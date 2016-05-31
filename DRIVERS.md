@@ -91,7 +91,7 @@ func main() {
     // "Berkeley" is the instance, "i.weather" is the interface
     iface := service.RegisterInterface("Berkeley", "i.weather")
 
-    // more code goes here
+    // attach metadata here (see below)
 }
 ```
 
@@ -160,6 +160,42 @@ Ideally, we'd place metadata in the URI where it is most helpful.
 **note**: in principle, these should all work with other metadata schemas other than `!meta`
 
 ### Example
+
+Now, lets add some metadata to our Weather Underground driver. This code demonstrates
+*how* metadata can be attached to a URI, and does not aim to inform *what* form this metadata
+should take.
+
+```go
+    // attach metadata to the service to describe it as a web service
+
+    // using service.SetMetadata handles packing the metadata object for us
+
+    // creates the URI "scratch.ns/mydrivers/s.weatherunderground/!meta/type"
+    service.SetMetadata("type", "Web Service")
+    // creates the URI "scratch.ns/mydrivers/s.weatherunderground/!meta/source/url"
+    service.SetMetadata("source/url", "https://www.wunderground.com/weather/api/")
+    // there is also iface.SetMetadata
+
+    // attach information to the instance "Berkeley" -- here we cannot use the library
+    // functions because none exist for this, but we can emulate its behavior easily enough.
+
+    // The following code is what happens "under the covers" when we call service.SetMetadata
+    // or iface.SetMetadata
+
+    // create a payload object to be persisted describing which State our instance is in
+    po := bw2.CreateMetadataPayloadObject(&bw2.MetadataTuple{
+        Value:  "California",             // the metadata value
+        Timestamp: time.Now().UnixNano(), // the time at which the metadata is set
+    })
+    // create "scratch.ns/mydrivers/s.weatherunderground/Berkeley/!meta/state"
+    state_uri := service.FullURI() + "Berkeley/!meta/state"
+    client.PublishOrExit(&bw2.PublishParams{
+        PayloadObjects: []bw2.PayloadObject{po}, // attach our metadata to the message
+        URI:            state_uri,               // where the message will be sent
+        Persist:        true,                    // make sure to persist the message
+    })
+
+```
 
 ## Permissions
 
