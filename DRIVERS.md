@@ -5,7 +5,7 @@ A guide on how to construct BW2 drivers.
 Drivers abstract away the details of communicating to underlying hardware and
 services to present a uniform interface.
 
-This document should be consumed after reading up on Bosswave services (docs coming soon).
+This document should be consumed after reading up on [Bosswave services](https://github.com/immesys/bw2/wiki/Services).
 
 ## URIs
 
@@ -56,6 +56,45 @@ We can divide URIs into several components:
 * **`name`**: this is the name of the signal or slot on the interface. The
   combination of `signal`/`slot` and `name` is defined by the interface.
 
+### Example: Creating a Service and Interfaces
+
+Here is some example code for how we might start defining a driver service for Weather Underground
+
+```go
+package main
+
+// retrieve the BOSSWAVE bindings
+import (
+	bw2 "gopkg.in/immesys/bw2bind.v5"
+    "os"
+    "time"
+)
+
+func main() {
+    // connects to the default BOSSWAVE router running locally
+    client := bw2.ConnectOrExit("")
+
+    // intelligent defaults for publishing/subscribing
+    client.OverrideAutoChainTo(true)
+
+    // need an entity file to define "who" this driver is
+    // here we grab the file name from the environment, but we could also
+    // hard code it or fetch it from a configuration file
+    client.SetEntityFromEnvironOrExit(os.Getenv("BW2_DEFAULT_ENTITY"))
+
+    // the root of the URI for the driver, i.e. "where" it is deployed
+    baseuri := "scratch.ns/mydrivers"
+
+    // creates the URI "scratch.ns/mydrivers/s.weatherunderground")
+    service := client.RegisterService(baseuri, "s.weatherunderground")
+    // creates the URI "scratch.ns/mydrivers/s.weatherunderground/Berkeley/i.weather"
+    // "Berkeley" is the instance, "i.weather" is the interface
+    iface := service.RegisterInterface("Berkeley", "i.weather")
+
+    // more code goes here
+}
+```
+
 ## Metadata
 
 Metadata is descriptive data attached to a service, an instance, an interface, or a signal/slot.
@@ -64,7 +103,7 @@ Services will persist data at special BOSSWAVE URIs.
 All resources in BOSSWAVE are identified with some URI that acts as a kind of
 "pointer": this is true both for topics acting as data transport channels
 between publishers and subscribers (as with the signals and slots above) as
-well as *persisted data*. 
+well as *persisted data*.
 
 Any message published on a URI will be delivered to all subscribers, but in
 some cases a process may want to see whatever message was last published on a
@@ -73,9 +112,20 @@ messages "live" on a URI and can be retrieved using a [BOSSWAVE query](https://g
 (not a subscription).
 
 By convention, metadata attached to a URI `<u>` should be persisted at
-`<u>/!meta/<keyname>`. ("!" has no special meaning). Because the persisted
-objects are full messages, they can contain lists of Payload Objects of various
-types.
+`<u>/!meta/<keyname>`. Because the persisted objects are full messages, they
+can contain lists of Payload Objects of various types.
+
+### Schemas
+
+The string `!meta` in a URI identifies that all parts of the URI following are
+part of the "meta" schema. In the "meta schema", keys are the portions of the URI
+follwing `!meta`, and values are a "Simple Metadata" ([PONum 2.0.3.1/32](https://github.com/immesys/bw2_pid/blob/master/allocations.yaml#L201-L207))
+struct consisting of a *string* value and a timestamp of when that metadata
+was set.
+
+* **TODO**: define the semantics for a set of metadata schemas
+
+### Metadata Placement in URIs
 
 In a service URI, we expect to place metadata at the following locations (`^`)
 ```
@@ -83,6 +133,33 @@ In a service URI, we expect to place metadata at the following locations (`^`)
                    ^          ^           ^                    ^
                service MD  instance MD  iface MD             signal/slot MD
 ```
+
+Ideally, we'd place metadata in the URI where it is most helpful.
+
+* `<basuri>/<service>/!meta/<key>`: metadata describing the service itself,
+  such as whether or not it has to do with lighting or where it is deployed.
+
+* `<baseuri>/<service>/<instance>/!meta/<key>`: metadata describing an instance
+  of a service, but more generic than the capabilities of that instance (which would
+  be under the purview of interface-metadata). For the "Berkeley" instance of the WeatherUnderground
+  service described above, possible metadata might include the state, country and zipcode of the
+  actual city, to further distinguish *which* Berkeley we mean. For a lighting instance, this may
+  describe the physical owner of the device.
+
+* `<baseuri>/<service>/<instance>/<interface>/!meta/<key>`: metadata describing
+  the specifics/semantics of an interface.
+
+* `<baseuri>/<service>/<instance>/<interface>/{signal/slot}/<name>/!meta/<key>`: metadata attached
+  to a particular signal or slot. The primary use case here would be the use of attaching `!meta/archive`
+  (with a value of a URI) indicating to an archival service that all messages sent on a signal or received
+  on a slot should be archived (assuming appropriate permissions, of course).
+
+  **note**: placing metadata here is not typical. Most metadata should be at the service, instance,
+  or interface level.
+
+**note**: in principle, these should all work with other metadata schemas other than `!meta`
+
+### Example
 
 ## Permissions
 
