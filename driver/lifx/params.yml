@@ -1,0 +1,8 @@
+svc_base_uri: 410.dev/lighting
+bearer_token: enter_your_bearer_token
+light_id: enter_light_id
+metavalid: Wed Apr 6 11:08:27 PDT 2016
+metadata:
+  location: "Kaifei's desk"
+  room: "410"
+  building: "Soda Hall, UC Berkeley, CA"
