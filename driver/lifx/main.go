@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"time"
 
-	bw "gopkg.in/immesys/bw2bind.v5"
 	"github.com/immesys/spawnpoint/spawnable"
+	bw "gopkg.in/immesys/bw2bind.v5"
 )
 
 var btok string
@@ -27,6 +27,7 @@ func main() {
 	cl := bw.ConnectOrExit("")
 	cl.SetEntityFromEnvironOrExit()
 	params := spawnable.GetParamsOrExit()
+	params.MergeMetadata(cl)
 
 	interval = minInterval
 	resetTime = time.Now()
