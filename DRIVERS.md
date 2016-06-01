@@ -172,8 +172,8 @@ should take.
 
     // creates the URI "scratch.ns/mydrivers/s.weatherunderground/!meta/type"
     service.SetMetadata("type", "Web Service")
-    // creates the URI "scratch.ns/mydrivers/s.weatherunderground/!meta/source/url"
-    service.SetMetadata("source/url", "https://www.wunderground.com/weather/api/")
+    // creates the URI "scratch.ns/mydrivers/s.weatherunderground/!meta/url"
+    service.SetMetadata("url", "https://www.wunderground.com/weather/api/")
     // there is also iface.SetMetadata
 
     // attach information to the instance "Berkeley" -- here we cannot use the library
@@ -197,8 +197,47 @@ should take.
 
 ```
 
+**TODO**: clarify: are hierarchical metadata keys ok, or does this break the permissions model?
+
 ## Permissions
 
+For our deployed driver to be useful, permissions must exist for:
+* the driver to publish data on a set of URIs (signals)
+* the driver to subscribe to data on a set of URIs (slots)
+* other processes to subscrbe to data published by the driver (signals)
+* other processes to publish to the driver (slots)
+
+**Driver Permissions**: the easiest method is to grant the driver full permissions on the
+URI defined by the deployment namespace and the service name:
+
+* permissions: `LPC*`
+* URI: `<namespace>/<service>/*`
+* TTL: typically 0 -- the driver does not need to grant permissions to anyone
+
+For example:
+
+```
+bw2 mkdot --from <granting entity> --to <driver entity> --uri scratch.ns/mydrivers/s.weatherunderground/*
+```
+
+**Usage Permissions**: there is more flexibility here because of how we may
+want to divide up permissions. The URI construction of services allows us this flexibility.
+
+We can (separately or together):
+* grant full subscribe access to signals: We use `+` to fuzz the instance and interface
+    * permissions: `LC` (L is optional)
+    * URI: `<namespace>/<service>/+/+/signal/*`
+* grant full publish access to slots:
+    * permissions: `P`
+    * URI: `<namespace>/<service>/+/+/slot/+`
+* grant subscription access to all interfaces of a certain type:
+    * permissions: `C`
+    * URI: `*/i.interfacename/signal/+`
+
+**TODO**: verify that these are the correct patterns
+
 ## Deployment
+
+**TODO**: spawnpoint permissions
 
 ## Archiving
