@@ -1,0 +1,4 @@
+path: <base uri of deployment>
+API_KEY: <weather underground api key>
+city: <city for weather>
+read_rate: <how often to read, written as go's time.Duration>
