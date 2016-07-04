@@ -1,6 +1,8 @@
-path: <base uri of deployment>
-URL: <http link to LiveData.xml on TED>
+svc_base_uri: <base uri of service>
+entityfile: <relative path to entity file>
+URL: http://<your ip:port here>/api/LiveData.xml
 extract: 
-    - total
-name: <name of deployment>
+    - MTU1
+    - MTU2
+name: <service name>
 poll_interval: 5s
