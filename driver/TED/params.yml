@@ -1,0 +1,6 @@
+path: <base uri of deployment>
+URL: <http link to LiveData.xml on TED>
+extract: 
+    - total
+name: <name of deployment>
+poll_interval: 5s
