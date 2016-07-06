@@ -99,7 +99,8 @@ func (ted *TED) Read() (map[string]*Data, error) {
 	var res Result
 	dec := xml.NewDecoder(resp.Body)
 	if err := dec.Decode(&res); err != nil {
-		log.Fatalln(errors.Wrap(err, "Could not decode XML"))
+		log.Println(errors.Wrap(err, "Could not decode XML"))
+		return ret, err
 	}
 	for _, v := range res.Voltage.Voltages {
 		for _, name := range ted.toExtract {
