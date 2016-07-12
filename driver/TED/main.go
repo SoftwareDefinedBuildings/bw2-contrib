@@ -45,8 +45,8 @@ func main() {
 	svc := bw.RegisterService(baseuri, "s.TED")
 	iface := svc.RegisterInterface(name, "i.meter")
 	bw.SetMetadata(iface.SignalURI("Voltage"), "UnitofMeasure", "V")
-	bw.SetMetadata(iface.SignalURI("RealPower"), "UnitofMeasure", "V")
-	bw.SetMetadata(iface.SignalURI("ApparentPower"), "UnitofMeasure", "VA")
+	bw.SetMetadata(iface.SignalURI("PowerNow"), "UnitofMeasure", "kW")
+	bw.SetMetadata(iface.SignalURI("KVA"), "UnitofMeasure", "kVA")
 	bw.SetMetadata(iface.FullURI(), "SourceName", params.MustString("SourceName"))
 
 	fmt.Println(svc.FullURI())
@@ -64,10 +64,10 @@ func main() {
 		iface.PublishSignal("Voltage", volt_msg.ToMsgPackBW())
 
 		power_msg := TimeseriesReading{UUID: realpower_uuid, Time: time.Now().Unix(), Value: d.PowerNow}
-		iface.PublishSignal("RealPower", power_msg.ToMsgPackBW())
+		iface.PublishSignal("PowerNow", power_msg.ToMsgPackBW())
 
 		ap_msg := TimeseriesReading{UUID: apparentpower_uuid, Time: time.Now().Unix(), Value: d.KVA}
-		iface.PublishSignal("ApparentPower", ap_msg.ToMsgPackBW())
+		iface.PublishSignal("KVA", ap_msg.ToMsgPackBW())
 	}
 
 }
