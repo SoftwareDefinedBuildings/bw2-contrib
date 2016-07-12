@@ -30,8 +30,7 @@ func main() {
 
 	params := spawnable.GetParamsOrExit()
 	bw.OverrideAutoChainTo(true)
-	//TODO: is there a standard key I should be using?
-	bw.SetEntityFileOrExit(params.MustString("entityfile"))
+	bw.SetEntityFromEnvironOrExit()
 
 	url := params.MustString("URL")
 	toExtract := params.MustStringSlice("extract")
@@ -60,6 +59,7 @@ func main() {
 	src := NewTEDSource(url, poll_interval, toExtract)
 	data := src.Start()
 	for d := range data {
+		fmt.Printf("Values: %+v\n", d)
 		volt_msg := TimeseriesReading{UUID: voltage_uuid, Time: time.Now().Unix(), Value: d.VoltageNow}
 		iface.PublishSignal("Voltage", volt_msg.ToMsgPackBW())
 

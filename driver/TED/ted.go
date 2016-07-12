@@ -20,8 +20,14 @@ type VoltageList struct {
 }
 
 type Voltage struct {
-	XMLName    xml.Name
-	VoltageNow float64 `xml:"VoltageNow"`
+	XMLName          xml.Name
+	VoltageNow       float64 `xml:"VoltageNow"`
+	LowVoltageHour   float64
+	LowVoltageToday  float64
+	LowVoltageMTD    float64
+	HighVoltageHour  float64
+	HighVoltageToday float64
+	HighVoltageMTD   float64
 }
 
 type PowerList struct {
@@ -30,16 +36,38 @@ type PowerList struct {
 }
 
 type Power struct {
-	XMLName  xml.Name
-	PowerNow float64 `xml:"PowerNow"`
-	KVA      float64 `xml:"KVA"`
+	XMLName   xml.Name
+	PowerNow  float64 `xml:"PowerNow"`
+	PowerHour float64
+	PowerTDY  float64
+	PowerMTD  float64
+	PowerProj float64
+	PeakTdy   float64
+	PeakMTD   float64
+	MinTdy    float64
+	MinMTD    float64
+	KVA       float64 `xml:"KVA"`
 }
 
 type Data struct {
-	Name       string
-	VoltageNow float64
-	PowerNow   float64
-	KVA        float64
+	Name             string
+	VoltageNow       float64
+	LowVoltageHour   float64
+	LowVoltageToday  float64
+	LowVoltageMTD    float64
+	HighVoltageHour  float64
+	HighVoltageToday float64
+	HighVoltageMTD   float64
+	PowerNow         float64
+	PowerHour        float64
+	PowerTDY         float64
+	PowerMTD         float64
+	PowerProj        float64
+	PeakTdy          float64
+	PeakMTD          float64
+	MinTdy           float64
+	MinMTD           float64
+	KVA              float64
 }
 
 type TED struct {
@@ -106,6 +134,12 @@ func (ted *TED) Read() (map[string]*Data, error) {
 		for _, name := range ted.toExtract {
 			if name == v.XMLName.Local {
 				ret[name].VoltageNow = v.VoltageNow
+				ret[name].LowVoltageHour = v.LowVoltageHour
+				ret[name].LowVoltageToday = v.LowVoltageToday
+				ret[name].LowVoltageMTD = v.LowVoltageMTD
+				ret[name].HighVoltageHour = v.HighVoltageHour
+				ret[name].HighVoltageToday = v.HighVoltageToday
+				ret[name].HighVoltageMTD = v.HighVoltageMTD
 			}
 		}
 	}
@@ -113,6 +147,14 @@ func (ted *TED) Read() (map[string]*Data, error) {
 		for _, name := range ted.toExtract {
 			if name == p.XMLName.Local {
 				ret[name].PowerNow = p.PowerNow
+				ret[name].PowerHour = p.PowerHour
+				ret[name].PowerTDY = p.PowerTDY
+				ret[name].PowerMTD = p.PowerMTD
+				ret[name].PowerProj = p.PowerProj
+				ret[name].PeakTdy = p.PeakTdy
+				ret[name].PeakMTD = p.PeakMTD
+				ret[name].MinTdy = p.MinTdy
+				ret[name].MinMTD = p.MinMTD
 				ret[name].KVA = p.KVA
 			}
 		}
