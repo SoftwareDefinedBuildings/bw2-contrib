@@ -39,8 +39,8 @@ func main() {
 	params := spawnable.GetParamsOrExit()
 	name := params.MustString("name")
 	baseURI := params.MustString("svc_base_uri")
-	if strings.HasSuffix(baseURI, "/") {
-		baseURI = baseURI[:len(baseURI)-1]
+	if !strings.HasSuffix(baseURI, "/") {
+		baseURI += "/"
 	}
 	userID := params.MustString("user_id")
 	apiKey := params.MustString("api_key")
@@ -71,8 +71,6 @@ func main() {
 	}
 	summCh := enphase.PollSummary(pollInterval)
 	for summary := range summCh {
-		fmt.Printf("Summary: %+v\n", summary)
-
 		currentPowerReading := TimeseriesReading{
 			UUID:  currentPowerUUID.String(),
 			Time:  time.Now().UnixNano(),

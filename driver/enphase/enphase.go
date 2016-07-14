@@ -20,15 +20,14 @@ type Enphase struct {
 }
 
 type enphaseSystem struct {
-	SystemID         uint64                 `json:"system_id"`
-	SystemName       string                 `json:"system_name"`
-	SystemPublicName string                 `json:"system_public_name"`
-	Status           string                 `json:"status"`
-	Timezone         string                 `json:"timezone"`
-	State            string                 `json:"state"`
-	City             string                 `json:"city"`
-	PostalCode       uint64                 `json:"postal_code"`
-	Meta             map[string]interface{} `json:"meta"`
+	SystemID         uint64 `json:"system_id"`
+	SystemName       string `json:"system_name"`
+	SystemPublicName string `json:"system_public_name"`
+	Status           string `json:"status"`
+	Timezone         string `json:"timezone"`
+	Country          string `json:"country"`
+	State            string `json:"state"`
+	City             string `json:"city"`
 }
 
 type indexResult struct {
@@ -36,17 +35,16 @@ type indexResult struct {
 }
 
 type Summary struct {
-	CurrentPower      uint64 `json:"current_power"`
-	EnergyLifetime    uint64 `json:"energy_lifetime"`
-	EnergyToday       uint64 `json:"energy_today"`
-	LastIntervalEndAt uint64 `json:"last_interval_end_at"`
-	LastReportAt      uint64 `json:"last_report_at"`
-	Modules           uint64 `json:"modules"`
-	OperationalAt     uint64 `json:"operational_at"`
-	SizeWatts         uint64 `json:"size_w"`
-	Source            string `json:"source"`
-	SummaryDate       string `json:"summary_date"`
-	SystemID          uint64 `json:"system_id"`
+	CurrentPower   uint64 `json:"current_power"`
+	EnergyLifetime uint64 `json:"energy_lifetime"`
+	EnergyToday    uint64 `json:"energy_today"`
+	Modules        uint64 `json:"modules"`
+	OperationalAt  uint64 `json:"operational_at"`
+	SizeWatts      uint64 `json:"size_w"`
+	Source         string `json:"source"`
+	Status         string `json:"status"`
+	SummaryDate    string `json:"summary_date"`
+	SystemID       uint64 `json:"system_id"`
 }
 
 func NewEnphase(apiKey string, userID string, sysName string) (*Enphase, error) {
@@ -61,8 +59,8 @@ func NewEnphase(apiKey string, userID string, sysName string) (*Enphase, error) 
 		return nil, fmt.Errorf("System index request failed: %v", resp.Status)
 	}
 
-	var rslt *indexResult
-	err := json.Unmarshal(body, rslt)
+	var rslt indexResult
+	err := json.Unmarshal(body, &rslt)
 	if err != nil {
 		return nil, fmt.Errorf("System index request failed: %v", err)
 	}
@@ -89,15 +87,15 @@ func (enphase *Enphase) ReadSummary() (*Summary, error) {
 		return nil, fmt.Errorf("Summary request failed: %v", errs)
 	}
 
-	var summ *Summary
-	err := json.Unmarshal(body, summ)
+	var summ Summary
+	err := json.Unmarshal(body, &summ)
 	if err != nil {
 		return nil, errors.New("Received invalid summary as response")
 	} else if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("Summary request failed: %v", err)
 	}
 
-	return summ, nil
+	return &summ, nil
 }
 
 func (enphase *Enphase) PollSummary(dur time.Duration) chan *Summary {
