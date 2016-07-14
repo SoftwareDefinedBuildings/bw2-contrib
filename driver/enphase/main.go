@@ -55,9 +55,9 @@ func main() {
 
 	svc := bwClient.RegisterService(baseURI+name, "s.Enphase")
 	iface := svc.RegisterInterface("enphase1", "i.meter")
-	bwClient.SetMetadata(iface.SignalURI("CurrentPower"), "UnitofMeasure", "W")
-
 	rootUUID := uuid.FromStringOrNil(rootUUIDStr)
+
+	bwClient.SetMetadata(iface.SignalURI("CurrentPower"), "UnitofMeasure", "W")
 	currentPowerUUID := uuid.NewV3(rootUUID, "CurrentPower")
 	bwClient.SetMetadata(iface.SignalURI("EnergyLifetime"), "UnitofMeasure", "Wh")
 	energyLifetimeUUID := uuid.NewV3(rootUUID, "EnergyLifetime")
