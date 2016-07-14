@@ -56,9 +56,9 @@ func NewEnphase(apiKey string, userID string, sysName string) (*Enphase, error) 
 		Query("user_id=" + userID).
 		EndBytes()
 	if errs != nil {
-		return nil, errors.New("System index request failed")
-	} else if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("System index request failed: %v", errs)
+	} else if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("System index request failed: %v", resp.Status)
 	}
 
 	var rslt *indexResult
