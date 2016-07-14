@@ -4,5 +4,4 @@ URL: http://<your ip:port here>/api/LiveData.xml
 extract: 
     - MTU1
     - MTU2
-name: <service name>
 poll_interval: 5s
