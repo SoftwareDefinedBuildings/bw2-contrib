@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/immesys/spawnpoint/spawnable"
@@ -10,8 +11,7 @@ import (
 	bw2 "gopkg.in/immesys/bw2bind.v5"
 )
 
-// Not sure why this isn't in bw2_pid
-const PODFTimeSeriesReading = `2.0.9.1`
+const rootUUIDStr = "d8b61708-2797-11e6-836b-0cc47a0f7eea"
 
 type TimeseriesReading struct {
 	UUID  string
@@ -20,7 +20,7 @@ type TimeseriesReading struct {
 }
 
 func (tsr *TimeseriesReading) ToMsgPack() bw2.PayloadObject {
-	po, err := bw2.CreateMsgPackPayloadObject(bw2.FromDotForm(PODFTimeSeriesReading), tsr)
+	po, err := bw2.CreateMsgPackPayloadObject(bw2.PONumTimeseriesReading, tsr)
 	if err != nil {
 		panic(err)
 	} else {
@@ -39,6 +39,9 @@ func main() {
 	params := spawnable.GetParamsOrExit()
 	name := params.MustString("name")
 	baseURI := params.MustString("svc_base_uri")
+	if strings.HasSuffix(baseURI, "/") {
+		baseURI = baseURI[:len(baseURI)-1]
+	}
 	userID := params.MustString("user_id")
 	apiKey := params.MustString("api_key")
 	sysName := params.MustString("system_name")
@@ -50,15 +53,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	svc := bwClient.RegisterService(baseURI, "s.Enphase")
-	iface := svc.RegisterInterface(name, "i.meter")
+	svc := bwClient.RegisterService(baseURI+name, "s.Enphase")
+	iface := svc.RegisterInterface("enphase1", "i.meter")
 	bwClient.SetMetadata(iface.SignalURI("CurrentPower"), "UnitofMeasure", "W")
-	// TODO More intelligent way to derive UUIDs, e.g. from V3?
-	currentPowerUUID := uuid.NewV4()
+
+	rootUUID := uuid.FromStringOrNil(rootUUIDStr)
+	currentPowerUUID := uuid.NewV3(rootUUID, "CurrentPower")
 	bwClient.SetMetadata(iface.SignalURI("EnergyLifetime"), "UnitofMeasure", "Wh")
-	energyLifetimeUUID := uuid.NewV4()
+	energyLifetimeUUID := uuid.NewV3(rootUUID, "EnergyLifetime")
 	bwClient.SetMetadata(iface.SignalURI("EnergyToday"), "UnitofMeasure", "Wh")
-	energyTodayUUID := uuid.NewV4()
+	energyTodayUUID := uuid.NewV3(rootUUID, "EnergyToday")
 
 	enphase, err := NewEnphase(apiKey, userID, sysName)
 	if err != nil {
