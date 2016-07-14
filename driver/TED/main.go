@@ -35,7 +35,6 @@ func main() {
 	url := params.MustString("URL")
 	toExtract := params.MustStringSlice("extract")
 	fmt.Println(toExtract)
-	name := params.MustString("name")
 	baseuri := params.MustString("svc_base_uri")
 	poll_interval := params.MustString("poll_interval")
 
@@ -43,31 +42,35 @@ func main() {
 	//params.MergeMetadata(bw)
 
 	svc := bw.RegisterService(baseuri, "s.TED")
-	iface := svc.RegisterInterface(name, "i.meter")
-	bw.SetMetadata(iface.SignalURI("Voltage"), "UnitofMeasure", "V")
-	bw.SetMetadata(iface.SignalURI("PowerNow"), "UnitofMeasure", "kW")
-	bw.SetMetadata(iface.SignalURI("KVA"), "UnitofMeasure", "kVA")
-	bw.SetMetadata(iface.FullURI(), "SourceName", params.MustString("SourceName"))
-
 	fmt.Println(svc.FullURI())
-	fmt.Println(iface.FullURI())
+	meters := make(map[string]*bw2.Interface)
+	uuids := make(map[string]string)
 
-	voltage_uuid := uuid.NewV3(NAMESPACE_UUID, name+"voltage").String()
-	realpower_uuid := uuid.NewV3(NAMESPACE_UUID, name+"realpower").String()
-	apparentpower_uuid := uuid.NewV3(NAMESPACE_UUID, name+"apparentpower").String()
+	for _, name := range toExtract {
+		iface := svc.RegisterInterface(name, "i.meter")
+		bw.SetMetadata(iface.SignalURI("Voltage"), "UnitofMeasure", "V")
+		bw.SetMetadata(iface.SignalURI("PowerNow"), "UnitofMeasure", "kW")
+		bw.SetMetadata(iface.SignalURI("KVA"), "UnitofMeasure", "kVA")
+		bw.SetMetadata(iface.FullURI(), "SourceName", params.MustString("SourceName"))
+		meters[name] = iface
+		uuids[name+"voltage"] = uuid.NewV3(NAMESPACE_UUID, name+"voltage").String()
+		uuids[name+"powernow"] = uuid.NewV3(NAMESPACE_UUID, name+"powernow").String()
+		uuids[name+"kva"] = uuid.NewV3(NAMESPACE_UUID, name+"kva").String()
+		fmt.Println(iface.FullURI())
+	}
 
 	src := NewTEDSource(url, poll_interval, toExtract)
 	data := src.Start()
 	for d := range data {
 		fmt.Printf("Values: %+v\n", d)
-		volt_msg := TimeseriesReading{UUID: voltage_uuid, Time: time.Now().Unix(), Value: d.VoltageNow}
-		iface.PublishSignal("Voltage", volt_msg.ToMsgPackBW())
+		volt_msg := TimeseriesReading{UUID: uuids[d.Name+"voltage"], Time: time.Now().Unix(), Value: d.VoltageNow}
+		meters[d.Name].PublishSignal("Voltage", volt_msg.ToMsgPackBW())
 
-		power_msg := TimeseriesReading{UUID: realpower_uuid, Time: time.Now().Unix(), Value: d.PowerNow}
-		iface.PublishSignal("PowerNow", power_msg.ToMsgPackBW())
+		power_msg := TimeseriesReading{UUID: uuids[d.Name+"powernow"], Time: time.Now().Unix(), Value: d.PowerNow}
+		meters[d.Name].PublishSignal("PowerNow", power_msg.ToMsgPackBW())
 
-		ap_msg := TimeseriesReading{UUID: apparentpower_uuid, Time: time.Now().Unix(), Value: d.KVA}
-		iface.PublishSignal("KVA", ap_msg.ToMsgPackBW())
+		ap_msg := TimeseriesReading{UUID: uuids[d.Name+"kva"], Time: time.Now().Unix(), Value: d.KVA}
+		meters[d.Name].PublishSignal("KVA", ap_msg.ToMsgPackBW())
 	}
 
 }
