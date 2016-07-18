@@ -5,3 +5,23 @@ extract:
     - MTU1
     - MTU2
 poll_interval: 5s
+metadata:
+    s.TED:
+        SourceName: "TED Test"
+    s.TED/MTU1:
+        Kind: Supply
+    s.TED/MTU2:
+        Kind: Load
+    s.TED/MTU1/i.meter/signal/Voltage:
+        UnitofMeasure: V
+    s.TED/MTU1/i.meter/signal/PowerNow:
+        UnitofMeasure: kW
+    s.TED/MTU1/i.meter/signal/KVA:
+        UnitofMeasure: kVA
+
+    s.TED/MTU2/i.meter/signal/Voltage:
+        UnitofMeasure: V
+    s.TED/MTU2/i.meter/signal/PowerNow:
+        UnitofMeasure: kW
+    s.TED/MTU2/i.meter/signal/KVA:
+        UnitofMeasure: kVA

@@ -38,8 +38,7 @@ func main() {
 	baseuri := params.MustString("svc_base_uri")
 	poll_interval := params.MustString("poll_interval")
 
-	//TODO: needs discussion on behavior of MergeMetadat
-	//params.MergeMetadata(bw)
+	params.MergeMetadata(bw)
 
 	svc := bw.RegisterService(baseuri, "s.TED")
 	fmt.Println(svc.FullURI())
@@ -48,10 +47,6 @@ func main() {
 
 	for _, name := range toExtract {
 		iface := svc.RegisterInterface(name, "i.meter")
-		bw.SetMetadata(iface.SignalURI("Voltage"), "UnitofMeasure", "V")
-		bw.SetMetadata(iface.SignalURI("PowerNow"), "UnitofMeasure", "kW")
-		bw.SetMetadata(iface.SignalURI("KVA"), "UnitofMeasure", "kVA")
-		bw.SetMetadata(iface.FullURI(), "SourceName", params.MustString("SourceName"))
 		meters[name] = iface
 		uuids[name+"voltage"] = uuid.NewV3(NAMESPACE_UUID, name+"voltage").String()
 		uuids[name+"powernow"] = uuid.NewV3(NAMESPACE_UUID, name+"powernow").String()
