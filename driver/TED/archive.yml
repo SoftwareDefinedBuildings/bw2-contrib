@@ -1,0 +1,43 @@
+Prefix: gabe.pantry/services
+Archive:
+  - URI: s.TED/MTU1/i.meter/signal/Voltage
+    Value: Value
+    MetadataURIs:
+    - s.TED
+    - s.TED/MTU1/i.meter
+    - s.TED/MTU1/i.meter/signal/Voltage
+
+  - URI: s.TED/MTU1/i.meter/signal/PowerNow
+    Value: Value
+    MetadataURIs:
+    - s.TED
+    - s.TED/MTU1/i.meter
+    - s.TED/MTU1/i.meter/signal/PowerNow
+
+  - URI: s.TED/MTU1/i.meter/signal/KVA
+    Value: Value
+    MetadataURIs:
+    - s.TED
+    - s.TED/MTU1/i.meter
+    - s.TED/MTU1/i.meter/signal/KVA
+
+  - URI: s.TED/MTU2/i.meter/signal/Voltage
+    Value: Value
+    MetadataURIs:
+    - s.TED
+    - s.TED/MTU1/i.meter
+    - s.TED/MTU2/i.meter/signal/Voltage
+
+  - URI: s.TED/MTU2/i.meter/signal/PowerNow
+    Value: Value
+    MetadataURIs:
+    - s.TED
+    - s.TED/MTU1/i.meter
+    - s.TED/MTU2/i.meter/signal/PowerNow
+
+  - URI: s.TED/MTU2/i.meter/signal/KVA
+    Value: Value
+    MetadataURIs:
+    - s.TED
+    - s.TED/MTU1/i.meter
+    - s.TED/MTU2/i.meter/signal/KVA
