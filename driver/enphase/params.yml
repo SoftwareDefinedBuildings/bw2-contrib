@@ -4,4 +4,4 @@ enphase_driver:
     user_id: <user_id here>
     apiKey: <api_key here>
     system_name: <Enphase System Name Here>
-    poll_interval: 30s
+    poll_interval: 5m

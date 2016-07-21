@@ -1,0 +1,19 @@
+Prefix: culler-mayeno.ns/devices/enphase/solarPVDriver
+Archive:
+  - URI: s.Enphase/enphase1/i.meter/signal/CurrentPower
+    Value: Value
+    MetadataURIs:
+    - s.Enphase/enphase1/i.meter
+    - s.Enphase/enphase1/i.meter/signal/CurrentPower
+
+  - URI: s.Enphase/enphase1/i.meter/signal/EnergyLifetime
+    Value: Value
+    MetadataURIs:
+    - s.Enphase/enphase1/i.meter
+    - s.Enphase/enphase1/i.meter/signal/EnergyLifetime
+
+  - URI: s.Enphase/enphase1/i.meter/signal/EnergyToday
+    Value: Value
+    MetadataURIs:
+    - s.Enphase/enphase1/i.meter
+    - s.Enphase/enphase1/i.meter/signal/EnergyToday
