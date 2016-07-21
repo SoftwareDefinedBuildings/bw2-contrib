@@ -1,4 +1,15 @@
-path: <base uri of deployment>
-API_KEY: <weather underground api key>
-city: <city for weather>
-read_rate: <how often to read, written as go's time.Duration>
+svc_base_uri: gabe.pantry/drivers/weather
+API_KEY:  <api key here>
+city: Berkeley
+read_rate: 5m
+metadata:
+    s.weatherunderground:
+        SourceName: "WeatherUnderground"
+    s.weatherunderground/Berkeley:
+        Location/City: Berkeley
+    s.weatherunderground/Berkeley/i.weather/signal/fahrenheit:
+        UnitofMeasure: "F"
+    s.weatherunderground/Berkeley/i.weather/signal/celsius:
+        UnitofMeasure: "C"
+    s.weatherunderground/Berkeley/i.weather/signal/relative_humidity:
+        UnitofMeasure: "RH%"
