@@ -50,8 +50,8 @@ func publish(svc *bw2.Service, nodeid uint16, stream string, msg TimeseriesReadi
 	if !found {
 		iface = svc.RegisterInterface(nodestring, stream)
 	}
-	fmt.Println(iface.SignalURI(nodestring))
-	iface.PublishSignal(nodestring, msg.ToMsgPackBW())
+	fmt.Printf("URI: %s\n", iface.SignalURI(stream))
+	iface.PublishSignal(stream, msg.ToMsgPackBW())
 }
 
 func main() {
@@ -62,7 +62,7 @@ func main() {
 	bw.SetEntityFromEnvironOrExit()
 
 	// params
-	serialPort := params.MustString("SerialPort")
+	//serialPort := params.MustString("SerialPort")
 	baudRate := params.MustInt("BaudRate")
 	NAMESPACE_UUID = uuid.FromStringOrNil(params.MustString("Namespace"))
 	baseuri := params.MustString("svc_base_uri")
@@ -71,58 +71,61 @@ func main() {
 
 	svc := bw.RegisterService(baseuri, "s.KETIMote")
 
-	ketiReceiver := NewKetiMoteReceiver(serialPort, baudRate)
+	serialPorts := params.MustStringSlice("SerialPorts")
+	for _, serialPort := range serialPorts {
+		ketiReceiver := NewKetiMoteReceiver(serialPort, baudRate)
+		go func() {
+			for tempRdg := range ketiReceiver.TempReadings {
+				// construct uuid
+				// for the publish calls, we keep them all Temperature so they show up
+				// under the same interface
+				fmt.Printf("Reading: %+v\n", tempRdg)
+				msg := TimeseriesReading{
+					UUID:  makeUUID(tempRdg.NodeID, "Temperature"),
+					Time:  time.Now().Unix(),
+					Value: tempRdg.Temperature,
+				}
+				publish(svc, tempRdg.NodeID, "i.keti-temperature", msg)
 
-	go func() {
-		for tempRdg := range ketiReceiver.TempReadings {
-			// construct uuid
-			// for the publish calls, we keep them all Temperature so they show up
-			// under the same interface
-			fmt.Printf("Reading: %+v\n", tempRdg)
-			msg := TimeseriesReading{
-				UUID:  makeUUID(tempRdg.NodeID, "Temperature"),
-				Time:  time.Now().Unix(),
-				Value: tempRdg.Temperature,
-			}
-			publish(svc, tempRdg.NodeID, "i.keti-temperature", msg)
+				msg2 := TimeseriesReading{
+					UUID:  makeUUID(tempRdg.NodeID, "Humidity"),
+					Time:  time.Now().Unix(),
+					Value: tempRdg.Humidity,
+				}
+				publish(svc, tempRdg.NodeID, "i.keti-temperature", msg2)
 
-			msg2 := TimeseriesReading{
-				UUID:  makeUUID(tempRdg.NodeID, "Humidity"),
-				Time:  time.Now().Unix(),
-				Value: tempRdg.Humidity,
+				msg3 := TimeseriesReading{
+					UUID:  makeUUID(tempRdg.NodeID, "Lux"),
+					Time:  time.Now().Unix(),
+					Value: tempRdg.Lux,
+				}
+				publish(svc, tempRdg.NodeID, "i.keti-temperature", msg3)
 			}
-			publish(svc, tempRdg.NodeID, "i.keti-temperature", msg2)
+		}()
+		go func() {
+			for pirRdg := range ketiReceiver.PIRReadings {
+				fmt.Printf("Reading: %+v\n", pirRdg)
+				msg := TimeseriesReading{
+					UUID:  makeUUID(pirRdg.NodeID, "PIR"),
+					Time:  time.Now().Unix(),
+					Value: pirRdg.PIR,
+				}
+				publish(svc, pirRdg.NodeID, "i.keti-pir", msg)
+			}
+		}()
+		go func() {
+			for co2Rdg := range ketiReceiver.CO2Readings {
+				fmt.Printf("Reading: %+v\n", co2Rdg)
+				msg := TimeseriesReading{
+					UUID:  makeUUID(co2Rdg.NodeID, "CO2"),
+					Time:  time.Now().Unix(),
+					Value: co2Rdg.CO2,
+				}
+				publish(svc, co2Rdg.NodeID, "i.keti-co2", msg)
+			}
+		}()
 
-			msg3 := TimeseriesReading{
-				UUID:  makeUUID(tempRdg.NodeID, "Lux"),
-				Time:  time.Now().Unix(),
-				Value: tempRdg.Lux,
-			}
-			publish(svc, tempRdg.NodeID, "i.keti-temperature", msg3)
-		}
-	}()
-	go func() {
-		for pirRdg := range ketiReceiver.PIRReadings {
-			fmt.Printf("Reading: %+v\n", pirRdg)
-			msg := TimeseriesReading{
-				UUID:  makeUUID(pirRdg.NodeID, "PIR"),
-				Time:  time.Now().Unix(),
-				Value: pirRdg.PIR,
-			}
-			publish(svc, pirRdg.NodeID, "i.keti-pir", msg)
-		}
-	}()
-	go func() {
-		for co2Rdg := range ketiReceiver.CO2Readings {
-			fmt.Printf("Reading: %+v\n", co2Rdg)
-			msg := TimeseriesReading{
-				UUID:  makeUUID(co2Rdg.NodeID, "CO2"),
-				Time:  time.Now().Unix(),
-				Value: co2Rdg.CO2,
-			}
-			publish(svc, co2Rdg.NodeID, "i.keti-co2", msg)
-		}
-	}()
+	}
 
 	waitForever := make(chan bool)
 	<-waitForever
