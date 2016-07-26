@@ -46,7 +46,7 @@ var motes = make(map[uint16]*bw2.Interface)
 
 func publish(svc *bw2.Service, nodeid uint16, stream string, msg TimeseriesReading) {
 	iface, found := motes[nodeid]
-	nodestring := fmt.Sprintf("%s", nodeid)
+	nodestring := fmt.Sprintf("%d", nodeid)
 	if !found {
 		iface = svc.RegisterInterface(nodestring, stream)
 	}
