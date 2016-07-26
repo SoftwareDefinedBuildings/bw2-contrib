@@ -26,7 +26,20 @@ func (msg TimeseriesReading) ToMsgPackBW() (po bw2.PayloadObject) {
 }
 
 func makeUUID(nodeid uint16, stream string) string {
-	return uuid.NewV3(NAMESPACE_UUID, fmt.Sprintf("%s", nodeid)+stream).String()
+	var channel string
+	switch stream {
+	case "Temperature":
+		channel = "temperature"
+	case "Humidity":
+		channel = "humidity"
+	case "Lux":
+		channel = "light"
+	case "PIR":
+		channel = "pir"
+	case "CO2":
+		channel = "co2"
+	}
+	return uuid.NewV5(NAMESPACE_UUID, fmt.Sprintf("%s-%s", nodeid, channel)).String()
 }
 
 var motes = make(map[uint16]*bw2.Interface)
