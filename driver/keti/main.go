@@ -77,6 +77,7 @@ func main() {
 			// construct uuid
 			// for the publish calls, we keep them all Temperature so they show up
 			// under the same interface
+			fmt.Printf("Reading: %+v\n", tempRdg)
 			msg := TimeseriesReading{
 				UUID:  makeUUID(tempRdg.NodeID, "Temperature"),
 				Time:  time.Now().Unix(),
@@ -101,6 +102,7 @@ func main() {
 	}()
 	go func() {
 		for pirRdg := range ketiReceiver.PIRReadings {
+			fmt.Printf("Reading: %+v\n", pirRdg)
 			msg := TimeseriesReading{
 				UUID:  makeUUID(pirRdg.NodeID, "PIR"),
 				Time:  time.Now().Unix(),
@@ -111,6 +113,7 @@ func main() {
 	}()
 	go func() {
 		for co2Rdg := range ketiReceiver.CO2Readings {
+			fmt.Printf("Reading: %+v\n", co2Rdg)
 			msg := TimeseriesReading{
 				UUID:  makeUUID(co2Rdg.NodeID, "CO2"),
 				Time:  time.Now().Unix(),
