@@ -54,7 +54,7 @@ func publish(svc *bw2.Service, nodeid uint16, stream string, msg TimeseriesReadi
 	iface, found := motes[nodeid]
 	nodestring := fmt.Sprintf("%d", nodeid)
 	if !found {
-		iface = svc.RegisterInterface(nodestring, stream)
+		iface = svc.RegisterInterfaceHeartbeatOnPub(nodestring, stream)
 	}
 	fmt.Printf("URI: %s\n", iface.SignalURI(stream))
 	iface.PublishSignal(stream, msg.ToMsgPackBW())
