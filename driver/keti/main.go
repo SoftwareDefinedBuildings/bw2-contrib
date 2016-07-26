@@ -82,21 +82,21 @@ func main() {
 				Time:  time.Now().Unix(),
 				Value: tempRdg.Temperature,
 			}
-			publish(svc, tempRdg.NodeID, "Temperature", msg)
+			publish(svc, tempRdg.NodeID, "keti-temperature", msg)
 
 			msg2 := TimeseriesReading{
 				UUID:  makeUUID(tempRdg.NodeID, "Humidity"),
 				Time:  time.Now().Unix(),
 				Value: tempRdg.Humidity,
 			}
-			publish(svc, tempRdg.NodeID, "Temperature", msg2)
+			publish(svc, tempRdg.NodeID, "keti-temperature", msg2)
 
 			msg3 := TimeseriesReading{
 				UUID:  makeUUID(tempRdg.NodeID, "Lux"),
 				Time:  time.Now().Unix(),
 				Value: tempRdg.Lux,
 			}
-			publish(svc, tempRdg.NodeID, "Temperature", msg3)
+			publish(svc, tempRdg.NodeID, "keti-temperature", msg3)
 		}
 	}()
 	go func() {
@@ -106,7 +106,7 @@ func main() {
 				Time:  time.Now().Unix(),
 				Value: pirRdg.PIR,
 			}
-			publish(svc, pirRdg.NodeID, "PIR", msg)
+			publish(svc, pirRdg.NodeID, "keti-pir", msg)
 		}
 	}()
 	go func() {
@@ -116,7 +116,7 @@ func main() {
 				Time:  time.Now().Unix(),
 				Value: co2Rdg.CO2,
 			}
-			publish(svc, co2Rdg.NodeID, "CO2", msg)
+			publish(svc, co2Rdg.NodeID, "keti-co2", msg)
 		}
 	}()
 
