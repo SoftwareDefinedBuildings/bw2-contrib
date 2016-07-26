@@ -10,13 +10,8 @@ import (
 	"sync"
 )
 
-type Wrapper struct {
-	Path    string
-	Reading SmapReading
-}
-
 type SmapReading struct {
-	UUID     string
+	UUID     string `json:"uuid"`
 	Readings [][]json.Number
 }
 
