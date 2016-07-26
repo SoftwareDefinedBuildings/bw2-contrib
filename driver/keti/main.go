@@ -5,6 +5,7 @@ import (
 	"github.com/immesys/spawnpoint/spawnable"
 	"github.com/satori/go.uuid"
 	bw2 "gopkg.in/immesys/bw2bind.v5"
+	"strings"
 	"time"
 )
 
@@ -25,7 +26,7 @@ func (msg TimeseriesReading) ToMsgPackBW() (po bw2.PayloadObject) {
 	return
 }
 
-func makeUUID(nodeid uint16, stream string) string {
+func getChannel(stream string) string {
 	var channel string
 	switch stream {
 	case "Temperature":
@@ -39,12 +40,17 @@ func makeUUID(nodeid uint16, stream string) string {
 	case "CO2":
 		channel = "co2"
 	}
+	return channel
+}
+
+func makeUUID(nodeid uint16, stream string) string {
+	channel := getChannel(stream)
 	return uuid.NewV5(NAMESPACE_UUID, fmt.Sprintf("%s-%s", nodeid, channel)).String()
 }
 
 var motes = make(map[uint16]*bw2.Interface)
 
-func publish(svc *bw2.Service, nodeid uint16, stream string, msg TimeseriesReading) {
+func publish(svc *bw2.Service, nodeid uint16, stream, serialPort string, msg TimeseriesReading) {
 	iface, found := motes[nodeid]
 	nodestring := fmt.Sprintf("%d", nodeid)
 	if !found {
@@ -52,6 +58,8 @@ func publish(svc *bw2.Service, nodeid uint16, stream string, msg TimeseriesReadi
 	}
 	fmt.Printf("URI: %s\n", iface.SignalURI(stream))
 	iface.PublishSignal(stream, msg.ToMsgPackBW())
+	path := strings.TrimPrefix(serialPort, "/dev") + fmt.Sprintf("/%d/", nodeid) + getChannel(stream)
+	msg.ToSmapReading(path)
 }
 
 func main() {
@@ -62,7 +70,6 @@ func main() {
 	bw.SetEntityFromEnvironOrExit()
 
 	// params
-	//serialPort := params.MustString("SerialPort")
 	baudRate := params.MustInt("BaudRate")
 	NAMESPACE_UUID = uuid.FromStringOrNil(params.MustString("Namespace"))
 	baseuri := params.MustString("svc_base_uri")
@@ -85,21 +92,21 @@ func main() {
 					Time:  time.Now().Unix(),
 					Value: tempRdg.Temperature,
 				}
-				publish(svc, tempRdg.NodeID, "i.keti-temperature", msg)
+				publish(svc, tempRdg.NodeID, "i.keti-temperature", serialPort, msg)
 
 				msg2 := TimeseriesReading{
 					UUID:  makeUUID(tempRdg.NodeID, "Humidity"),
 					Time:  time.Now().Unix(),
 					Value: tempRdg.Humidity,
 				}
-				publish(svc, tempRdg.NodeID, "i.keti-temperature", msg2)
+				publish(svc, tempRdg.NodeID, "i.keti-temperature", serialPort, msg2)
 
 				msg3 := TimeseriesReading{
 					UUID:  makeUUID(tempRdg.NodeID, "Lux"),
 					Time:  time.Now().Unix(),
 					Value: tempRdg.Lux,
 				}
-				publish(svc, tempRdg.NodeID, "i.keti-temperature", msg3)
+				publish(svc, tempRdg.NodeID, "i.keti-temperature", serialPort, msg3)
 			}
 		}()
 		go func() {
@@ -110,7 +117,7 @@ func main() {
 					Time:  time.Now().Unix(),
 					Value: pirRdg.PIR,
 				}
-				publish(svc, pirRdg.NodeID, "i.keti-pir", msg)
+				publish(svc, pirRdg.NodeID, "i.keti-pir", serialPort, msg)
 			}
 		}()
 		go func() {
@@ -121,7 +128,7 @@ func main() {
 					Time:  time.Now().Unix(),
 					Value: co2Rdg.CO2,
 				}
-				publish(svc, co2Rdg.NodeID, "i.keti-co2", msg)
+				publish(svc, co2Rdg.NodeID, "i.keti-co2", serialPort, msg)
 			}
 		}()
 

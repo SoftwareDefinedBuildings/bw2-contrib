@@ -1,6 +1,5 @@
 svc_base_uri: scratch.ns/devices/ketimotes
 entityfile: entity.ent
-SerialPort: /dev/ttyrd00
 SerialPorts:
 - /dev/ttyrd00
 - /dev/ttyrd01
