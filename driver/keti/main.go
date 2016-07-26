@@ -44,6 +44,19 @@ func getChannel(stream string) string {
 	return channel
 }
 
+func getIfaceName(stream string) string {
+	switch stream {
+	case "Temperature", "Humidity", "Lux":
+		return "i.keti-temperature"
+	case "PIR":
+		return "i.keti-pir"
+	case "CO2":
+		return "i.keti-co2"
+	default:
+		return "i.keti-temperature"
+	}
+}
+
 func makeUUID(serial_id [6]byte, stream string) string {
 	channel := getChannel(stream)
 	return uuid.NewV5(NAMESPACE_UUID, fmt.Sprintf("%s-%s", serial_id, channel)).String()
@@ -55,7 +68,7 @@ func publish(svc *bw2.Service, nodeid uint16, stream string, msg TimeseriesReadi
 	iface, found := motes[nodeid]
 	nodestring := fmt.Sprintf("%d", nodeid)
 	if !found {
-		iface = svc.RegisterInterfaceHeartbeatOnPub(nodestring, stream)
+		iface = svc.RegisterInterfaceHeartbeatOnPub(nodestring, getIfaceName(stream))
 	}
 	fmt.Printf("URI: %s\n", iface.SignalURI(stream))
 	iface.PublishSignal(stream, msg.ToMsgPackBW())
@@ -66,9 +79,6 @@ func publishSmap(nodeid uint16, uri, stream, serialPort string, msg TimeseriesRe
 	if err := bufsend.Send(path, msg); err != nil {
 		fmt.Println(err)
 	}
-	//if err := msg.SendToSmap(path, uri); err != nil {
-	//	fmt.Println(err)
-	//}
 }
 
 func main() {
@@ -103,7 +113,7 @@ func main() {
 					Time:  time.Now().Unix(),
 					Value: tempRdg.Temperature,
 				}
-				publish(svc, tempRdg.NodeID, "i.keti-temperature", msg)
+				publish(svc, tempRdg.NodeID, "Temperature", msg)
 				publishSmap(tempRdg.NodeID, smapURI, "Temperature", serialPort, msg)
 
 				msg2 := TimeseriesReading{
@@ -111,7 +121,7 @@ func main() {
 					Time:  time.Now().Unix(),
 					Value: tempRdg.Humidity,
 				}
-				publish(svc, tempRdg.NodeID, "i.keti-temperature", msg2)
+				publish(svc, tempRdg.NodeID, "Humidity", msg2)
 				publishSmap(tempRdg.NodeID, smapURI, "Humidity", serialPort, msg2)
 
 				msg3 := TimeseriesReading{
@@ -119,7 +129,7 @@ func main() {
 					Time:  time.Now().Unix(),
 					Value: tempRdg.Lux,
 				}
-				publish(svc, tempRdg.NodeID, "i.keti-temperature", msg3)
+				publish(svc, tempRdg.NodeID, "Lux", msg3)
 				publishSmap(tempRdg.NodeID, smapURI, "Lux", serialPort, msg3)
 			}
 		}()
@@ -131,7 +141,7 @@ func main() {
 					Time:  time.Now().Unix(),
 					Value: pirRdg.PIR,
 				}
-				publish(svc, pirRdg.NodeID, "i.keti-pir", msg)
+				publish(svc, pirRdg.NodeID, "PIR", msg)
 				publishSmap(pirRdg.NodeID, smapURI, "PIR", serialPort, msg)
 			}
 		}()
@@ -143,7 +153,7 @@ func main() {
 					Time:  time.Now().Unix(),
 					Value: co2Rdg.CO2,
 				}
-				publish(svc, co2Rdg.NodeID, "i.keti-co2", msg)
+				publish(svc, co2Rdg.NodeID, "CO2", msg)
 				publishSmap(co2Rdg.NodeID, smapURI, "CO2", serialPort, msg)
 			}
 		}()
