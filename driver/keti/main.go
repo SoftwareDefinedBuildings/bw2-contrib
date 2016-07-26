@@ -101,8 +101,9 @@ func main() {
 
 	serialPorts := params.MustStringSlice("SerialPorts")
 	for _, serialPort := range serialPorts {
+		serialPort := serialPort
 		ketiReceiver := NewKetiMoteReceiver(serialPort, baudRate)
-		go func() {
+		go func(serialPort string) {
 			for tempRdg := range ketiReceiver.TempReadings {
 				// construct uuid
 				// for the publish calls, we keep them all Temperature so they show up
@@ -132,8 +133,8 @@ func main() {
 				publish(svc, tempRdg.NodeID, "Lux", msg3)
 				publishSmap(tempRdg.NodeID, smapURI, "Lux", serialPort, msg3)
 			}
-		}()
-		go func() {
+		}(serialPort)
+		go func(serialPort string) {
 			for pirRdg := range ketiReceiver.PIRReadings {
 				fmt.Printf("Reading: %+v\n", pirRdg)
 				msg := TimeseriesReading{
@@ -144,8 +145,8 @@ func main() {
 				publish(svc, pirRdg.NodeID, "PIR", msg)
 				publishSmap(pirRdg.NodeID, smapURI, "PIR", serialPort, msg)
 			}
-		}()
-		go func() {
+		}(serialPort)
+		go func(serialPort string) {
 			for co2Rdg := range ketiReceiver.CO2Readings {
 				fmt.Printf("Reading: %+v\n", co2Rdg)
 				msg := TimeseriesReading{
@@ -156,7 +157,7 @@ func main() {
 				publish(svc, co2Rdg.NodeID, "CO2", msg)
 				publishSmap(co2Rdg.NodeID, smapURI, "CO2", serialPort, msg)
 			}
-		}()
+		}(serialPort)
 
 	}
 
