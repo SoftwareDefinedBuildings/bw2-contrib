@@ -82,7 +82,7 @@ func (tos *TOSSerialClient) dataReceived(data []byte) {
 
 func (tos *TOSSerialClient) deliver() {
 	// decode packet and check CRC
-	if len(tos.packet) == 0 {
+	if len(tos.packet) <= 2 {
 		tos.packet = []byte{}
 		return
 	}
