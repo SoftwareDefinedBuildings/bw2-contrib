@@ -33,10 +33,11 @@ var motes = make(map[uint16]*bw2.Interface)
 
 func publish(svc *bw2.Service, nodeid uint16, stream string, msg TimeseriesReading) {
 	iface, found := motes[nodeid]
+	nodestring := fmt.Sprintf("%s", nodeid)
 	if !found {
-		iface = svc.RegisterInterface(fmt.Sprintf("%s", nodeid), stream)
+		iface = svc.RegisterInterface(nodestring, stream)
 	}
-	iface.PublishSignal(stream, msg.ToMsgPackBW())
+	iface.PublishSignal(nodestring, msg.ToMsgPackBW())
 }
 
 func main() {
@@ -61,6 +62,8 @@ func main() {
 	go func() {
 		for tempRdg := range ketiReceiver.TempReadings {
 			// construct uuid
+			// for the publish calls, we keep them all Temperature so they show up
+			// under the same interface
 			msg := TimeseriesReading{
 				UUID:  makeUUID(tempRdg.NodeID, "Temperature"),
 				Time:  time.Now().Unix(),
@@ -73,14 +76,14 @@ func main() {
 				Time:  time.Now().Unix(),
 				Value: tempRdg.Humidity,
 			}
-			publish(svc, tempRdg.NodeID, "Humidity", msg2)
+			publish(svc, tempRdg.NodeID, "Temperature", msg2)
 
 			msg3 := TimeseriesReading{
 				UUID:  makeUUID(tempRdg.NodeID, "Lux"),
 				Time:  time.Now().Unix(),
 				Value: tempRdg.Lux,
 			}
-			publish(svc, tempRdg.NodeID, "Lux", msg3)
+			publish(svc, tempRdg.NodeID, "Temperature", msg3)
 		}
 	}()
 	go func() {
