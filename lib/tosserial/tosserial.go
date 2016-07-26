@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/tarm/serial"
 	"log"
+	"sync"
 )
 
 const (
@@ -14,7 +15,8 @@ const (
 )
 
 type TOSSerialClient struct {
-	packet  []byte
+	packet []byte
+	sync.Mutex
 	Packets chan []byte
 }
 
@@ -22,7 +24,7 @@ func NewTOSSerialClient(port string, baudrate int) *TOSSerialClient {
 	c := &serial.Config{Name: port, Baud: baudrate}
 	tos := &TOSSerialClient{
 		packet:  []byte{},
-		Packets: make(chan []byte),
+		Packets: make(chan []byte, 100),
 	}
 	go func() {
 		for {
@@ -71,7 +73,9 @@ func (tos *TOSSerialClient) dataReceived(data []byte) {
 		if d == HDLC_FLAG_BYTE {
 			tos.deliver()
 		} else {
+			tos.Lock()
 			tos.packet = append(tos.packet, d)
+			tos.Unlock()
 		}
 	}
 }
@@ -80,9 +84,14 @@ func (tos *TOSSerialClient) deliver() {
 	// decode packet and check CRC
 	if len(tos.packet) <= 2 {
 		fmt.Println("called deliver with <= 2 bytes")
+		tos.Lock()
+		tos.packet = []byte{}
+		tos.Unlock()
 		return
 	}
+	tos.Lock()
 	packet := tos.unescape(tos.packet)
+	tos.Unlock()
 	tos.packet = []byte{}
 	crc := tos.crc16(0, packet[:len(packet)-2])
 	packet_crc := tos.decode(packet[len(packet)-2:])
