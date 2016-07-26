@@ -28,16 +28,19 @@ type KetiTempReading struct {
 	Humidity    float64
 	Lux         float64
 	NodeID      uint16
+	SerialID    [6]byte
 }
 
 type KetiPIRReading struct {
-	PIR    float64
-	NodeID uint16
+	PIR      float64
+	NodeID   uint16
+	SerialID [6]byte
 }
 
 type KetiCO2Reading struct {
-	CO2    float64
-	NodeID uint16
+	CO2      float64
+	NodeID   uint16
+	SerialID [6]byte
 }
 
 type KetiMoteReceiver struct {
@@ -127,7 +130,7 @@ func (keti *KetiMoteReceiver) handlePacket(packet []byte) {
 		// adjsut values
 		temp := SHT11_D1 + SHT11_D2*float64(_temp)
 		humidity := SHT11_C1 + SHT11_C2*float64(_humidity) + SHT11_C3*float64(_humidity*_humidity)
-		keti.TempReadings <- KetiTempReading{Temperature: temp, Humidity: humidity, Lux: float64(lux), NodeID: node_id}
+		keti.TempReadings <- KetiTempReading{Temperature: temp, Humidity: humidity, Lux: float64(lux), NodeID: node_id, SerialID: serial_id}
 		return
 	}
 
@@ -137,7 +140,7 @@ func (keti *KetiMoteReceiver) handlePacket(packet []byte) {
 			fmt.Printf("Error reading pir: %v\n", err)
 			return
 		}
-		keti.PIRReadings <- KetiPIRReading{PIR: float64(pir), NodeID: node_id}
+		keti.PIRReadings <- KetiPIRReading{PIR: float64(pir), NodeID: node_id, SerialID: serial_id}
 		return
 	}
 
@@ -147,7 +150,7 @@ func (keti *KetiMoteReceiver) handlePacket(packet []byte) {
 			fmt.Printf("Error reading co2: %v\n", err)
 			return
 		}
-		keti.CO2Readings <- KetiCO2Reading{CO2: float64(co2), NodeID: node_id}
+		keti.CO2Readings <- KetiCO2Reading{CO2: float64(co2), NodeID: node_id, SerialID: serial_id}
 		return
 	}
 }

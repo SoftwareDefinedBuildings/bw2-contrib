@@ -43,9 +43,9 @@ func getChannel(stream string) string {
 	return channel
 }
 
-func makeUUID(nodeid uint16, stream string) string {
+func makeUUID(serial_id [6]byte, stream string) string {
 	channel := getChannel(stream)
-	return uuid.NewV5(NAMESPACE_UUID, fmt.Sprintf("%d-%s", nodeid, channel)).String()
+	return uuid.NewV5(NAMESPACE_UUID, fmt.Sprintf("%s-%s", serial_id, channel)).String()
 }
 
 var motes = make(map[uint16]*bw2.Interface)
@@ -94,7 +94,7 @@ func main() {
 				// under the same interface
 				fmt.Printf("Reading: %+v\n", tempRdg)
 				msg := TimeseriesReading{
-					UUID:  makeUUID(tempRdg.NodeID, "Temperature"),
+					UUID:  makeUUID(tempRdg.SerialID, "Temperature"),
 					Time:  time.Now().Unix(),
 					Value: tempRdg.Temperature,
 				}
@@ -102,7 +102,7 @@ func main() {
 				publishSmap(tempRdg.NodeID, smapURI, "Temperature", serialPort, msg)
 
 				msg2 := TimeseriesReading{
-					UUID:  makeUUID(tempRdg.NodeID, "Humidity"),
+					UUID:  makeUUID(tempRdg.SerialID, "Humidity"),
 					Time:  time.Now().Unix(),
 					Value: tempRdg.Humidity,
 				}
@@ -110,7 +110,7 @@ func main() {
 				publishSmap(tempRdg.NodeID, smapURI, "Humidity", serialPort, msg2)
 
 				msg3 := TimeseriesReading{
-					UUID:  makeUUID(tempRdg.NodeID, "Lux"),
+					UUID:  makeUUID(tempRdg.SerialID, "Lux"),
 					Time:  time.Now().Unix(),
 					Value: tempRdg.Lux,
 				}
@@ -122,7 +122,7 @@ func main() {
 			for pirRdg := range ketiReceiver.PIRReadings {
 				fmt.Printf("Reading: %+v\n", pirRdg)
 				msg := TimeseriesReading{
-					UUID:  makeUUID(pirRdg.NodeID, "PIR"),
+					UUID:  makeUUID(pirRdg.SerialID, "PIR"),
 					Time:  time.Now().Unix(),
 					Value: pirRdg.PIR,
 				}
@@ -134,7 +134,7 @@ func main() {
 			for co2Rdg := range ketiReceiver.CO2Readings {
 				fmt.Printf("Reading: %+v\n", co2Rdg)
 				msg := TimeseriesReading{
-					UUID:  makeUUID(co2Rdg.NodeID, "CO2"),
+					UUID:  makeUUID(co2Rdg.SerialID, "CO2"),
 					Time:  time.Now().Unix(),
 					Value: co2Rdg.CO2,
 				}
