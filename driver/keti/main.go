@@ -50,6 +50,7 @@ func publish(svc *bw2.Service, nodeid uint16, stream string, msg TimeseriesReadi
 	if !found {
 		iface = svc.RegisterInterface(nodestring, stream)
 	}
+	fmt.Println(iface.SignalURI(nodestring))
 	iface.PublishSignal(nodestring, msg.ToMsgPackBW())
 }
 
