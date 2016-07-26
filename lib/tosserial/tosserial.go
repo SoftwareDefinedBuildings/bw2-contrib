@@ -33,7 +33,7 @@ func NewTOSSerialClient(port string, baudrate int) *TOSSerialClient {
 				log.Fatal(err)
 			}
 			for {
-				buf := make([]byte, 1)
+				buf := make([]byte, 128)
 				n, err := port.Read(buf)
 				if err != nil {
 					fmt.Println(err)
@@ -82,8 +82,7 @@ func (tos *TOSSerialClient) dataReceived(data []byte) {
 
 func (tos *TOSSerialClient) deliver() {
 	// decode packet and check CRC
-	if len(tos.packet) <= 2 {
-		fmt.Println("called deliver with <= 2 bytes")
+	if len(tos.packet) == 0 {
 		return
 	}
 	tos.Lock()
