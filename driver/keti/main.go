@@ -45,7 +45,7 @@ func getChannel(stream string) string {
 
 func makeUUID(nodeid uint16, stream string) string {
 	channel := getChannel(stream)
-	return uuid.NewV5(NAMESPACE_UUID, fmt.Sprintf("%s-%s", nodeid, channel)).String()
+	return uuid.NewV5(NAMESPACE_UUID, fmt.Sprintf("%d-%s", nodeid, channel)).String()
 }
 
 var motes = make(map[uint16]*bw2.Interface)
@@ -107,6 +107,7 @@ func main() {
 					Value: tempRdg.Humidity,
 				}
 				publish(svc, tempRdg.NodeID, "i.keti-temperature", msg2)
+				publishSmap(tempRdg.NodeID, smapURI, "Humidity", serialPort, msg2)
 
 				msg3 := TimeseriesReading{
 					UUID:  makeUUID(tempRdg.NodeID, "Lux"),
@@ -114,6 +115,7 @@ func main() {
 					Value: tempRdg.Lux,
 				}
 				publish(svc, tempRdg.NodeID, "i.keti-temperature", msg3)
+				publishSmap(tempRdg.NodeID, smapURI, "Lux", serialPort, msg3)
 			}
 		}()
 		go func() {
@@ -125,6 +127,7 @@ func main() {
 					Value: pirRdg.PIR,
 				}
 				publish(svc, pirRdg.NodeID, "i.keti-pir", msg)
+				publishSmap(pirRdg.NodeID, smapURI, "PIR", serialPort, msg)
 			}
 		}()
 		go func() {
@@ -136,6 +139,7 @@ func main() {
 					Value: co2Rdg.CO2,
 				}
 				publish(svc, co2Rdg.NodeID, "i.keti-co2", msg)
+				publishSmap(co2Rdg.NodeID, smapURI, "CO2", serialPort, msg)
 			}
 		}()
 
