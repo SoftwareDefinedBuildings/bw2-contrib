@@ -78,6 +78,10 @@ func (tos *TOSSerialClient) dataReceived(data []byte) {
 
 func (tos *TOSSerialClient) deliver() {
 	// decode packet and check CRC
+	if len(tos.packet) <= 2 {
+		fmt.Println("called deliver with <= 2 bytes")
+		return
+	}
 	packet := tos.unescape(tos.packet)
 	tos.packet = []byte{}
 	crc := tos.crc16(0, packet[:len(packet)-2])
