@@ -1,9 +1,22 @@
-svc_base_uri: scratch.ns/devices/ketimotes
-entityfile: entity.ent
+svc_base_uri: ucberkeley/eecs/sdh
+entityfile: keti.ent
 SerialPorts:
+- /dev/ttyas00
+- /dev/ttyar00
 - /dev/ttyrd00
-- /dev/ttyrd01
+- /dev/ttyfs00
+- /dev/ttyfz00
+- /dev/ttygs00
+- /dev/ttyhf00
+- /dev/ttyhb00
+- /dev/ttyho00
+- /dev/ttyez00
+- /dev/ttyes00
+#- /dev/ttyef00
+#- /dev/ttyed00
+#- /dev/ttyee00
 BaudRate: 115200
+smapURI: http://pantry.cs.berkeley.edu:8079/add/apikey
 Namespace: c6c45e38-9352-11e2-9103-0026bb56ec92
 metadata:
     s.KETIMote:
