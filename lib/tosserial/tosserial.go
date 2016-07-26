@@ -130,7 +130,7 @@ func (tos *TOSSerialClient) decode(v []byte) uint32 {
 func (tos *TOSSerialClient) crc16(base_crc uint32, frame_data []byte) uint32 {
 	crc := base_crc
 	for _, b := range frame_data {
-		crc = crc ^ uint32(b<<8)
+		crc = crc ^ (uint32(b) << 8)
 		for i := 0; i < 8; i++ {
 			if crc&0x8000 == 0x8000 {
 				crc = (crc << 1) ^ 0x1021
