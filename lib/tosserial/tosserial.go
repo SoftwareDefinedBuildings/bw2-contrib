@@ -84,9 +84,6 @@ func (tos *TOSSerialClient) deliver() {
 	// decode packet and check CRC
 	if len(tos.packet) <= 2 {
 		fmt.Println("called deliver with <= 2 bytes")
-		tos.Lock()
-		tos.packet = []byte{}
-		tos.Unlock()
 		return
 	}
 	tos.Lock()
