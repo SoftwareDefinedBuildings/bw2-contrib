@@ -4,6 +4,8 @@ package tosserial
 
 import (
 	"fmt"
+	"github.com/tarm/serial"
+	"log"
 )
 
 const (
@@ -16,11 +18,30 @@ type TOSSerialClient struct {
 	Packets chan []byte
 }
 
-func NewTOSSerialClient() *TOSSerialClient {
-	return &TOSSerialClient{
+func NewTOSSerialClient(port string, baudrate int) *TOSSerialClient {
+	c := &serial.Config{Name: port, Baud: baudrate}
+	tos := &TOSSerialClient{
 		packet:  []byte{},
 		Packets: make(chan []byte),
 	}
+	go func() {
+		for {
+			port, err := serial.OpenPort(c)
+			if err != nil {
+				log.Fatal(err)
+			}
+			for {
+				buf := make([]byte, 128)
+				n, err := port.Read(buf)
+				if err != nil {
+					fmt.Println(err)
+				}
+				tos.dataReceived(buf[:n])
+			}
+
+		}
+	}()
+	return tos
 }
 
 //Developer notes:
@@ -45,7 +66,7 @@ func NewTOSSerialClient() *TOSSerialClient {
 
 //Read bytes until we get to a HDLC_FLAG_BYTE value
 //(either the end of a packet, or the start of a new one)
-func (tos *TOSSerialClient) DataReceived(data []byte) {
+func (tos *TOSSerialClient) dataReceived(data []byte) {
 	for _, d := range data {
 		if d == HDLC_FLAG_BYTE {
 			tos.deliver()
