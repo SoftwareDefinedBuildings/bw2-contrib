@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strconv"
+	"sync"
 )
 
 type SmapReading struct {
@@ -37,5 +39,48 @@ func (msg TimeseriesReading) SendToSmap(msgPath, uri string) error {
 	if resp.StatusCode != 200 {
 		return fmt.Errorf("Got status code %d\n", resp.StatusCode)
 	}
+	return nil
+}
+
+type BufferedSender struct {
+	uri      string
+	tosend   []byte
+	max, num int
+	sync.Mutex
+}
+
+func NewBufferedSender(uri string, max int) *BufferedSender {
+	return &BufferedSender{
+		tosend: []byte{},
+		uri:    uri,
+		max:    max,
+		num:    0,
+	}
+}
+
+func (buf *BufferedSender) Send(path string, msg TimeseriesReading) error {
+	b, err := msg.ToSmapReading(path)
+	if err != nil {
+		return err
+	}
+	buf.Lock()
+	defer buf.Unlock()
+	buf.num += 1
+	if buf.num < buf.max {
+		buf.tosend = append(buf.tosend, b...)
+		return nil
+	}
+	sendme := buf.tosend
+	resp, err := http.Post(buf.uri, "application/json", bytes.NewBuffer(sendme))
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		reason, _ := ioutil.ReadAll(resp.Body)
+		return fmt.Errorf("Got status code %d: %s\n", resp.StatusCode, reason)
+	}
+	buf.tosend = []byte{}
+	buf.num = 0
 	return nil
 }

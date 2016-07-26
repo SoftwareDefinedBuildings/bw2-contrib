@@ -10,6 +10,7 @@ import (
 )
 
 var NAMESPACE_UUID uuid.UUID
+var bufsend *BufferedSender
 
 //func init() {
 //NAMESPACE_UUID = uuid.FromStringOrNil("d8b61708-2797-11e6-836b-0cc47a0f7eea")
@@ -62,9 +63,12 @@ func publish(svc *bw2.Service, nodeid uint16, stream string, msg TimeseriesReadi
 
 func publishSmap(nodeid uint16, uri, stream, serialPort string, msg TimeseriesReading) {
 	path := strings.TrimPrefix(serialPort, "/dev") + fmt.Sprintf("/%d/", nodeid) + getChannel(stream)
-	if err := msg.SendToSmap(path, uri); err != nil {
+	if err := bufsend.Send(path, msg); err != nil {
 		fmt.Println(err)
 	}
+	//if err := msg.SendToSmap(path, uri); err != nil {
+	//	fmt.Println(err)
+	//}
 }
 
 func main() {
@@ -83,6 +87,7 @@ func main() {
 	params.MergeMetadata(bw)
 
 	svc := bw.RegisterService(baseuri, "s.KETIMote")
+	bufsend = NewBufferedSender(smapURI, 100)
 
 	serialPorts := params.MustStringSlice("SerialPorts")
 	for _, serialPort := range serialPorts {
