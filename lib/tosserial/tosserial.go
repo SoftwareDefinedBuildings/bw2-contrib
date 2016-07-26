@@ -119,18 +119,18 @@ func (tos *TOSSerialClient) unescape(packet []byte) []byte {
 	return ret
 }
 
-func (tos *TOSSerialClient) decode(v []byte) uint32 {
-	r := uint32(0)
-	for i := len(v) - 1; i != 0; i-- {
-		r = (r << 8) + uint32(v[i])
+func (tos *TOSSerialClient) decode(v []byte) uint16 {
+	r := uint16(0)
+	for i := len(v) - 1; i >= 0; i-- {
+		r = (r << 8) + uint16(v[i])
 	}
 	return r
 }
 
-func (tos *TOSSerialClient) crc16(base_crc uint32, frame_data []byte) uint32 {
+func (tos *TOSSerialClient) crc16(base_crc uint16, frame_data []byte) uint16 {
 	crc := base_crc
 	for _, b := range frame_data {
-		crc = crc ^ (uint32(b) << 8)
+		crc = crc ^ (uint16(b) << 8)
 		for i := 0; i < 8; i++ {
 			if crc&0x8000 == 0x8000 {
 				crc = (crc << 1) ^ 0x1021
