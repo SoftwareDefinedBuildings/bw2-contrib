@@ -33,7 +33,7 @@ func NewTOSSerialClient(port string, baudrate int) *TOSSerialClient {
 				log.Fatal(err)
 			}
 			for {
-				buf := make([]byte, 128)
+				buf := make([]byte, 1)
 				n, err := port.Read(buf)
 				if err != nil {
 					fmt.Println(err)
@@ -88,8 +88,8 @@ func (tos *TOSSerialClient) deliver() {
 	}
 	tos.Lock()
 	packet := tos.unescape(tos.packet)
-	tos.Unlock()
 	tos.packet = []byte{}
+	tos.Unlock()
 	crc := tos.crc16(0, packet[:len(packet)-2])
 	packet_crc := tos.decode(packet[len(packet)-2:])
 	if crc != packet_crc {
