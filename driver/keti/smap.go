@@ -20,13 +20,6 @@ func (msg TimeseriesReading) ToSmapReading(path string) ([]byte, error) {
 		UUID:     msg.UUID,
 		Readings: [][]json.Number{[]json.Number{json.Number(timeString), json.Number(floatString)}},
 	}
-	b, e := json.MarshalIndent(map[string]*SmapReading{
-		path: rdg,
-	}, "", " ")
-	if e != nil {
-		fmt.Println(e)
-	}
-	fmt.Println(string(b))
 	return json.Marshal(map[string]*SmapReading{
 		path: rdg,
 	})
