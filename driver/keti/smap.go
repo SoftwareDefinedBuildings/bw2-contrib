@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"strconv"
 )
 
@@ -28,4 +30,19 @@ func (msg TimeseriesReading) ToSmapReading(path string) ([]byte, error) {
 	return json.Marshal(map[string]*SmapReading{
 		path: rdg,
 	})
+}
+
+func (msg TimeseriesReading) SendToSmap(msgPath, uri string) error {
+	mybytes, err := msg.ToSmapReading(msgPath)
+	if err != nil {
+		return err
+	}
+	resp, err := http.Post(uri, "application/json", bytes.NewBuffer(mybytes))
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("Got status code %d\n", resp.StatusCode)
+	}
+	return nil
 }
