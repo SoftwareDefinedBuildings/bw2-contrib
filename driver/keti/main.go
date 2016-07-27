@@ -111,7 +111,7 @@ func main() {
 				fmt.Printf("Reading: %+v\n", tempRdg)
 				msg := TimeseriesReading{
 					UUID:  makeUUID(tempRdg.SerialID, "Temperature"),
-					Time:  time.Now().Unix(),
+					Time:  time.Now().Unix() * 1000,
 					Value: tempRdg.Temperature,
 				}
 				publish(svc, tempRdg.NodeID, "Temperature", msg)
@@ -119,7 +119,7 @@ func main() {
 
 				msg2 := TimeseriesReading{
 					UUID:  makeUUID(tempRdg.SerialID, "Humidity"),
-					Time:  time.Now().Unix(),
+					Time:  time.Now().Unix() * 1000,
 					Value: tempRdg.Humidity,
 				}
 				publish(svc, tempRdg.NodeID, "Humidity", msg2)
@@ -127,7 +127,7 @@ func main() {
 
 				msg3 := TimeseriesReading{
 					UUID:  makeUUID(tempRdg.SerialID, "Lux"),
-					Time:  time.Now().Unix(),
+					Time:  time.Now().Unix() * 1000,
 					Value: tempRdg.Lux,
 				}
 				publish(svc, tempRdg.NodeID, "Lux", msg3)
@@ -139,7 +139,7 @@ func main() {
 				fmt.Printf("Reading: %+v\n", pirRdg)
 				msg := TimeseriesReading{
 					UUID:  makeUUID(pirRdg.SerialID, "PIR"),
-					Time:  time.Now().Unix(),
+					Time:  time.Now().Unix() * 1000,
 					Value: pirRdg.PIR,
 				}
 				publish(svc, pirRdg.NodeID, "PIR", msg)
@@ -151,7 +151,7 @@ func main() {
 				fmt.Printf("Reading: %+v\n", co2Rdg)
 				msg := TimeseriesReading{
 					UUID:  makeUUID(co2Rdg.SerialID, "CO2"),
-					Time:  time.Now().Unix(),
+					Time:  time.Now().Unix() * 1000,
 					Value: co2Rdg.CO2,
 				}
 				publish(svc, co2Rdg.NodeID, "CO2", msg)
