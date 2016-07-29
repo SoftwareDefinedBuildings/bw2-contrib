@@ -105,6 +105,7 @@ func (tos *TOSSerialClient) unescape(packet []byte) []byte {
 	esc := false
 	for _, b := range packet {
 		if esc {
+			fmt.Printf("ESCAPE before: %02x. After %02x\n", b, b^0x20)
 			ret = append(ret, b^0x20)
 			esc = false
 		} else if b == HDLC_CTLESC_BYTE {
