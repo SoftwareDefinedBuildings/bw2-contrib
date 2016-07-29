@@ -71,7 +71,9 @@ func publish(svc *bw2.Service, nodeid uint16, stream string, msg TimeseriesReadi
 		iface = svc.RegisterInterfaceHeartbeatOnPub(nodestring, getIfaceName(stream))
 	}
 	fmt.Printf("URI: %s\n", iface.SignalURI(stream))
-	iface.PublishSignal(stream, msg.ToMsgPackBW())
+	if err := iface.PublishSignal(stream, msg.ToMsgPackBW()); err != nil {
+		fmt.Println(err)
+	}
 }
 
 func publishSmap(nodeid uint16, uri, stream, serialPort string, msg TimeseriesReading) {
