@@ -69,6 +69,12 @@ func NewKetiMoteReceiver(serialPort string, baudrate int) *KetiMoteReceiver {
 func (keti *KetiMoteReceiver) handlePacket(packet []byte) {
 	if len(packet) != 29 {
 		fmt.Printf("Packet length was not 29. Was %d\n", len(packet))
+		for i, b := range packet {
+			fmt.Printf("%02x ", b)
+			if i == len(packet)-1 {
+				fmt.Printf("\n")
+			}
+		}
 		return
 	}
 	var (
