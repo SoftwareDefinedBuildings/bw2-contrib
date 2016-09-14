@@ -1,0 +1,9 @@
+svc_base_uri: peterxu30/caiso/weather
+read_rate: 5m
+metadata:
+    s.Caiso:
+        SourceName: "Caiso"
+    s.caiso/i.weather/signal/solar:
+        UnitofMeasure: "MW"
+    s.caiso/i.weather/signal/wind:
+        UnitofMeasure: "MW"
