@@ -19,7 +19,7 @@ type TimeseriesReading struct {
 	Value uint64
 }
 
-func (tsr *TimeseriesReading) ToMsgPack() bw2.PayloadObject {
+func (tsr *TimeseriesReading) ToMsgPackPO() bw2.PayloadObject {
 	po, err := bw2.CreateMsgPackPayloadObject(bw2.PONumTimeseriesReading, tsr)
 	if err != nil {
 		panic(err)
@@ -76,20 +76,20 @@ func main() {
 			Time:  time.Now().UnixNano(),
 			Value: summary.CurrentPower,
 		}
-		iface.PublishSignal("CurrentPower", currentPowerReading.ToMsgPack())
+		iface.PublishSignal("CurrentPower", currentPowerReading.ToMsgPackPO())
 
 		energyLifetimeReading := TimeseriesReading{
 			UUID:  energyLifetimeUUID.String(),
 			Time:  time.Now().UnixNano(),
 			Value: summary.EnergyLifetime,
 		}
-		iface.PublishSignal("EnergyLifetime", energyLifetimeReading.ToMsgPack())
+		iface.PublishSignal("EnergyLifetime", energyLifetimeReading.ToMsgPackPO())
 
 		energyTodayReading := TimeseriesReading{
 			UUID:  energyTodayUUID.String(),
 			Time:  time.Now().UnixNano(),
 			Value: summary.EnergyToday,
 		}
-		iface.PublishSignal("EnergyToday", energyTodayReading.ToMsgPack())
+		iface.PublishSignal("EnergyToday", energyTodayReading.ToMsgPackPO())
 	}
 }
