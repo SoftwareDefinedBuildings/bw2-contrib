@@ -1,7 +1,8 @@
-Prefix: gabe.pantry/services
+Prefix: culler-mayeno.ns/devices/tedmain/
 Archive:
   - URI: s.TED/MTU1/i.meter/signal/Voltage
     Value: Value
+    Name: Voltage
     MetadataURIs:
     - s.TED
     - s.TED/MTU1/i.meter
@@ -9,6 +10,7 @@ Archive:
 
   - URI: s.TED/MTU1/i.meter/signal/PowerNow
     Value: Value
+    Name: PowerNow
     MetadataURIs:
     - s.TED
     - s.TED/MTU1/i.meter
@@ -16,6 +18,7 @@ Archive:
 
   - URI: s.TED/MTU1/i.meter/signal/KVA
     Value: Value
+    Name: KVA
     MetadataURIs:
     - s.TED
     - s.TED/MTU1/i.meter
@@ -23,6 +26,7 @@ Archive:
 
   - URI: s.TED/MTU2/i.meter/signal/Voltage
     Value: Value
+    Name: Voltage
     MetadataURIs:
     - s.TED
     - s.TED/MTU1/i.meter
@@ -30,6 +34,7 @@ Archive:
 
   - URI: s.TED/MTU2/i.meter/signal/PowerNow
     Value: Value
+    Name: PowerNow
     MetadataURIs:
     - s.TED
     - s.TED/MTU1/i.meter
@@ -37,6 +42,7 @@ Archive:
 
   - URI: s.TED/MTU2/i.meter/signal/KVA
     Value: Value
+    Name: KVA
     MetadataURIs:
     - s.TED
     - s.TED/MTU1/i.meter
