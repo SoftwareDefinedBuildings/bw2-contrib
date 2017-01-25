@@ -1,20 +1,23 @@
-Prefix: culler-mayeno.ns/devices
+Prefix: <Your Prefix Here>
 Archive:
-  - URI: s.Enphase/enphase1/i.meter/signal/CurrentPower
+  - AttachURI: devices
+    ArchiveURI: s.Enphase/enphase1/i.meter/signal/CurrentPower
     Value: Value
     Name: CurrentPower
     MetadataURIs:
     - s.Enphase/enphase1/i.meter
     - s.Enphase/enphase1/i.meter/signal/CurrentPower
 
-  - URI: s.Enphase/enphase1/i.meter/signal/EnergyLifetime
+  - AttachURI: devices
+    ArchiveURI: s.Enphase/enphase1/i.meter/signal/EnergyLifetime
     Value: Value
     Name: EnergyLifetime
     MetadataURIs:
     - s.Enphase/enphase1/i.meter
     - s.Enphase/enphase1/i.meter/signal/EnergyLifetime
 
-  - URI: s.Enphase/enphase1/i.meter/signal/EnergyToday
+  - AttachURI: devices
+    ArchiveURI: s.Enphase/enphase1/i.meter/signal/EnergyToday
     Value: Value
     Name: EnergyToday
     MetadataURIs:

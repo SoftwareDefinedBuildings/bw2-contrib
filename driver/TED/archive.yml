@@ -1,6 +1,7 @@
-Prefix: culler-mayeno.ns/devices/tedmain/
+Prefix: <Your Prefix Here>
 Archive:
-  - URI: s.TED/MTU1/i.meter/signal/Voltage
+  - AttachURI: devices
+    ArchiveURI: s.TED/MTU1/i.meter/signal/Voltage
     Value: Value
     Name: Voltage
     MetadataURIs:
@@ -8,7 +9,8 @@ Archive:
     - s.TED/MTU1/i.meter
     - s.TED/MTU1/i.meter/signal/Voltage
 
-  - URI: s.TED/MTU1/i.meter/signal/PowerNow
+  - AttachURI: devices
+    ArchiveURI: s.TED/MTU1/i.meter/signal/PowerNow
     Value: Value
     Name: PowerNow
     MetadataURIs:
@@ -16,7 +18,8 @@ Archive:
     - s.TED/MTU1/i.meter
     - s.TED/MTU1/i.meter/signal/PowerNow
 
-  - URI: s.TED/MTU1/i.meter/signal/KVA
+  - AttachURI: devices
+    ArchiveURI: s.TED/MTU1/i.meter/signal/KVA
     Value: Value
     Name: KVA
     MetadataURIs:
@@ -24,7 +27,8 @@ Archive:
     - s.TED/MTU1/i.meter
     - s.TED/MTU1/i.meter/signal/KVA
 
-  - URI: s.TED/MTU2/i.meter/signal/Voltage
+  - AttachURI: devices
+    ArchiveURI: s.TED/MTU2/i.meter/signal/Voltage
     Value: Value
     Name: Voltage
     MetadataURIs:
@@ -32,7 +36,8 @@ Archive:
     - s.TED/MTU1/i.meter
     - s.TED/MTU2/i.meter/signal/Voltage
 
-  - URI: s.TED/MTU2/i.meter/signal/PowerNow
+  - AttachURI: devices
+    ArchiveURI: s.TED/MTU2/i.meter/signal/PowerNow
     Value: Value
     Name: PowerNow
     MetadataURIs:
@@ -40,7 +45,8 @@ Archive:
     - s.TED/MTU1/i.meter
     - s.TED/MTU2/i.meter/signal/PowerNow
 
-  - URI: s.TED/MTU2/i.meter/signal/KVA
+  - AttachURI: devices
+    ArchiveURI: s.TED/MTU2/i.meter/signal/KVA
     Value: Value
     Name: KVA
     MetadataURIs:
