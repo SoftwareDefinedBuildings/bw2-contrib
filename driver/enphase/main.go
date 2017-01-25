@@ -37,7 +37,6 @@ func main() {
 	bwClient.SetEntityFromEnvironOrExit()
 
 	params := spawnable.GetParamsOrExit()
-	name := params.MustString("name")
 	baseURI := params.MustString("svc_base_uri")
 	if !strings.HasSuffix(baseURI, "/") {
 		baseURI += "/"
@@ -53,7 +52,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	svc := bwClient.RegisterService(baseURI+name, "s.Enphase")
+	svc := bwClient.RegisterService(baseURI, "s.Enphase")
 	iface := svc.RegisterInterface("enphase1", "i.meter")
 	rootUUID := uuid.FromStringOrNil(rootUUIDStr)
 
