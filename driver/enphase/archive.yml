@@ -1,25 +1,25 @@
 Prefix: <Your Prefix Here>
 Archive:
   - AttachURI: devices
-    ArchiveURI: s.Enphase/enphase1/i.meter/signal/CurrentPower
+    ArchiveURI: devices/enphase/s.Enphase/enphase1/i.meter/signal/CurrentPower
     Value: Value
     Name: CurrentPower
     MetadataURIs:
-    - s.Enphase/enphase1/i.meter
-    - s.Enphase/enphase1/i.meter/signal/CurrentPower
+    - devices/enphase/s.Enphase/enphase1/i.meter
+    - devices/enphase/s.Enphase/enphase1/i.meter/signal/CurrentPower
 
   - AttachURI: devices
-    ArchiveURI: s.Enphase/enphase1/i.meter/signal/EnergyLifetime
+    ArchiveURI: devices/enphase/s.Enphase/enphase1/i.meter/signal/EnergyLifetime
     Value: Value
     Name: EnergyLifetime
     MetadataURIs:
-    - s.Enphase/enphase1/i.meter
-    - s.Enphase/enphase1/i.meter/signal/EnergyLifetime
+    - devices/enphase/s.Enphase/enphase1/i.meter
+    - devices/enphase/s.Enphase/enphase1/i.meter/signal/EnergyLifetime
 
   - AttachURI: devices
-    ArchiveURI: s.Enphase/enphase1/i.meter/signal/EnergyToday
+    ArchiveURI: devices/enphase/s.Enphase/enphase1/i.meter/signal/EnergyToday
     Value: Value
     Name: EnergyToday
     MetadataURIs:
-    - s.Enphase/enphase1/i.meter
-    - s.Enphase/enphase1/i.meter/signal/EnergyToday
+    - devices/enphase/s.Enphase/enphase1/i.meter
+    - devices/enphase/s.Enphase/enphase1/i.meter/signal/EnergyToday
