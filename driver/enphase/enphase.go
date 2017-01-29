@@ -104,10 +104,11 @@ func (enphase *Enphase) PollSummary(dur time.Duration) chan *Summary {
 		for {
 			summary, err := enphase.ReadSummary()
 			if err != nil {
-				summCh <- nil
-			} else {
-				summCh <- summary
+				fmt.Printf("Error polling enphase data: %v\n", err)
+				close(summCh)
+				return
 			}
+			summCh <- summary
 			time.Sleep(dur)
 		}
 	}()
