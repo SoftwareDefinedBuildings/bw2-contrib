@@ -14,14 +14,8 @@ import (
 
 const NAMESPACE_UUID = `d8b61708-2797-11e6-836b-0cc47a0f7eea`
 
-type TimeseriesReading struct {
-	UUID  string
-	Time  int64
-	Value InfoResponse
-}
-
-func (tsr *TimeseriesReading) ToMsgPackPO() bw2.PayloadObject {
-	po, err := bw2.CreateMsgPackPayloadObject(bw2.PONumTimeseriesReading, tsr)
+func (ir *InfoResponse) ToMsgPackPO() bw2.PayloadObject {
+	po, err := bw2.CreateMsgPackPayloadObject(bw2.PONumTimeseriesReading, ir)
 	if err != nil {
 		panic(err)
 	}
@@ -156,13 +150,8 @@ func (d *Driver) Scrape() {
 	inf := InfoResponse{}
 	json.Unmarshal(contents, &inf)
 	inf.Time = time.Now().UnixNano()
-
-	reading := TimeseriesReading{
-		UUID:  d.timeseriesUUID,
-		Time:  inf.Time,
-		Value: inf,
-	}
-	po := reading.ToMsgPackPO()
+	inf.UUID = d.timeseriesUUID
+	po := inf.ToMsgPackPO()
 
 	d.iface.PublishSignal("info", po)
 	d.lastheat = inf.HeatTemp
