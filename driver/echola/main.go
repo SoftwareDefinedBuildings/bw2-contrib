@@ -84,9 +84,9 @@ func main() {
 			}
 
 			if po.GetContents()[0] == 0 {
-				echola.ActuatePlug(idx, false)
+				echola.ActuatePlug(idx+1, false)
 			} else if po.GetContents()[0] == 1 {
-				echola.ActuatePlug(idx, true)
+				echola.ActuatePlug(idx+1, true)
 			} else {
 				fmt.Println("Actuation command contents must be 0 or 1, dropping")
 			}
