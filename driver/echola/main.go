@@ -72,6 +72,7 @@ func main() {
 
 	// Subscribe to actuation commands
 	for i := 0; i < numPlugs; i++ {
+		idx := i
 		interfaces[i].SubscribeSlot("state", func(msg *bw2.SimpleMessage) {
 			po := msg.GetOnePODF(bw2.PODFBinaryActuation)
 			if po == nil {
@@ -83,9 +84,9 @@ func main() {
 			}
 
 			if po.GetContents()[0] == 0 {
-				echola.ActuatePlug(i, false)
+				echola.ActuatePlug(idx, false)
 			} else if po.GetContents()[0] == 1 {
-				echola.ActuatePlug(i, true)
+				echola.ActuatePlug(idx, true)
 			} else {
 				fmt.Println("Actuation command contents must be 0 or 1, dropping")
 			}
