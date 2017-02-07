@@ -1,0 +1,4 @@
+plug_ip: <echola IP address>
+svc_base_uri: <base URI>
+poll_interval: <poll interval, e.g. 10s>
+name: <device name>

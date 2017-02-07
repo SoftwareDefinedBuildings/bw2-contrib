@@ -59,6 +59,7 @@ func NewEnphase(apiKey string, userID string, sysName string) (*Enphase, error) 
 		return nil, fmt.Errorf("System index request failed: %v", resp.Status)
 	}
 
+	defer resp.Body.Close()
 	var rslt indexResult
 	err := json.Unmarshal(body, &rslt)
 	if err != nil {
@@ -87,6 +88,7 @@ func (enphase *Enphase) ReadSummary() (*Summary, error) {
 		return nil, fmt.Errorf("Summary request failed: %v", errs)
 	}
 
+	defer resp.Body.Close()
 	var summ Summary
 	err := json.Unmarshal(body, &summ)
 	if err != nil {
