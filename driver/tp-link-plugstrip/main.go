@@ -19,10 +19,6 @@ type TimeSeriesReading struct {
 	Value float64
 }
 
-type ActuationCommand struct {
-	On bool `msgpack:"on"`
-}
-
 func (tsr *TimeSeriesReading) ToMsgPackPO() bw2.PayloadObject {
 	po, err := bw2.CreateMsgPackPayloadObject(bw2.PONumTimeseriesReading, tsr)
 	if err != nil {
@@ -52,25 +48,33 @@ func main() {
 	fmt.Printf("Initialized driver for %s plugstrip\n", ps.model)
 
 	deviceName := params.MustString("name")
-	svc := bwClient.RegisterService(baseURI, "s.TPLinkPlug")
-	relayIface := svc.RegisterInterface(deviceName, "i.plug")
-	relayIface.SubscribeSlot("relay", func(msg *bw2.SimpleMessage) {
-		po := msg.GetOnePODF(bw2.PODFMsgPack)
+	if deviceName == "" {
+		os.Exit(1)
+	}
+	svc := bwClient.RegisterService(baseURI+deviceName, "s.powerup.v0")
+	relayIface := svc.RegisterInterface("relay", "i.binact")
+	relayIface.SubscribeSlot("state", func(msg *bw2.SimpleMessage) {
+		po := msg.GetOnePODF(bw2.PODFBinaryActuation)
 		if po == nil {
-			fmt.Println("Received actuation message w/o proper PO type, dropping")
-		}
-		var cmd ActuationCommand
-		msgPackPo, ok := po.(bw2.MsgPackPayloadObject)
-		if !ok {
-			fmt.Println("Actuation message contained invalid msgpack PO, dropping")
-		}
-		if err = msgPackPo.ValueInto(&cmd); err != nil {
-			fmt.Println("Could not parse actuation message PO, dropping")
+			fmt.Println("Received actuation command w/o proper PO type, dropping")
+			return
+		} else if len(po.GetContents()) < 1 {
+			fmt.Println("Received actuation command with invalid PO, dropping")
+			return
 		}
 
-		err = ps.SetRelayState(cmd.On)
-		if err != nil {
-			fmt.Println(err)
+		if po.GetContents()[0] == 0 {
+			err = ps.SetRelayState(false)
+			if err != nil {
+				fmt.Println(err)
+			}
+		} else if po.GetContents()[0] == 1 {
+			err = ps.SetRelayState(true)
+			if err != nil {
+				fmt.Println(err)
+			}
+		} else {
+			fmt.Println("Actuation command contents must be 0x00 or 0x01, dropping")
 		}
 	})
 
@@ -82,14 +86,13 @@ func main() {
 				fmt.Println("Invalid Poll Interval Length:", pollInterval)
 				os.Exit(1)
 			}
-			plugIface := svc.RegisterInterface(deviceName, "i.meter")
 			namespaceUUID := uuid.FromStringOrNil(NAMESPACE_UUID_STR)
 			currentUUID := uuid.NewV3(namespaceUUID, deviceName+"current").String()
-			bwClient.SetMetadata(plugIface.SignalURI("Current"), "UnitOfMeasure", "A")
+			bwClient.SetMetadata(relayIface.SignalURI("Current"), "UnitOfMeasure", "A")
 			voltageUUID := uuid.NewV3(namespaceUUID, deviceName+"voltage").String()
-			bwClient.SetMetadata(plugIface.SignalURI("Voltage"), "UnitOfMeasure", "V")
+			bwClient.SetMetadata(relayIface.SignalURI("Voltage"), "UnitOfMeasure", "V")
 			powerUUID := uuid.NewV3(namespaceUUID, deviceName+"power").String()
-			bwClient.SetMetadata(plugIface.SignalURI("Power"), "UnitOfMeasure", "W")
+			bwClient.SetMetadata(relayIface.SignalURI("Power"), "UnitOfMeasure", "W")
 
 			for {
 				stats, err := ps.GetPowerStats()
@@ -99,11 +102,11 @@ func main() {
 				}
 				timestamp := time.Now().UnixNano()
 				currentMsg := TimeSeriesReading{UUID: currentUUID, Time: timestamp, Value: stats.Current}
-				plugIface.PublishSignal("Current", currentMsg.ToMsgPackPO())
+				relayIface.PublishSignal("current", currentMsg.ToMsgPackPO())
 				voltageMsg := TimeSeriesReading{UUID: voltageUUID, Time: timestamp, Value: stats.Voltage}
-				plugIface.PublishSignal("Voltage", voltageMsg.ToMsgPackPO())
+				relayIface.PublishSignal("voltage", voltageMsg.ToMsgPackPO())
 				powerMsg := TimeSeriesReading{UUID: powerUUID, Time: timestamp, Value: stats.Power}
-				plugIface.PublishSignal("Power", powerMsg.ToMsgPackPO())
+				relayIface.PublishSignal("power", powerMsg.ToMsgPackPO())
 
 				time.Sleep(pollInterval)
 			}
