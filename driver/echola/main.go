@@ -54,10 +54,11 @@ func main() {
 		os.Exit(1)
 	}
 	service := bwClient.RegisterService(baseURI+deviceName, "s.powerup.v0")
-	interfaces := make([]*bw2.Interface, numPlugs)
+	plug_interfaces := make([]*bw2.Interface, numPlugs)
 	for i := 0; i < numPlugs; i++ {
-		interfaces[i] = service.RegisterInterface(strconv.Itoa(i+1), "i.binact")
+		plug_interfaces[i] = service.RegisterInterface(strconv.Itoa(i+1), "i.binact")
 	}
+	plugstrip_interface := service.RegisterInterface("plugstrip", "i.meter")
 
 	rootUUID := uuid.FromStringOrNil(NAMESPACE_UUID_STR)
 	stateUUIDs := make([]string, numPlugs)
@@ -67,13 +68,15 @@ func main() {
 		stateUUIDs[i] = uuid.NewV3(rootUUID, stateName).String()
 		powerName := fmt.Sprintf("%spower%d", deviceName, i+1)
 		powerUUIDs[i] = uuid.NewV3(rootUUID, powerName).String()
-		bwClient.SetMetadata(interfaces[i].SignalURI("power"), "UnitOfMeasure", "W")
+		bwClient.SetMetadata(plug_interfaces[i].SignalURI("power"), "UnitOfMeasure", "W")
 	}
+	totalPowerUUID := uuid.NewV3(rootUUID, deviceName+"totalPower").String()
+	bwClient.SetMetadata(plugstrip_interface.SignalURI("totalpower"), "UnitOfMeasure", "W")
 
 	// Subscribe to actuation commands
 	for i := 0; i < numPlugs; i++ {
 		idx := i
-		interfaces[i].SubscribeSlot("state", func(msg *bw2.SimpleMessage) {
+		plug_interfaces[i].SubscribeSlot("state", func(msg *bw2.SimpleMessage) {
 			po := msg.GetOnePODF(bw2.PODFBinaryActuation)
 			if po == nil {
 				fmt.Println("Received actuation command without valid PO, dropping")
@@ -95,7 +98,7 @@ func main() {
 
 	// Publish status information
 	for {
-		plugStatuses, err := echola.GetStatus()
+		totalPower, plugStatuses, err := echola.GetStatus()
 		if err != nil {
 			fmt.Printf("Error getting Echola status: %v\n", err)
 			os.Exit(1)
@@ -111,7 +114,7 @@ func main() {
 				Time:  timestamp,
 				Value: float64(plugStatuses[i].Enabled),
 			}
-			if err := interfaces[i].PublishSignal("state", msg.ToMsgPackPO()); err != nil {
+			if err := plug_interfaces[i].PublishSignal("state", msg.ToMsgPackPO()); err != nil {
 				fmt.Printf("Failed to publish state info: %v\n", err)
 			}
 
@@ -120,10 +123,17 @@ func main() {
 				Time:  timestamp,
 				Value: plugStatuses[i].Power,
 			}
-			if err := interfaces[i].PublishSignal("power", msg.ToMsgPackPO()); err != nil {
+			if err := plug_interfaces[i].PublishSignal("power", msg.ToMsgPackPO()); err != nil {
 				fmt.Printf("Failed to publish power info: %v\n", err)
 			}
 		}
+
+		msg := TimeSeriesReading{
+			UUID:  totalPowerUUID,
+			Time:  timestamp,
+			Value: totalPower,
+		}
+		plugstrip_interface.PublishSignal("totalpower", msg.ToMsgPackPO())
 
 		time.Sleep(pollInt)
 	}

@@ -36,6 +36,8 @@ type echolaResponse struct {
 	Pow6 float64 `xml:"pow6"`
 	Pow7 float64 `xml:"pow7"`
 	Pow8 float64 `xml:"pow8"`
+
+	PowT float64 `xml:"powt"`
 }
 
 func NewEchola(ipAddr string) *Echola {
@@ -45,21 +47,21 @@ func NewEchola(ipAddr string) *Echola {
 	}
 }
 
-func (echola *Echola) GetStatus() ([]PlugState, error) {
+func (echola *Echola) GetStatus() (float64, []PlugState, error) {
 	var results []PlugState
 	dest := fmt.Sprintf("http://%s/api.xml", echola.ipAddr)
 	resp, _, errs := echola.req.Get(dest).End()
 	if errs != nil {
-		return results, fmt.Errorf("Error retrieving plug status: %v", errs)
+		return 0.0, results, fmt.Errorf("Error retrieving plug status: %v", errs)
 	} else if resp.StatusCode != 200 {
-		return results, fmt.Errorf("Error retrieving plug status: %s", resp.Status)
+		return 0.0, results, fmt.Errorf("Error retrieving plug status: %s", resp.Status)
 	}
 
 	defer resp.Body.Close()
 	var response echolaResponse
 	dec := xml.NewDecoder(resp.Body)
 	if err := dec.Decode(&response); err != nil {
-		return results, fmt.Errorf("Failed to decode XML: %v", err)
+		return 0.0, results, fmt.Errorf("Failed to decode XML: %v", err)
 	}
 
 	results = make([]PlugState, 8)
@@ -71,7 +73,7 @@ func (echola *Echola) GetStatus() ([]PlugState, error) {
 	results[5] = PlugState{Enabled: response.PState6, Power: response.Pow6}
 	results[6] = PlugState{Enabled: response.PState7, Power: response.Pow7}
 	results[7] = PlugState{Enabled: response.PState8, Power: response.Pow8}
-	return results, nil
+	return response.PowT, results, nil
 }
 
 func (echola *Echola) ActuatePlug(plugIndex int, on bool) error {
