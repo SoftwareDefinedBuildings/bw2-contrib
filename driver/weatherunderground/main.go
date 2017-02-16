@@ -52,14 +52,15 @@ func main() {
 	src := NewWeatherUndergroundSource(apikey, location, read_rate)
 	data := src.Start()
 	for point := range data {
+		timestamp := time.Now().UnixNano()
 		fmt.Println(point)
-		temp_f := TimeseriesReading{UUID: temp_f_uuid, Time: time.Now().Unix(), Value: point.F}
+		temp_f := TimeseriesReading{UUID: temp_f_uuid, Time: timestamp, Value: point.F}
 		iface.PublishSignal("fahrenheit", temp_f.ToMsgPackBW())
 
-		temp_c := TimeseriesReading{UUID: temp_c_uuid, Time: time.Now().Unix(), Value: point.C}
+		temp_c := TimeseriesReading{UUID: temp_c_uuid, Time: timestamp, Value: point.C}
 		iface.PublishSignal("celsius", temp_c.ToMsgPackBW())
 
-		rh := TimeseriesReading{UUID: relative_humidity_uuid, Time: time.Now().Unix(), Value: point.RH}
+		rh := TimeseriesReading{UUID: relative_humidity_uuid, Time: timestamp, Value: point.RH}
 		iface.PublishSignal("relative_humidity", rh.ToMsgPackBW())
 	}
 }
