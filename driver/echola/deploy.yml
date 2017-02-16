@@ -1,0 +1,8 @@
+entity: echola.ent
+container: jhkolb/spawnpoint:amd64
+build: [go get github.com/SoftwareDefinedBuildings/bw2-contrib/driver/echola]
+run: [echola]
+memAlloc: 512M
+cpuShares: 512
+autoRestart: false
+includedFiles: [params.yml]

@@ -59,6 +59,7 @@ func NewEnphase(apiKey string, userID string, sysName string) (*Enphase, error) 
 		return nil, fmt.Errorf("System index request failed: %v", resp.Status)
 	}
 
+	defer resp.Body.Close()
 	var rslt indexResult
 	err := json.Unmarshal(body, &rslt)
 	if err != nil {
@@ -87,6 +88,7 @@ func (enphase *Enphase) ReadSummary() (*Summary, error) {
 		return nil, fmt.Errorf("Summary request failed: %v", errs)
 	}
 
+	defer resp.Body.Close()
 	var summ Summary
 	err := json.Unmarshal(body, &summ)
 	if err != nil {
@@ -104,10 +106,11 @@ func (enphase *Enphase) PollSummary(dur time.Duration) chan *Summary {
 		for {
 			summary, err := enphase.ReadSummary()
 			if err != nil {
-				summCh <- nil
-			} else {
-				summCh <- summary
+				fmt.Printf("Error polling enphase data: %v\n", err)
+				close(summCh)
+				return
 			}
+			summCh <- summary
 			time.Sleep(dur)
 		}
 	}()

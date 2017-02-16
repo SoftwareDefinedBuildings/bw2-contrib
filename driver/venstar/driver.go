@@ -8,23 +8,39 @@ import (
 	"net/url"
 	"time"
 
-	"gopkg.in/immesys/bw2bind.v5"
+	"github.com/satori/go.uuid"
+	bw2 "gopkg.in/immesys/bw2bind.v5"
 )
 
-type Driver struct {
-	bwc      *bw2bind.BW2Client
-	r        DiscoveryRecord
-	upd      chan DiscoveryRecord
-	base     string
-	svc      *bw2bind.Service
-	iface    *bw2bind.Interface
-	lastheat float64
-	lastcool float64
+const NAMESPACE_UUID = `d8b61708-2797-11e6-836b-0cc47a0f7eea`
+
+func (ir *InfoResponse) ToMsgPackPO() bw2.PayloadObject {
+	po, err := bw2.CreateMsgPackPayloadObject(bw2.PONumTimeseriesReading, ir)
+	if err != nil {
+		panic(err)
+	}
+	return po
 }
 
-func newThermostat(base string, bwc *bw2bind.BW2Client, r DiscoveryRecord) chan DiscoveryRecord {
+type Driver struct {
+	bwc            *bw2.BW2Client
+	r              DiscoveryRecord
+	upd            chan DiscoveryRecord
+	base           string
+	svc            *bw2.Service
+	iface          *bw2.Interface
+	lastheat       float64
+	lastcool       float64
+	timeseriesUUID string
+}
+
+func newThermostat(base string, bwc *bw2.BW2Client, r DiscoveryRecord) chan DiscoveryRecord {
 	d := Driver{base: base, bwc: bwc, r: r, upd: make(chan DiscoveryRecord)}
 	d.svc = bwc.RegisterService(base, "s.venstar")
+
+	rootUUID := uuid.FromStringOrNil(NAMESPACE_UUID)
+	d.timeseriesUUID = uuid.NewV3(rootUUID, "info").String()
+
 	go d.Start()
 	return d.upd
 }
@@ -78,7 +94,7 @@ func (d *Driver) SetAway(val int) {
 	fmt.Println("set response: ", string(contents))
 	resp.Body.Close()
 }
-func (d *Driver) Control(sm *bw2bind.SimpleMessage) {
+func (d *Driver) Control(sm *bw2.SimpleMessage) {
 	//Commands:
 	//{"cmd":"set_away","value": 1 / 0}
 	//{"cmd":"set_auto_setpoints", "heattemp": val, "cooltemp": val}
@@ -86,8 +102,8 @@ func (d *Driver) Control(sm *bw2bind.SimpleMessage) {
 	sm.Dump()
 	cm := make(map[string]interface{})
 	for _, po := range sm.POs {
-		if po.IsType(bw2bind.PONumMsgPack, bw2bind.POMaskMsgPack) {
-			pom, ok := po.(bw2bind.MsgPackPayloadObject)
+		if po.IsType(bw2.PONumMsgPack, bw2.POMaskMsgPack) {
+			pom, ok := po.(bw2.MsgPackPayloadObject)
 			if !ok {
 				fmt.Println("skipping invalid command")
 				continue
@@ -134,10 +150,8 @@ func (d *Driver) Scrape() {
 	inf := InfoResponse{}
 	json.Unmarshal(contents, &inf)
 	inf.Time = time.Now().UnixNano()
-	po, err := bw2bind.CreateMsgPackPayloadObject(bw2bind.PONumVenstarInfo, &inf)
-	if err != nil {
-		panic(err)
-	}
+	inf.UUID = d.timeseriesUUID
+	po := inf.ToMsgPackPO()
 
 	d.iface.PublishSignal("info", po)
 	d.lastheat = inf.HeatTemp

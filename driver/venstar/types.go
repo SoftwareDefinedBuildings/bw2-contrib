@@ -2,6 +2,7 @@ package main
 
 type InfoResponse struct {
 	Time           int64   `json:"-" msgpack:"time"`
+	UUID           string  `json:"UUID" msgpack:"UUID"`
 	Name           string  `json:"name" msgpack:"name"`
 	Mode           int     `json:"mode" msgpack:"mode"`
 	State          int     `json:"state" msgpack:"state"`

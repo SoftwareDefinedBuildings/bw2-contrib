@@ -1,0 +1,4 @@
+svc_base_uri: <base uri of service>
+plug_ip: <plug IP address>
+name: <device name>
+poll_interval: <time between power stat samples, e.g. "10s">
