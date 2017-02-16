@@ -30,26 +30,26 @@ func main() {
 
 	params := spawnable.GetParamsOrExit()
 	apikey := params.MustString("API_KEY")
-	city := params.MustString("city")
+	location := params.MustString("location")
 	baseuri := params.MustString("svc_base_uri")
 	read_rate := params.MustString("read_rate")
 
 	bw.OverrideAutoChainTo(true)
 	bw.SetEntityFromEnvironOrExit()
 	svc := bw.RegisterService(baseuri, "s.weatherunderground")
-	iface := svc.RegisterInterface(city, "i.weather")
+	iface := svc.RegisterInterface(location, "i.weather")
 
 	params.MergeMetadata(bw)
 
 	fmt.Println(iface.FullURI())
 	fmt.Println(iface.SignalURI("fahrenheit"))
 
-	// generate UUIDs from city + metric name
-	temp_f_uuid := uuid.NewV3(NAMESPACE_UUID, city+"fahrenheit").String()
-	temp_c_uuid := uuid.NewV3(NAMESPACE_UUID, city+"celsius").String()
-	relative_humidity_uuid := uuid.NewV3(NAMESPACE_UUID, city+"relative_humidity").String()
+	// generate UUIDs from location + metric name
+	temp_f_uuid := uuid.NewV3(NAMESPACE_UUID, location+"fahrenheit").String()
+	temp_c_uuid := uuid.NewV3(NAMESPACE_UUID, location+"celsius").String()
+	relative_humidity_uuid := uuid.NewV3(NAMESPACE_UUID, location+"relative_humidity").String()
 
-	src := NewWeatherUndergroundSource(apikey, city, read_rate)
+	src := NewWeatherUndergroundSource(apikey, location, read_rate)
 	data := src.Start()
 	for point := range data {
 		fmt.Println(point)
