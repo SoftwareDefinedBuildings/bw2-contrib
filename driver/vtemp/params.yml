@@ -1,0 +1,7 @@
+svc_base_uri: <base_uri>
+poll_interval: 5m
+metadata:
+  s.Vtemp:
+    SourceName: "Virtual Temperature Sensor"
+  s.vtemp/i.temperature/signal/temperature:
+    UnitofMeasure: "Farenheight"
