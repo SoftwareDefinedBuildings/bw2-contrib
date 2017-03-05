@@ -1,7 +1,8 @@
-svc_base_uri: <base_uri>
+svc_base_uri: scratch.ns/services
 poll_interval: 5m
 metadata:
-  s.Vtemp:
+  s.vtemp:
     SourceName: "Virtual Temperature Sensor"
-  s.vtemp/i.temperature/signal/temperature:
-    UnitofMeasure: "Farenheight"
+  s.vtemp/vtemp_sensor/i.xbox.temperature_sensor/signal/temperature:
+    UnitofMeasure: Farenheight
+    Type: Temperature
