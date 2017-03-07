@@ -6,7 +6,7 @@ import (
 )
 
 type InfoData struct {
-	temperature float64
+	Temperature float64
 }
 
 func (i *InfoData) ToMsgPackPO() (bo bw2.PayloadObject) {
@@ -35,7 +35,7 @@ func main() {
 	v := NewVtemp(poll_interval)
 	data := v.Start()
 	for point := range data {
-		reading := InfoData{temperature: point.temperature}
+		reading := InfoData{Temperature: point}
 		iface.PublishSignal("info", reading.ToMsgPackPO())
 	}
 }

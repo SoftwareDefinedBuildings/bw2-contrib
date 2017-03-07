@@ -16,7 +16,7 @@ const (
 type Vtemp struct {
 	random *rand.Rand
 	rate time.Duration
-	data chan TempStats
+	data chan float64
 }
 
 type TempStats struct {
@@ -33,11 +33,11 @@ func NewVtemp(rate string) *Vtemp {
 	return &Vtemp{
 		random: rand.New(s1),
 		rate: dur,
-		data: make(chan TempStats),
+		data: make(chan float64),
 	}
 }
 
-func (v *Vtemp) Start() chan TempStats {
+func (v *Vtemp) Start() chan float64 {
 	go func() {
 		for _ = range time.Tick(v.rate) {
 			v.data <- v.getTemp()
@@ -46,10 +46,8 @@ func (v *Vtemp) Start() chan TempStats {
 	return v.data
 }
 
-func (v *Vtemp) getTemp() TempStats {
-	return TempStats {
-		temperature: v.generateTemp(),
-	}
+func (v *Vtemp) getTemp() float64 {
+	return v.generateTemp()
 }
 
 func (v *Vtemp) generateTemp() float64 {
