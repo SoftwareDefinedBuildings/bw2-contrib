@@ -42,7 +42,7 @@ func (v *Vtemp) Start() chan TempStats {
 		for _ = range time.Tick(v.rate) {
 			v.data <- v.getTemp()
 		}
-	}
+	}()
 	return v.data
 }
 

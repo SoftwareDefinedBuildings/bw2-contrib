@@ -39,8 +39,6 @@ func main() {
 
 	params.MergeMetadata(bwClient)
 
-	temp_uuid := uuid.NewV3(NAMESPACE_UUID, "temperature").String()
-
 	v := NewVtemp(poll_interval)
 	data := v.Start()
 	for point := range data {
