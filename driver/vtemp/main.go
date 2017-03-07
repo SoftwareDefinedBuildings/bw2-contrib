@@ -2,15 +2,8 @@ package main
 
 import (
 	"github.com/immesys/spawnpoint/spawnable"
-	uuid "github.com/satori/go.uuid"
 	bw2 "gopkg.in/immesys/bw2bind.v5"
 )
-
-var NAMESPACE_UUID uuid.UUID
-
-func init() {
-	NAMESPACE_UUID = uuid.NewV1()
-}
 
 type InfoData struct {
 	temperature float64
