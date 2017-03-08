@@ -11,7 +11,7 @@ const (
 	PONUM = "2.1.1.2"
 )
 
-type TimeseriesReading struct {
+type Reading struct {
 	Time int64
 	State bool
 }
@@ -20,7 +20,7 @@ type Info struct {
 	State bool
 }
 
-func (tsr *TimeseriesReading) ToMsgPackPO(ponum int) (bo bw2.PayloadObject) {
+func (tsr *Reading) ToMsgPackPO(ponum int) (bo bw2.PayloadObject) {
 	po, err := bw2.CreateMsgPackPayloadObject(ponum, tsr)
 	if err != nil {
 		panic(err)
@@ -71,7 +71,7 @@ func main() {
 	for {
 		status := v.GetStatus()
 		timestamp := time.Now().UnixNano()
-		msg := TimeseriesReading {
+		msg := Reading {
 			Time: timestamp,
 			State: status,
 		}
