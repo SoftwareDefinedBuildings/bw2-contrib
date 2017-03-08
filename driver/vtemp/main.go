@@ -6,6 +6,7 @@ import (
 )
 
 type InfoData struct {
+	Time int64
 	Temperature float64
 }
 
@@ -35,7 +36,10 @@ func main() {
 	v := NewVtemp(poll_interval)
 	data := v.Start()
 	for point := range data {
-		reading := InfoData{Temperature: point}
+		reading := InfoData{
+			Time: time.Now().UnixNano(),
+			Temperature: point,
+		}
 		iface.PublishSignal("info", reading.ToMsgPackPO())
 	}
 }

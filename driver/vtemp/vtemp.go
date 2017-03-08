@@ -19,10 +19,6 @@ type Vtemp struct {
 	data chan float64
 }
 
-type TempStats struct {
-	temperature float64
-}
-
 func NewVtemp(rate string) *Vtemp {
 	dur, err := time.ParseDuration(rate)
 	if err != nil {
