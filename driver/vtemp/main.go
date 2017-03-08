@@ -5,13 +5,13 @@ import (
 	bw2 "gopkg.in/immesys/bw2bind.v5"
 )
 
-type InfoData struct {
+type Reading struct {
 	Time int64
 	Temperature float64
 }
 
-func (i *InfoData) ToMsgPackPO() (bo bw2.PayloadObject) {
-	po, err := bw2.CreateMsgPackPayloadObject(bw2.PONumTimeseriesReading, i)
+func (r *Reading) ToMsgPackPO(ponum int) (bo bw2.PayloadObject) {
+	po, err := bw2.CreateMsgPackPayloadObject(ponum, r)
 	if err != nil {
 		panic(err)
 	}
@@ -36,7 +36,7 @@ func main() {
 	v := NewVtemp(poll_interval)
 	data := v.Start()
 	for point := range data {
-		reading := InfoData{
+		reading := Info {
 			Time: time.Now().UnixNano(),
 			Temperature: point,
 		}
