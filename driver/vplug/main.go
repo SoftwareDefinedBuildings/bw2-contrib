@@ -7,13 +7,17 @@ import (
 	"time"
 )
 
-type InfoData struct {
+type TimeseriesReading struct {
 	Time int64
 	State bool
 }
 
-func (i *InfoData) ToMsgPackPO() (bo bw2.PayloadObject) {
-	po, err := bw2.CreateMsgPackPayloadObject(bw2.PONumTimeseriesReading, i)
+type Info struct {
+	State bool
+}
+
+func (tsr *TimeseriesReading) ToMsgPackPO() (bo bw2.PayloadObject) {
+	po, err := bw2.CreateMsgPackPayloadObject(bw2.PONumTimeseriesReading, tsr)
 	if err != nil {
 		panic(err)
 	}
@@ -42,33 +46,33 @@ func main() {
 	v := NewVplug()
 
 	iface.SubscribeSlot("state", func(msg *bw2.SimpleMessage) {
-		po := msg.GetOnePODF(bw2.PODFBinaryActuation)
+		po := msg.GetOnePODF("2.1.1.2")
 		if po == nil {
 			fmt.Println("Received actuation command without valid PO, dropping")
 			return
-		} else if len(po.GetContents()) < 1 {
-			fmt.Println("Received actuation command with invalid PO, dropping")
+		}
+
+		msgpo, err := bw2.LoadMsgPackPayloadObject(po.GetPONum(), po.GetContents())
+		if err != nil {
+			fmt.Println("Could not load MsgPackPayloadObject")
 			return
 		}
 
-		if po.GetContents()[0] == 0 {
-			v.ActuatePlug(false)
-		} else if po.GetContents()[0] == 1 {
-			v.ActuatePlug(true)
-		} else {
-			fmt.Println("Actuation command contents must be 0 or 1, dropping")
-		}
+		var data Info
+		msgpo.ValueInto(data)
+
+		v.ActuatePlug(data.State)
 	})
 
 	for {
 		status := v.GetStatus()
 		timestamp := time.Now().UnixNano()
-		msg := InfoData {
+		msg := TimeseriesReading {
 			Time: timestamp,
 			State: status,
 		}
 
-		iface.PublishSignal("state", msg.ToMsgPackPO())
+		iface.PublishSignal("info", msg.ToMsgPackPO())
 		time.Sleep(pollInt)
 	}
 }

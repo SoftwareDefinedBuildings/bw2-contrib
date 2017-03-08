@@ -4,5 +4,5 @@ metadata:
   s.vplug:
     SourceName: "Virtual Plug"
     Device: Plug
-  s.vplug/vplug/i.xbox.plug/signal/state:
+  s.vplug/vplug/i.xbox.plug/signal/info:
     Type: State
