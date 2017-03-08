@@ -7,14 +7,18 @@ import (
 	"time"
 )
 
-type TimeseriesReading struct {
+const (
+	PONUM = "2.1.1.1"
+)
+
+type Reading struct {
 	Time int64
 	State bool
 	Brightness int
 }
 
-func (tsr *TimeseriesReading) ToMsgPackPO() (bo bw2.PayloadObject) {
-	po, err := bw2.CreateMsgPackPayloadObject(bw2.PONumTimeseriesReading, tsr)
+func (r *Reading) ToMsgPackPO(ponum int) (bo bw2.PayloadObject) {
+	po, err := bw2.CreateMsgPackPayloadObject(ponum, r)
 	if err != nil {
 		panic(err)
 	}
@@ -43,7 +47,7 @@ func main() {
 	v := NewVlight()
 
 	iface.SubscribeSlot("state", func(msg *bw2.SimpleMessage) {
-		po := msg.GetOnePODF("2.1.1.1")
+		po := msg.GetOnePODF(PONUM)
 		if po == nil {
 			fmt.Println("Received actuation command without valid PO, dropping")
 			return
@@ -68,13 +72,13 @@ func main() {
 	for {
 		info := v.GetStatus()
 		timestamp := time.Now().UnixNano()
-		msg := TimeseriesReading {
+		msg := Reading {
 			Time: timestamp,
 			State: info.State,
 			Brightness: info.Brightness,
 		}
 
-		iface.PublishSignal("info", msg.ToMsgPackPO())
+		iface.PublishSignal("info", msg.ToMsgPackPO(PONUM)) // DON'T KNOW PONUM
 		time.Sleep(pollInt)
 	}
 }
