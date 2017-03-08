@@ -20,8 +20,8 @@ type Info struct {
 	State bool
 }
 
-func (tsr *Reading) ToMsgPackPO(ponum int) (bo bw2.PayloadObject) {
-	po, err := bw2.CreateMsgPackPayloadObject(ponum, tsr)
+func (tsr *Reading) ToMsgPackPO() (bo bw2.PayloadObject) {
+	po, err := bw2.CreateMsgPackPayloadObject(bw2.FromDotForm(PONUM), tsr)
 	if err != nil {
 		panic(err)
 	}
@@ -76,7 +76,7 @@ func main() {
 			State: status,
 		}
 
-		iface.PublishSignal("info", msg.ToMsgPackPO(??)) //don't know ponum
+		iface.PublishSignal("info", msg.ToMsgPackPO())
 		time.Sleep(pollInt)
 	}
 }

@@ -11,7 +11,7 @@ type Reading struct {
 }
 
 func (r *Reading) ToMsgPackPO(ponum int) (bo bw2.PayloadObject) {
-	po, err := bw2.CreateMsgPackPayloadObject(ponum, r)
+	po, err := bw2.CreateMsgPackPayloadObject(bw2.FromDotForm(PONUM), r)
 	if err != nil {
 		panic(err)
 	}

@@ -17,8 +17,8 @@ type Reading struct {
 	Brightness int
 }
 
-func (r *Reading) ToMsgPackPO(ponum int) (bo bw2.PayloadObject) {
-	po, err := bw2.CreateMsgPackPayloadObject(ponum, r)
+func (r *Reading) ToMsgPackPO() (bo bw2.PayloadObject) {
+	po, err := bw2.CreateMsgPackPayloadObject(bw2.FromDotForm(PONUM), r)
 	if err != nil {
 		panic(err)
 	}
@@ -78,7 +78,7 @@ func main() {
 			Brightness: info.Brightness,
 		}
 
-		iface.PublishSignal("info", msg.ToMsgPackPO(PONUM)) // DON'T KNOW PONUM
+		iface.PublishSignal("info", msg.ToMsgPackPO()) // DON'T KNOW PONUM
 		time.Sleep(pollInt)
 	}
 }
