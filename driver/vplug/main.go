@@ -7,6 +7,10 @@ import (
 	"time"
 )
 
+const (
+	PONUM = "2.1.1.2"
+)
+
 type TimeseriesReading struct {
 	Time int64
 	State bool
@@ -16,8 +20,8 @@ type Info struct {
 	State bool
 }
 
-func (tsr *TimeseriesReading) ToMsgPackPO() (bo bw2.PayloadObject) {
-	po, err := bw2.CreateMsgPackPayloadObject(bw2.PONumTimeseriesReading, tsr)
+func (tsr *TimeseriesReading) ToMsgPackPO(ponum int) (bo bw2.PayloadObject) {
+	po, err := bw2.CreateMsgPackPayloadObject(ponum, tsr)
 	if err != nil {
 		panic(err)
 	}
@@ -46,7 +50,7 @@ func main() {
 	v := NewVplug()
 
 	iface.SubscribeSlot("state", func(msg *bw2.SimpleMessage) {
-		po := msg.GetOnePODF("2.1.1.2")
+		po := msg.GetOnePODF(PONUM)
 		if po == nil {
 			fmt.Println("Received actuation command without valid PO, dropping")
 			return
@@ -72,7 +76,7 @@ func main() {
 			State: status,
 		}
 
-		iface.PublishSignal("info", msg.ToMsgPackPO())
+		iface.PublishSignal("info", msg.ToMsgPackPO(??)) //don't know ponum
 		time.Sleep(pollInt)
 	}
 }
