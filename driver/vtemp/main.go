@@ -3,6 +3,11 @@ package main
 import (
 	"github.com/immesys/spawnpoint/spawnable"
 	bw2 "gopkg.in/immesys/bw2bind.v5"
+	"time"
+)
+
+const (
+	PONUM = "2.1.2.0"
 )
 
 type Reading struct {
@@ -10,7 +15,7 @@ type Reading struct {
 	Temperature float64
 }
 
-func (r *Reading) ToMsgPackPO(ponum int) (bo bw2.PayloadObject) {
+func (r *Reading) ToMsgPackPO() bw2.PayloadObject {
 	po, err := bw2.CreateMsgPackPayloadObject(bw2.FromDotForm(PONUM), r)
 	if err != nil {
 		panic(err)
@@ -36,7 +41,7 @@ func main() {
 	v := NewVtemp(poll_interval)
 	data := v.Start()
 	for point := range data {
-		reading := Info {
+		reading := Reading {
 			Time: time.Now().UnixNano(),
 			Temperature: point,
 		}
