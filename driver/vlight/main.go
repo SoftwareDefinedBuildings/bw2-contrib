@@ -58,12 +58,16 @@ func main() {
 
 		msgpo, err := bw2.LoadMsgPackPayloadObject(po.GetPONum(), po.GetContents())
 		if err != nil {
-			fmt.Println("Could not load MsgPackPayloadObject")
+			fmt.Println(err)
 			return
 		}
 
 		var data Info
-		msgpo.ValueInto(data)
+		err = msgpo.ValueInto(&data)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
 
 		v.ActuateLight(data.State)
 		v.SetBrightness(data.Brightness)
@@ -78,7 +82,7 @@ func main() {
 			Brightness: info.Brightness,
 		}
 
-		iface.PublishSignal("info", msg.ToMsgPackPO()) // DON'T KNOW PONUM
+		iface.PublishSignal("info", msg.ToMsgPackPO())
 		time.Sleep(pollInt)
 	}
 }
