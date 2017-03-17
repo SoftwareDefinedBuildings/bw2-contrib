@@ -1,0 +1,8 @@
+svc_base_uri: scratch.ns/services
+poll_interval: 10s
+metadata:
+  s.vlight:
+    SourceName: "Virtual Light"
+    Device: Light
+  s.vlight/vlight/i.xbox.light/signal/info:
+    Type: State

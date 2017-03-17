@@ -1,0 +1,8 @@
+svc_base_uri: scratch.ns/services
+poll_interval: 10s
+metadata:
+  s.vplug:
+    SourceName: "Virtual Plug"
+    Device: Plug
+  s.vplug/vplug/i.xbox.plug/signal/info:
+    Type: State
