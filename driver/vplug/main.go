@@ -70,14 +70,6 @@ func main() {
 			return
 		}
 
-		var data Info
-
-		err := msgpo.ValueInto(&data)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-
 		v.ActuatePlug(data.State)
 	})
 
