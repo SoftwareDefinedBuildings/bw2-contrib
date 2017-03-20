@@ -12,6 +12,9 @@ const (
 )
 
 type Reading struct {
+=======
+type TimeseriesReading struct {
+>>>>>>> vplug
 	Time int64
 	State bool
 }
@@ -20,8 +23,8 @@ type Info struct {
 	State bool
 }
 
-func (tsr *Reading) ToMsgPackPO() (bo bw2.PayloadObject) {
-	po, err := bw2.CreateMsgPackPayloadObject(bw2.FromDotForm(PONUM), tsr)
+func (r *Reading) ToMsgPackPO() (bo bw2.PayloadObject) {
+	po, err := bw2.CreateMsgPackPayloadObject(bw2.FromDotForm(PONUM), r)
 	if err != nil {
 		panic(err)
 	}
@@ -63,7 +66,15 @@ func main() {
 		}
 
 		var data Info
+
 		err = msgpo.ValueInto(&data)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		var data Info
+		err := msgpo.ValueInto(&data)
 		if err != nil {
 			fmt.Println(err)
 			return
