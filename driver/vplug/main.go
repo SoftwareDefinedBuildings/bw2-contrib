@@ -12,9 +12,6 @@ const (
 )
 
 type Reading struct {
-=======
-type TimeseriesReading struct {
->>>>>>> vplug
 	Time int64
 	State bool
 }
@@ -74,6 +71,7 @@ func main() {
 		}
 
 		var data Info
+
 		err := msgpo.ValueInto(&data)
 		if err != nil {
 			fmt.Println(err)
