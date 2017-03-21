@@ -11,17 +11,11 @@ const (
 	PONUM = "2.1.1.2"
 )
 
-type Reading struct {
-	Time int64
-	State bool
-}
-
-type Info struct {
-	State bool
-}
-
-func (r *Reading) ToMsgPackPO() (bo bw2.PayloadObject) {
-	po, err := bw2.CreateMsgPackPayloadObject(bw2.FromDotForm(PONUM), r)
+func NewInfoPO(time int64, state bool) bw2.PayloadObject {
+	msg := map[string]interface{}{
+		"time": time,
+		"state": state}
+	po, err := bw2.CreateMsgPackPayloadObject(bw2.FromDotForm(PONUM), msg)
 	if err != nil {
 		panic(err)
 	}
@@ -62,7 +56,7 @@ func main() {
 			return
 		}
 
-		var data Info
+		var data map[string]interface{}
 
 		err = msgpo.ValueInto(&data)
 		if err != nil {
@@ -70,18 +64,16 @@ func main() {
 			return
 		}
 
-		v.ActuatePlug(data.State)
+		v.ActuatePlug(data["state"].(bool))
 	})
 
 	for {
 		status := v.GetStatus()
 		timestamp := time.Now().UnixNano()
-		msg := Reading {
-			Time: timestamp,
-			State: status,
-		}
-
-		iface.PublishSignal("info", msg.ToMsgPackPO())
+		msg := NewInfoPO(
+			timestamp,
+			status)
+		iface.PublishSignal("info", msg)
 		time.Sleep(pollInt)
 	}
 }

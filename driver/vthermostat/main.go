@@ -11,12 +11,7 @@ const (
 	PONUM = "2.1.1.0"
 )
 
-type Setpoints struct {
-	HeatingSetpoint float64
-	CoolingSetpoint float64
-}
-
-func NewInfoPayloadObject(temp float64, relHumidity float64, heatingSetpoint float64, coolingSetpoint float64, override bool, fan bool, mode int, state int, time int64) (bw2.PayloadObject) {
+func NewInfoPO(temp float64, relHumidity float64, heatingSetpoint float64, coolingSetpoint float64, override bool, fan bool, mode int, state int, time int64) (bw2.PayloadObject) {
 	msg := map[string]interface{}{
 		"temperature": temp, 
 		"relative_humidity": relHumidity, 
@@ -105,7 +100,7 @@ func main() {
 
 	data := v.Start()
 	for point := range data {
-		po := NewInfoPayloadObject(
+		po := NewInfoPO(
 			point.temperature,
 			point.relativeHumidity,
 			point.heatingSetpoint,
