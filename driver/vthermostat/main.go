@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/immesys/spawnpoint/spawnable"
 	bw2 "gopkg.in/immesys/bw2bind.v5"
+	"os"
 	"time"
 )
 
@@ -11,7 +12,12 @@ const (
 	PONUM = "2.1.1.0"
 )
 
-func NewInfoPO(temp float64, relHumidity float64, heatingSetpoint float64, coolingSetpoint float64, override bool, fan bool, mode int, state int, time int64) (bw2.PayloadObject) {
+type CSVPoint struct {
+	time int64
+	temperature float64
+}
+
+func NewInfoPO(time int64, temp float64, relHumidity float64, heatingSetpoint float64, coolingSetpoint float64, override bool, fan bool, mode int, state int) (bw2.PayloadObject) {
 	msg := map[string]interface{}{
 		"temperature": temp, 
 		"relative_humidity": relHumidity, 
@@ -45,6 +51,20 @@ func main() {
 	params.MergeMetadata(bwClient)
 
 	v := NewVthermostat(poll_interval)
+
+	csvChan := make(chan CSVPoint, 10)
+	csvFile, err := os.Create("vthermostat.csv")
+	if err == nil {
+		go func() {
+			fmt.Println("receiving")
+			for point := range csvChan {
+				line := fmt.Sprint(point.time, ",", point.temperature, ",")
+				csvFile.Write([]byte(line))
+			}
+		}()
+	} else {
+		fmt.Println(err)
+	}
 
 	iface.SubscribeSlot("setpoints", func(msg *bw2.SimpleMessage) {
 		po := msg.GetOnePODF(PONUM)
@@ -89,7 +109,6 @@ func main() {
 			fmt.Println(err)
 			return
 		}
-		fmt.Println("STATE RECEIVED\n", data)
 
 		v.setHeatingSetpoint(data["heating_setpoint"].(float64))
 		v.setCoolingSetpoint(data["cooling_setpoint"].(float64))
@@ -100,7 +119,9 @@ func main() {
 
 	data := v.Start()
 	for point := range data {
+		timestamp := time.Now().UnixNano()
 		po := NewInfoPO(
+			timestamp,
 			point.temperature,
 			point.relativeHumidity,
 			point.heatingSetpoint,
@@ -108,8 +129,14 @@ func main() {
 			point.override,
 			point.fan,
 			point.mode,
-			point.state,
-			time.Now().UnixNano())
+			point.state)
 		iface.PublishSignal("info", po)
+		
+		csvData := CSVPoint {
+			time: timestamp,
+			temperature: point.temperature,
+		}
+
+		csvChan <- csvData
 	}
 }
