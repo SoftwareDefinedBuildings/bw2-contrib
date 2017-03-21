@@ -9,6 +9,7 @@ const (
 	BASE_TEMP = 78
 	BASE_HSETPOINT = 60
 	BASE_CSETPOINT = 90
+	BASE_MODE = 3
 	E = 0.1
 	FLUX = 10
 	THERMAL_RESISTANCE = 0.1
@@ -57,8 +58,8 @@ func NewVthermostat(rate string) *Vthermostat {
 		coolingSetpoint: BASE_CSETPOINT,
 		override: false,
 		fan: false,
-		mode: 0,
-		state: 0,
+		mode: BASE_MODE,
+		state: BASE_MODE,
 	}
 }
 
@@ -82,8 +83,18 @@ func (v *Vthermostat) setMode(mode int) {
 	v.mode = mode
 }
 
-func (v *Vthermostat) setState(state int) { //state is determined by schedule
-	v.state = state
+func (v *Vthermostat) setState(cooling int, heating int) {
+	if cooling == 0 && heating == 0 {
+		if v.mode == 0 {
+			v.state = 0
+		} else {
+			v.state = 3
+		}
+	} else if cooling == 0 && heating == 1 {
+		v.state = 1
+	} else if cooling == 1 && heating == 0 {
+		v.state = 2
+	}
 }
 
 func (v *Vthermostat) generateOutsideAirTemp() float64 {
@@ -100,8 +111,13 @@ func (v *Vthermostat) generateRelativeHumidity(temp float64) float64 {
 	return REL_HUMIDITY_A * math.Pow(REL_HUMIDITY_B, temp)
 }
 
-func (v *Vthermostat) generateRoomTemp(outsideAirTemp float64) float64 {
-	cooling, heating := 0, 0
+func (v *Vthermostat) generateRoomTemp(outsideAirTemp float64, cooling int, heating int) float64 {
+	deltaT := outsideAirTemp - v.temperature
+	temp := v.temperature + (THERMAL_RESISTANCE * deltaT) - (float64(cooling) * E * deltaT) + (float64(heating) * E * deltaT) //T + (thermal_resistance * delta_t) - (cooling * e * delta_t) + (heat * e * delta_t)
+	return temp
+}
+
+func (v *Vthermostat) evalTempCondition() (cooling int, heating int) {
 	if v.temperature < v.heatingSetpoint {
 		heating = 1
 	} else if v.temperature > v.coolingSetpoint {
@@ -118,10 +134,7 @@ func (v *Vthermostat) generateRoomTemp(outsideAirTemp float64) float64 {
 		case 3:
 			break
 	}
-
-	deltaT := outsideAirTemp - v.temperature
-	temp := v.temperature + (THERMAL_RESISTANCE * deltaT) - (float64(cooling) * E * deltaT) + (float64(heating) * E * deltaT) //T + (thermal_resistance * delta_t) - (cooling * e * delta_t) + (heat * e * delta_t)
-	return temp
+	return
 }
 
 func (v *Vthermostat) Start() chan Point {
@@ -135,7 +148,9 @@ func (v *Vthermostat) Start() chan Point {
 
 func (v *Vthermostat) run() Point {
 	oat := v.generateOutsideAirTemp()
-	v.temperature = v.generateRoomTemp(oat)
+	cooling, heating := v.evalTempCondition()
+	v.setState(cooling, heating)
+	v.temperature = v.generateRoomTemp(oat, cooling, heating)
 	v.relativeHumidity = v.generateRelativeHumidity(v.temperature)
 	return v.getPoint()
 }

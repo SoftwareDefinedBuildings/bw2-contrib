@@ -11,33 +11,23 @@ const (
 	PONUM = "2.1.1.0"
 )
 
-type Info struct {
-	Temperature float64
-	RelativeHumidity float64
-	HeatingSetpoint float64
-	CoolingSetpoint float64
-	Override bool
-	Fan bool
-	Mode int
-	State int
-	Time int64
-}
-
 type Setpoints struct {
 	HeatingSetpoint float64
 	CoolingSetpoint float64
 }
 
-type State struct {
-	HeatingSetpoint float64
-	CoolingSetpoint float64
-	Override bool
-	Fan bool
-	Mode int
-}
-
-func (i *Info) ToMsgPackPO() (bo bw2.PayloadObject) {
-	po, err := bw2.CreateMsgPackPayloadObject(bw2.FromDotForm(PONUM), i)
+func NewInfoPayloadObject(temp float64, relHumidity float64, heatingSetpoint float64, coolingSetpoint float64, override bool, fan bool, mode int, state int, time int64) (bw2.PayloadObject) {
+	msg := map[string]interface{}{
+		"temperature": temp, 
+		"relative_humidity": relHumidity, 
+		"heating_setpoint": heatingSetpoint, 
+		"cooling_setpoint": coolingSetpoint, 
+		"override": override, 
+		"fan": fan, 
+		"mode": mode, 
+		"state": state, 
+		"time": time}
+	po, err := bw2.CreateMsgPackPayloadObject(bw2.FromDotForm(PONUM), msg)
 	if err != nil {
 		panic(err)
 	}
@@ -74,15 +64,15 @@ func main() {
 			return
 		}
 
-		var data Setpoints
+		var data map[string]interface{}
 		err = msgpo.ValueInto(&data)
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
 
-		v.setHeatingSetpoint(data.HeatingSetpoint)
-		v.setCoolingSetpoint(data.CoolingSetpoint)
+		v.setHeatingSetpoint(data["heating_setpoint"].(float64))
+		v.setCoolingSetpoint(data["cooling_setpoint"].(float64))
 	})
 
 	iface.SubscribeSlot("state", func(msg *bw2.SimpleMessage) {
@@ -98,33 +88,33 @@ func main() {
 			return
 		}
 
-		var data State
+		var data map[string]interface{}
 		err = msgpo.ValueInto(&data)
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
+		fmt.Println("STATE RECEIVED\n", data)
 
-		v.setHeatingSetpoint(data.HeatingSetpoint)
-		v.setCoolingSetpoint(data.CoolingSetpoint)
-		v.setOverride(data.Override)
-		v.setMode(data.Mode)
-		v.setFan(data.Fan)
+		v.setHeatingSetpoint(data["heating_setpoint"].(float64))
+		v.setCoolingSetpoint(data["cooling_setpoint"].(float64))
+		v.setOverride(data["override"].(bool))
+		v.setMode(int(data["mode"].(uint64)))
+		v.setFan(data["fan"].(bool))
 	})
 
 	data := v.Start()
 	for point := range data {
-		reading := Info {
-			Temperature: point.temperature,
-			RelativeHumidity: point.relativeHumidity,
-			HeatingSetpoint: point.heatingSetpoint,
-			CoolingSetpoint: point.coolingSetpoint,
-			Override: point.override,
-			Fan: point.fan,
-			Mode: point.mode,
-			State: point.state,
-			Time: time.Now().UnixNano(),
-		}
-		iface.PublishSignal("info", reading.ToMsgPackPO())
+		po := NewInfoPayloadObject(
+			point.temperature,
+			point.relativeHumidity,
+			point.heatingSetpoint,
+			point.coolingSetpoint,
+			point.override,
+			point.fan,
+			point.mode,
+			point.state,
+			time.Now().UnixNano())
+		iface.PublishSignal("info", po)
 	}
 }
