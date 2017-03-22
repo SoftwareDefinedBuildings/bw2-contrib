@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/immesys/spawnpoint/spawnable"
 	bw2 "gopkg.in/immesys/bw2bind.v5"
-	"os"
+	"strconv"
 	"time"
 )
 
@@ -53,18 +53,11 @@ func main() {
 	v := NewVthermostat(poll_interval)
 
 	csvChan := make(chan CSVPoint, 10)
-	csvFile, err := os.Create("vthermostat.csv")
-	if err == nil {
-		go func() {
-			fmt.Println("receiving")
-			for point := range csvChan {
-				line := fmt.Sprint(point.time, ",", point.temperature, ",")
-				csvFile.Write([]byte(line))
-			}
-		}()
-	} else {
-		fmt.Println(err)
-	}
+	go func() {
+		for point := range csvChan {
+			fmt.Println(strconv.FormatInt(point.time, 10) + ",", strconv.FormatFloat(point.temperature, 'f', -1, 64) + ",")
+		}
+	}()
 
 	iface.SubscribeSlot("setpoints", func(msg *bw2.SimpleMessage) {
 		po := msg.GetOnePODF(PONUM)
