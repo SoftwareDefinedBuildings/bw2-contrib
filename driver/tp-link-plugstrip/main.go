@@ -11,7 +11,10 @@ import (
 	bw2 "gopkg.in/immesys/bw2bind.v5"
 )
 
-const NAMESPACE_UUID_STR = "d8b61708-2797-11e6-836b-0cc47a0f7eea"
+const (
+	NAMESPACE_UUID_STR = "d8b61708-2797-11e6-836b-0cc47a0f7eea"
+	PONUM = "2.1.1.2"
+)
 
 type TimeSeriesReading struct {
 	UUID  string
@@ -26,6 +29,17 @@ func (tsr *TimeSeriesReading) ToMsgPackPO() bw2.PayloadObject {
 	} else {
 		return po
 	}
+}
+
+func NewInfoPO(time int64, state bool) bw2.PayloadObject {
+	msg := map[string]interface{}{
+		"time": time,
+		"state": state}
+	po, err := bw2.CreateMsgPackPayloadObject(bw2.FromDotForm(PONUM), msg)
+	if err != nil {
+		panic(err)
+	}
+	return po
 }
 
 func main() {
@@ -78,6 +92,31 @@ func main() {
 		}
 	})
 
+	xbosIface := svc.RegisterInterface("relay", "i.xbos.plug")
+	xbosIface.SubscribeSlot("state", func(msg *bw2.SimpleMessage) {
+		po := msg.GetOnePODF(PONUM)
+		if po == nil {
+			fmt.Println("Received actuation command without valid PO, dropping")
+			return
+		}
+
+		msgpo, err := bw2.LoadMsgPackPayloadObject(po.GetPONum(), po.GetContents())
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		var data map[string]interface{}
+
+		err = msgpo.ValueInto(&data)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		state := data["state"].(bool)
+		ps.SetRelayState(state)
+	})
+
 	if ps.HasPowerStats() {
 		go func() {
 			intervalStr := params.MustString("poll_interval")
@@ -107,6 +146,9 @@ func main() {
 				relayIface.PublishSignal("voltage", voltageMsg.ToMsgPackPO())
 				powerMsg := TimeSeriesReading{UUID: powerUUID, Time: timestamp, Value: stats.Power}
 				relayIface.PublishSignal("power", powerMsg.ToMsgPackPO())
+
+				xbosPO := NewInfoPO(timestamp, ps.GetState())
+				xbosIface.PublishSignal("info", xbosPO)
 
 				time.Sleep(pollInterval)
 			}

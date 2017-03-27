@@ -25,6 +25,24 @@ func (ir *InfoResponse) ToMsgPackPO() bw2.PayloadObject {
 	return po
 }
 
+func NewXbosInfoPO(time int64, temp float64, relHumidity float64, heatingSetpoint float64, coolingSetpoint float64, override bool, fan bool, mode int, state int) (bw2.PayloadObject) {
+	msg := map[string]interface{}{
+		"temperature": temp, 
+		"relative_humidity": relHumidity, 
+		"heating_setpoint": heatingSetpoint, 
+		"cooling_setpoint": coolingSetpoint, 
+		"override": override, 
+		"fan": fan, 
+		"mode": mode, 
+		"state": state, 
+		"time": time}
+	po, err := bw2.CreateMsgPackPayloadObject(bw2.FromDotForm(PONUM), msg)
+	if err != nil {
+		panic(err)
+	}
+	return po
+}
+
 type Driver struct {
 	bwc            *bw2.BW2Client
 	r              DiscoveryRecord
@@ -213,24 +231,6 @@ func (d *Driver) Control(sm *bw2.SimpleMessage) {
 			}
 		}
 	}
-}
-
-func NewXbosInfoPO(time int64, temp float64, relHumidity float64, heatingSetpoint float64, coolingSetpoint float64, override bool, fan bool, mode int, state int) (bw2.PayloadObject) {
-	msg := map[string]interface{}{
-		"temperature": temp, 
-		"relative_humidity": relHumidity, 
-		"heating_setpoint": heatingSetpoint, 
-		"cooling_setpoint": coolingSetpoint, 
-		"override": override, 
-		"fan": fan, 
-		"mode": mode, 
-		"state": state, 
-		"time": time}
-	po, err := bw2.CreateMsgPackPayloadObject(bw2.FromDotForm(PONUM), msg)
-	if err != nil {
-		panic(err)
-	}
-	return po
 }
 
 func (d *Driver) Scrape() {
