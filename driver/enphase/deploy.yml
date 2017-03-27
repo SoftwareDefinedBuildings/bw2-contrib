@@ -1,9 +1,8 @@
-alpha:
-  enphase_driver:
-    entity: /home/jack/bosswave/keys/jackDev.ent
-    container: immesys/spawnpoint:amd64
-    build: [go get github.com/SoftwareDefinedBuildings/bw2-contrib/driver/enphase]
-    run: [enphase]
-    memAlloc: 512M
-    cpuShares: 512
-    autoRestart: false
+entity: enphase.ent
+container: jhkolb/spawnpoint:amd64
+build: [go get github.com/SoftwareDefinedBuildings/bw2-contrib/driver/enphase]
+run: [enphase]
+memAlloc: 512M
+cpuShares: 512
+autoRestart: false
+includedFiles: [params.yml]

@@ -4,14 +4,15 @@ URL: http://<your ip:port here>/api/LiveData.xml
 extract: 
     - MTU1
     - MTU2
-poll_interval: 5s
+name: main
+poll_interval: 1s
 metadata:
     s.TED:
-        SourceName: "TED Test"
+        SourceName: "TED Main"
     s.TED/MTU1:
-        Kind: Supply
-    s.TED/MTU2:
         Kind: Load
+    s.TED/MTU2:
+        Kind: Supply
     s.TED/MTU1/i.meter/signal/Voltage:
         UnitofMeasure: V
     s.TED/MTU1/i.meter/signal/PowerNow:
@@ -25,3 +26,4 @@ metadata:
         UnitofMeasure: kW
     s.TED/MTU2/i.meter/signal/KVA:
         UnitofMeasure: kVA
+

@@ -1,43 +1,55 @@
-Prefix: gabe.pantry/services
+Prefix: <Your Prefix Here>
 Archive:
-  - URI: s.TED/MTU1/i.meter/signal/Voltage
+  - AttachURI: devices
+    ArchiveURI: devices/tedmain/s.TED/MTU1/i.meter/signal/Voltage
     Value: Value
+    Name: Voltage
     MetadataURIs:
-    - s.TED
-    - s.TED/MTU1/i.meter
-    - s.TED/MTU1/i.meter/signal/Voltage
+    - devices/tedmain/s.TED
+    - devices/tedmain/s.TED/MTU1/i.meter
+    - devices/tedmain/s.TED/MTU1/i.meter/signal/Voltage
 
-  - URI: s.TED/MTU1/i.meter/signal/PowerNow
+  - AttachURI: devices
+    ArchiveURI: devices/tedmain/s.TED/MTU1/i.meter/signal/PowerNow
     Value: Value
+    Name: PowerNow
     MetadataURIs:
-    - s.TED
-    - s.TED/MTU1/i.meter
-    - s.TED/MTU1/i.meter/signal/PowerNow
+    - devices/tedmain/s.TED
+    - devices/tedmain/s.TED/MTU1/i.meter
+    - devices/tedmain/s.TED/MTU1/i.meter/signal/PowerNow
 
-  - URI: s.TED/MTU1/i.meter/signal/KVA
+  - AttachURI: devices
+    ArchiveURI: devices/tedmain/s.TED/MTU1/i.meter/signal/KVA
     Value: Value
+    Name: KVA
     MetadataURIs:
-    - s.TED
-    - s.TED/MTU1/i.meter
-    - s.TED/MTU1/i.meter/signal/KVA
+    - devices/tedmain/s.TED
+    - devices/tedmain/s.TED/MTU1/i.meter
+    - devices/tedmain/s.TED/MTU1/i.meter/signal/KVA
 
-  - URI: s.TED/MTU2/i.meter/signal/Voltage
+  - AttachURI: devices
+    ArchiveURI: devices/tedmain/s.TED/MTU2/i.meter/signal/Voltage
     Value: Value
+    Name: Voltage
     MetadataURIs:
-    - s.TED
-    - s.TED/MTU1/i.meter
-    - s.TED/MTU2/i.meter/signal/Voltage
+    - devices/tedmain/s.TED
+    - devices/tedmain/s.TED/MTU1/i.meter
+    - devices/tedmain/s.TED/MTU2/i.meter/signal/Voltage
 
-  - URI: s.TED/MTU2/i.meter/signal/PowerNow
+  - AttachURI: devices
+    ArchiveURI: devices/tedmain/s.TED/MTU2/i.meter/signal/PowerNow
     Value: Value
+    Name: PowerNow
     MetadataURIs:
-    - s.TED
-    - s.TED/MTU1/i.meter
-    - s.TED/MTU2/i.meter/signal/PowerNow
+    - devices/tedmain/s.TED
+    - devices/tedmain/s.TED/MTU1/i.meter
+    - devices/tedmain/s.TED/MTU2/i.meter/signal/PowerNow
 
-  - URI: s.TED/MTU2/i.meter/signal/KVA
+  - AttachURI: devices
+    ArchiveURI: devices/tedmain/s.TED/MTU2/i.meter/signal/KVA
     Value: Value
+    Name: KVA
     MetadataURIs:
-    - s.TED
-    - s.TED/MTU1/i.meter
-    - s.TED/MTU2/i.meter/signal/KVA
+    - devices/tedmain/s.TED
+    - devices/tedmain/s.TED/MTU1/i.meter
+    - devices/tedmain/s.TED/MTU2/i.meter/signal/KVA

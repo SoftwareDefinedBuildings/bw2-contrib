@@ -22,26 +22,26 @@ type WeatherData struct {
 }
 
 type WeatherUndergroundSource struct {
-	key  string
-	city string
-	URL  string
-	rate time.Duration
-	data chan WeatherData
-	req  *gorequest.SuperAgent
+	key      string
+	location string
+	URL      string
+	rate     time.Duration
+	data     chan WeatherData
+	req      *gorequest.SuperAgent
 }
 
-func NewWeatherUndergroundSource(key, city string, rate string) *WeatherUndergroundSource {
+func NewWeatherUndergroundSource(key, location string, rate string) *WeatherUndergroundSource {
 	dur, err := time.ParseDuration(rate)
 	if err != nil {
 		panic(err)
 	}
 	return &WeatherUndergroundSource{
-		key:  key,
-		city: city,
-		URL:  fmt.Sprintf("http://api.wunderground.com/api/%s/conditions/q/CA/%s.json", key, city),
-		rate: dur,
-		data: make(chan WeatherData),
-		req:  gorequest.New(),
+		key:      key,
+		location: location,
+		URL:      fmt.Sprintf("http://api.wunderground.com/api/%s/conditions/q/%s.json", key, location),
+		rate:     dur,
+		data:     make(chan WeatherData),
+		req:      gorequest.New(),
 	}
 }
 
