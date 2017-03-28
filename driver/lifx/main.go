@@ -17,11 +17,13 @@ var lid string
 const minInterval = 1 * time.Second
 const maxInterval = 30 * time.Minute
 const adjustTime = 10 * time.Second
+const PONUM = "2.1.1.1"
 
 var resetTime time.Time
 var interval time.Duration
 var preempt chan struct{}
 var ifc *bw.Interface
+var xbosIfc *bw.Interface
 
 func main() {
 	cl := bw.ConnectOrExit("")
@@ -38,8 +40,10 @@ func main() {
 
 	svc := cl.RegisterService(uri, "s.lifx")
 	ifc = svc.RegisterInterface("0", "i.hsb-light")
+	xbosIfc = svc.RegisterInterface("0", "i.xbos.light")
 
 	ifc.SubscribeSlot("hsb", dispatch)
+	xbosIfc.SubscribeSlot("state", xbosDispatch)
 	for {
 		select {
 		case <-preempt:
@@ -63,6 +67,18 @@ type State struct {
 	}
 	Brightness float64
 	Power      string
+}
+
+func NewInfoPO(time int64, state bool, brightness int) bw.PayloadObject {
+	msg := map[string]interface{}{
+		"time": time,
+		"state": state,
+		"brightness": brightness}
+	po, err := bw.CreateMsgPackPayloadObject(bw.FromDotForm(PONUM), msg)
+	if err != nil {
+		panic(err)
+	}
+	return po
 }
 
 var lastHue float64
@@ -106,6 +122,16 @@ func updateColor() {
 	if err != nil {
 		panic(err)
 	}
+
+	timestamp := time.Now().UnixNano()
+	state := cs[0].Power == "on"
+	brightness := int(cs[0].Brightness)
+	xbosPO := NewInfoPO(timestamp, state, brightness)
+	err = xbosIfc.PublishSignal("info", xbosPO)
+	if err != nil {
+		panic(err)
+	}
+
 	if lastHue != cs[0].Color.Hue ||
 		lastSat != cs[0].Color.Saturation ||
 		lastBrightness != cs[0].Brightness {
@@ -141,6 +167,51 @@ func dispatch(m *bw.SimpleMessage) {
 		clamp(&sat)
 		colorstr += fmt.Sprintf("saturation:%.3f ", sat)
 	}
+	if hasbri {
+		clamp(&bri)
+		colorstr += fmt.Sprintf("brightness:%.3f ", bri)
+	}
+	if hassta && !sta {
+		pstr = "off"
+	}
+
+	if colorstr != "" {
+		colorstr = ",\"color\":\"" + colorstr + "\""
+	}
+	msg := fmt.Sprintf("{\"power\":\"%s\",\"duration\":0.1%s}", pstr, colorstr)
+
+	fmt.Println(spawnable.DoHttpPutStr(fmt.Sprintf("https://api.lifx.com/v1/lights/%s/state", lid),
+		msg, []string{"Content-Type", `application/json`,
+			"Authorization", "Bearer " + btok}))
+	time.Sleep(50 * time.Millisecond)
+	preempt <- struct{}{}
+}
+
+func xbosDispatch(m *bw.SimpleMessage) {
+	po := m.GetOnePODF(PONUM)
+	if po == nil {
+		fmt.Println("Received actuation command without valid PO, dropping")
+		return
+	}
+
+	msgpo, err := bw.LoadMsgPackPayloadObject(po.GetPONum(), po.GetContents())
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	var data map[string]interface{}
+	err = msgpo.ValueInto(&data)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	bri, hasbri := data["brightness"].(float64)
+	sta, hassta := data["state"].(bool)
+
+	colorstr := ""
+	pstr := "on"
 	if hasbri {
 		clamp(&bri)
 		colorstr += fmt.Sprintf("brightness:%.3f ", bri)
