@@ -22,7 +22,7 @@ const TP_LINK_KEY_INIT = 171
 type Plugstrip struct {
 	address string
 	model   string
-	state bool
+	state   bool
 }
 
 type PowerStats struct {

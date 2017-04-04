@@ -14,7 +14,7 @@ import (
 
 const (
 	NAMESPACE_UUID = `d8b61708-2797-11e6-836b-0cc47a0f7eea`
-	PONUM = "2.1.1.0"
+	PONUM          = "2.1.1.0"
 )
 
 func (ir *InfoResponse) ToMsgPackPO() bw2.PayloadObject {
@@ -25,17 +25,17 @@ func (ir *InfoResponse) ToMsgPackPO() bw2.PayloadObject {
 	return po
 }
 
-func NewXbosInfoPO(time int64, temp float64, relHumidity float64, heatingSetpoint float64, coolingSetpoint float64, override bool, fan bool, mode int, state int) (bw2.PayloadObject) {
+func NewXbosInfoPO(time int64, temp float64, relHumidity float64, heatingSetpoint float64, coolingSetpoint float64, override bool, fan bool, mode int, state int) bw2.PayloadObject {
 	msg := map[string]interface{}{
-		"temperature": temp, 
-		"relative_humidity": relHumidity, 
-		"heating_setpoint": heatingSetpoint, 
-		"cooling_setpoint": coolingSetpoint, 
-		"override": override, 
-		"fan": fan, 
-		"mode": mode, 
-		"state": state, 
-		"time": time}
+		"temperature":       temp,
+		"relative_humidity": relHumidity,
+		"heating_setpoint":  heatingSetpoint,
+		"cooling_setpoint":  coolingSetpoint,
+		"override":          override,
+		"fan":               fan,
+		"mode":              mode,
+		"state":             state,
+		"time":              time}
 	po, err := bw2.CreateMsgPackPayloadObject(bw2.FromDotForm(PONUM), msg)
 	if err != nil {
 		panic(err)
@@ -50,11 +50,11 @@ type Driver struct {
 	base           string
 	svc            *bw2.Service
 	iface          *bw2.Interface
-	xbos_iface	   *bw2.Interface
+	xbos_iface     *bw2.Interface
 	lastheat       float64
 	lastcool       float64
-	override 	   bool
-	fan 		   bool
+	override       bool
+	fan            bool
 	timeseriesUUID string
 }
 
@@ -107,11 +107,11 @@ func (d *Driver) Start() {
 		cool := data["cooling_setpoint"].(float64)
 		d.SetSetpoints(
 			nil,
-			&heat, 
+			&heat,
 			&cool)
 	})
 
-	d.xbos_iface.SubscribeSlot("state", func (msg *bw2.SimpleMessage) {
+	d.xbos_iface.SubscribeSlot("state", func(msg *bw2.SimpleMessage) {
 		fmt.Println("got message from slot state:")
 		msg.Dump()
 		cm := make(map[string]interface{})
@@ -139,8 +139,8 @@ func (d *Driver) Start() {
 		heat := data["heating_setpoint"].(float64)
 		cool := data["cooling_setpoint"].(float64)
 		d.SetSetpoints(
-			&mode, 
-			&heat, 
+			&mode,
+			&heat,
 			&cool)
 		d.override = data["override"].(bool)
 		d.fan = data["fan"].(bool)

@@ -71,8 +71,8 @@ type State struct {
 
 func NewInfoPO(time int64, state bool, brightness int) bw.PayloadObject {
 	msg := map[string]interface{}{
-		"time": time,
-		"state": state,
+		"time":       time,
+		"state":      state,
 		"brightness": brightness}
 	po, err := bw.CreateMsgPackPayloadObject(bw.FromDotForm(PONUM), msg)
 	if err != nil {

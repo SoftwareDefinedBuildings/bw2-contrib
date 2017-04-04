@@ -13,7 +13,7 @@ import (
 
 const (
 	NAMESPACE_UUID_STR = "d8b61708-2797-11e6-836b-0cc47a0f7eea"
-	PONUM = "2.1.1.2"
+	PONUM              = "2.1.1.2"
 )
 
 type TimeSeriesReading struct {
@@ -33,7 +33,7 @@ func (tsr *TimeSeriesReading) ToMsgPackPO() bw2.PayloadObject {
 
 func NewInfoPO(time int64, state bool) bw2.PayloadObject {
 	msg := map[string]interface{}{
-		"time": time,
+		"time":  time,
 		"state": state}
 	po, err := bw2.CreateMsgPackPayloadObject(bw2.FromDotForm(PONUM), msg)
 	if err != nil {

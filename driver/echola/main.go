@@ -32,7 +32,7 @@ func (tsr *TimeSeriesReading) ToMsgPackPO() bw2.PayloadObject {
 
 func NewInfoPO(time int64, state bool) bw2.PayloadObject {
 	msg := map[string]interface{}{
-		"time": time,
+		"time":  time,
 		"state": state}
 	po, err := bw2.CreateMsgPackPayloadObject(bw2.FromDotForm(PONUM), msg)
 	if err != nil {
@@ -170,7 +170,7 @@ func main() {
 			}
 
 			state := false
-			if (plugStatuses[i].Enabled == 1) {
+			if plugStatuses[i].Enabled == 1 {
 				state = true
 			}
 
