@@ -13,21 +13,21 @@ const (
 )
 
 type CSVPoint struct {
-	time int64
+	time        int64
 	temperature float64
 }
 
-func NewInfoPO(time int64, temp float64, relHumidity float64, heatingSetpoint float64, coolingSetpoint float64, override bool, fan bool, mode int, state int) (bw2.PayloadObject) {
+func NewInfoPO(time int64, temp float64, relHumidity float64, heatingSetpoint float64, coolingSetpoint float64, override bool, fan bool, mode int, state int) bw2.PayloadObject {
 	msg := map[string]interface{}{
-		"temperature": temp, 
-		"relative_humidity": relHumidity, 
-		"heating_setpoint": heatingSetpoint, 
-		"cooling_setpoint": coolingSetpoint, 
-		"override": override, 
-		"fan": fan, 
-		"mode": mode, 
-		"state": state, 
-		"time": time}
+		"temperature":       temp,
+		"relative_humidity": relHumidity,
+		"heating_setpoint":  heatingSetpoint,
+		"cooling_setpoint":  coolingSetpoint,
+		"override":          override,
+		"fan":               fan,
+		"mode":              mode,
+		"state":             state,
+		"time":              time}
 	po, err := bw2.CreateMsgPackPayloadObject(bw2.FromDotForm(PONUM), msg)
 	if err != nil {
 		panic(err)
@@ -55,7 +55,7 @@ func main() {
 	csvChan := make(chan CSVPoint, 10)
 	go func() {
 		for point := range csvChan {
-			fmt.Println(strconv.FormatInt(point.time, 10) + ",", strconv.FormatFloat(point.temperature, 'f', -1, 64) + ",")
+			fmt.Println(strconv.FormatInt(point.time, 10)+",", strconv.FormatFloat(point.temperature, 'f', -1, 64)+",")
 		}
 	}()
 
@@ -124,9 +124,9 @@ func main() {
 			point.mode,
 			point.state)
 		iface.PublishSignal("info", po)
-		
-		csvData := CSVPoint {
-			time: timestamp,
+
+		csvData := CSVPoint{
+			time:        timestamp,
 			temperature: point.temperature,
 		}
 
