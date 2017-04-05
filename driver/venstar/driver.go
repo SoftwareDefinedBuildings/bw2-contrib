@@ -234,10 +234,15 @@ func (d *Driver) Control(sm *bw2.SimpleMessage) {
 
 func (d *Driver) Scrape() {
 	resp, err := http.Get("http://" + d.r.IP + "/query/info")
-	contents, _ := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		panic(err)
 	}
+
+	contents, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		panic(err)
+	}
+
 	resp.Body.Close()
 	inf := InfoResponse{}
 	json.Unmarshal(contents, &inf)
