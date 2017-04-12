@@ -9,12 +9,13 @@ import (
 	"github.com/parnurzeal/gorequest"
 )
 
-var modeMappings = map[string]int32{
+var modeNameMappings = map[string]int32{
 	"Off":  0,
 	"Heat": 1,
 	"Cool": 2,
 	"Auto": 3,
 }
+var modeValMappings = []string{"Off", "Heat", "Cool", "Auto"}
 
 var stateMappings = map[string]int32{
 	"Off":         0,
@@ -25,13 +26,12 @@ var stateMappings = map[string]int32{
 }
 
 // TODO Support case where the thermostat is configured to use Celsius
-// TODO Add actuation capabilities
 
 type Pelican struct {
 	username string
 	password string
 	name     string
-	sitename string
+	target   string
 	req      *gorequest.SuperAgent
 }
 
@@ -68,19 +68,26 @@ type apiThermostat struct {
 	RunStatus       string  `xml:"runStatus"`
 }
 
+type pelicanStateParams struct {
+	HeatingSetpoint float64
+	CoolingSetpoint float64
+	Override        bool
+	Mode            int32
+	Fan             bool
+}
+
 func NewPelican(username, password, sitename, name string) *Pelican {
 	return &Pelican{
 		username: username,
 		password: password,
-		sitename: sitename,
+		target:   fmt.Sprintf("https://%s.officeclimatecontrol.net/api.cgi", sitename),
 		name:     name,
 		req:      gorequest.New(),
 	}
 }
 
 func (pel *Pelican) GetStatus() (*PelicanStatus, error) {
-	dest := fmt.Sprintf("https://%s.officeclimatecontrol.net/api.cgi", pel.sitename)
-	resp, _, errs := pel.req.Get(dest).
+	resp, _, errs := pel.req.Get(pel.target).
 		Param("username", pel.username).
 		Param("password", pel.password).
 		Param("request", "get").
@@ -129,8 +136,81 @@ func (pel *Pelican) GetStatus() (*PelicanStatus, error) {
 		CoolingSetpoint: float64(thermostat.CoolingSetpoint),
 		Override:        thermostat.SetBy != "Schedule",
 		Fan:             fanState,
-		Mode:            modeMappings[thermostat.System],
+		Mode:            modeNameMappings[thermostat.System],
 		State:           thermState,
 		Time:            time.Now().UnixNano(),
 	}, nil
+}
+
+func (pel *Pelican) ModifySetpoints(heatingSetpoint, coolingSetpoint float64) error {
+	resp, _, errs := pel.req.Get(pel.target).
+		Param("username", pel.username).
+		Param("password", pel.password).
+		Param("request", "set").
+		Param("object", "thermostat").
+		Param("selection", fmt.Sprintf("name:%s;", pel.name)).
+		Param("value", fmt.Sprintf("heatSetting:%d;coolSetting:%d;", int(heatingSetpoint), int(coolingSetpoint))).
+		End()
+	if errs != nil {
+		return fmt.Errorf("Error modifying thermostat temp settings: %v", errs)
+	}
+
+	defer resp.Body.Close()
+	var response apiResponse
+	dec := xml.NewDecoder(resp.Body)
+	if err := dec.Decode(&response); err != nil {
+		return fmt.Errorf("Failed to decode response XML: %v", err)
+	}
+	result := response.Result
+	if result.Success == 0 {
+		return fmt.Errorf("Error modifying thermostat temp settings: %v", result.Message)
+	}
+
+	return nil
+}
+
+func (pel *Pelican) ModifyState(params *pelicanStateParams) error {
+	if params.Mode < 0 || params.Mode > 3 {
+		return fmt.Errorf("Specified thermostat mode %d is invalid", params.Mode)
+	}
+
+	var scheduleVal string
+	if params.Override {
+		scheduleVal = "Off"
+	} else {
+		scheduleVal = "On"
+	}
+	systemVal := modeValMappings[params.Mode]
+	var fanVal string
+	if params.Fan {
+		fanVal = "On"
+	} else {
+		fanVal = "Auto"
+	}
+
+	resp, _, errs := pel.req.Get(pel.target).
+		Param("username", pel.username).
+		Param("password", pel.password).
+		Param("request", "set").
+		Param("object", "thermostat").
+		Param("selection", fmt.Sprintf("name:%s;", pel.name)).
+		Param("value", fmt.Sprintf("heatSetting:%d;coolSetting:%d;schedule:%s;system:%s;fan:%s;",
+			int(params.HeatingSetpoint), int(params.CoolingSetpoint), scheduleVal, systemVal, fanVal)).
+		End()
+	if errs != nil {
+		return fmt.Errorf("Error modifying thermostat state: %v", errs)
+	}
+
+	defer resp.Body.Close()
+	var response apiResponse
+	dec := xml.NewDecoder(resp.Body)
+	if err := dec.Decode(&response); err != nil {
+		return fmt.Errorf("Failed to decode response XML: %v", err)
+	}
+	result := response.Result
+	if result.Success == 0 {
+		return fmt.Errorf("Error modifying thermostat state: %s", result.Message)
+	}
+
+	return nil
 }
