@@ -6,41 +6,41 @@ import (
 )
 
 const (
-	BASE_TEMP = 78
-	BASE_HSETPOINT = 60
-	BASE_CSETPOINT = 90
-	BASE_MODE = 3
-	E = 0.1
-	FLUX = 10
+	BASE_TEMP          = 78
+	BASE_HSETPOINT     = 60
+	BASE_CSETPOINT     = 90
+	BASE_MODE          = 3
+	E                  = 0.1
+	FLUX               = 10
 	THERMAL_RESISTANCE = 0.1
 
-	DEW_POINT = 50.0
+	DEW_POINT      = 50.0
 	REL_HUMIDITY_A = 5.656854249
 	REL_HUMIDITY_B = 0.9659363289
 )
 
 type Vthermostat struct {
-	data chan Point
-	rate time.Duration
-	temperature float64
+	data             chan Point
+	rate             time.Duration
+	temperature      float64
 	relativeHumidity float64
-	heatingSetpoint float64
-	coolingSetpoint float64
-	override bool
-	fan bool
-	mode int
-	state int
+	heatingSetpoint  float64
+	coolingSetpoint  float64
+	override         bool
+	fan              bool
+	mode             int
+	state            int
 }
 
 type Point struct {
-	temperature float64
+	temperature      float64
 	relativeHumidity float64
-	heatingSetpoint float64
-	coolingSetpoint float64
-	override bool
-	fan bool
-	mode int
-	state int
+	heatingSetpoint  float64
+	coolingSetpoint  float64
+	override         bool
+	fan              bool
+	mode             int
+	state            int
 }
 
 func NewVthermostat(rate string) *Vthermostat {
@@ -50,16 +50,16 @@ func NewVthermostat(rate string) *Vthermostat {
 	}
 
 	return &Vthermostat{
-		data: make(chan Point),
-		rate: dur,
-		temperature: BASE_TEMP,
+		data:             make(chan Point),
+		rate:             dur,
+		temperature:      BASE_TEMP,
 		relativeHumidity: 0.0,
-		heatingSetpoint: BASE_HSETPOINT,
-		coolingSetpoint: BASE_CSETPOINT,
-		override: false,
-		fan: false,
-		mode: BASE_MODE,
-		state: BASE_MODE,
+		heatingSetpoint:  BASE_HSETPOINT,
+		coolingSetpoint:  BASE_CSETPOINT,
+		override:         false,
+		fan:              false,
+		mode:             BASE_MODE,
+		state:            BASE_MODE,
 	}
 }
 
@@ -100,7 +100,7 @@ func (v *Vthermostat) setState(cooling int, heating int) {
 func (v *Vthermostat) generateOutsideAirTemp() float64 {
 	currentTime := time.Now()
 	currentTimeSeconds := float64((currentTime.Hour() * 3600) + (currentTime.Minute() * 60) + currentTime.Second())
-	temp := BASE_TEMP + (FLUX * math.Sin(0.01 * currentTimeSeconds))
+	temp := BASE_TEMP + (FLUX * math.Sin(0.01*currentTimeSeconds))
 	return temp
 }
 
@@ -125,14 +125,14 @@ func (v *Vthermostat) evalTempCondition() (cooling int, heating int) {
 	}
 
 	switch v.mode {
-		case 0:
-			cooling, heating = 0, 0
-		case 1:
-			cooling = 0
-		case 2:
-			heating = 0
-		case 3:
-			break
+	case 0:
+		cooling, heating = 0, 0
+	case 1:
+		cooling = 0
+	case 2:
+		heating = 0
+	case 3:
+		break
 	}
 	return
 }
@@ -156,14 +156,14 @@ func (v *Vthermostat) run() Point {
 }
 
 func (v *Vthermostat) getPoint() Point {
-	return Point {
-		temperature: v.temperature,
+	return Point{
+		temperature:      v.temperature,
 		relativeHumidity: v.relativeHumidity,
-		heatingSetpoint: v.heatingSetpoint,
-		coolingSetpoint: v.coolingSetpoint,
-		override: v.override,
-		fan: v.fan,
-		mode: v.mode,
-		state: v.state,
+		heatingSetpoint:  v.heatingSetpoint,
+		coolingSetpoint:  v.coolingSetpoint,
+		override:         v.override,
+		fan:              v.fan,
+		mode:             v.mode,
+		state:            v.state,
 	}
 }
