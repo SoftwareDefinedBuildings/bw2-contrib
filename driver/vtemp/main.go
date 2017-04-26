@@ -10,13 +10,11 @@ const (
 	PONUM = "2.1.2.0"
 )
 
-type Reading struct {
-	Time int64
-	Temperature float64
-}
-
-func (r *Reading) ToMsgPackPO() bw2.PayloadObject {
-	po, err := bw2.CreateMsgPackPayloadObject(bw2.FromDotForm(PONUM), r)
+func NewInfoPO(time int64, temp float64) bw2.PayloadObject {
+	msg := map[string]interface{}{
+		"time": time,
+		"temperature": temp}
+	po, err := bw2.CreateMsgPackPayloadObject(bw2.FromDotForm(PONUM), msg)
 	if err != nil {
 		panic(err)
 	}
@@ -41,10 +39,9 @@ func main() {
 	v := NewVtemp(poll_interval)
 	data := v.Start()
 	for point := range data {
-		reading := Reading {
-			Time: time.Now().UnixNano(),
-			Temperature: point,
-		}
-		iface.PublishSignal("info", reading.ToMsgPackPO())
+		po := NewInfoPO(
+			time.Now().UnixNano(),
+			point)
+		iface.PublishSignal("info", po)
 	}
 }

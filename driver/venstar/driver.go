@@ -12,10 +12,31 @@ import (
 	bw2 "gopkg.in/immesys/bw2bind.v5"
 )
 
-const NAMESPACE_UUID = `d8b61708-2797-11e6-836b-0cc47a0f7eea`
+const (
+	NAMESPACE_UUID = `d8b61708-2797-11e6-836b-0cc47a0f7eea`
+	PONUM          = "2.1.1.0"
+)
 
 func (ir *InfoResponse) ToMsgPackPO() bw2.PayloadObject {
 	po, err := bw2.CreateMsgPackPayloadObject(bw2.PONumTimeseriesReading, ir)
+	if err != nil {
+		panic(err)
+	}
+	return po
+}
+
+func NewXbosInfoPO(time int64, temp float64, relHumidity float64, heatingSetpoint float64, coolingSetpoint float64, override bool, fan bool, mode int, state int) bw2.PayloadObject {
+	msg := map[string]interface{}{
+		"temperature":       temp,
+		"relative_humidity": relHumidity,
+		"heating_setpoint":  heatingSetpoint,
+		"cooling_setpoint":  coolingSetpoint,
+		"override":          override,
+		"fan":               fan,
+		"mode":              mode,
+		"state":             state,
+		"time":              time}
+	po, err := bw2.CreateMsgPackPayloadObject(bw2.FromDotForm(PONUM), msg)
 	if err != nil {
 		panic(err)
 	}
@@ -29,8 +50,11 @@ type Driver struct {
 	base           string
 	svc            *bw2.Service
 	iface          *bw2.Interface
+	xbos_iface     *bw2.Interface
 	lastheat       float64
 	lastcool       float64
+	override       bool
+	fan            bool
 	timeseriesUUID string
 }
 
@@ -53,6 +77,75 @@ func (d *Driver) Start() {
 	}()
 	d.iface = d.svc.RegisterInterface(d.r.Name, "i.venstar")
 	d.iface.SubscribeSlot("control", d.Control)
+
+	d.xbos_iface = d.svc.RegisterInterface(d.r.Name, "i.xbos.thermostat")
+	d.xbos_iface.SubscribeSlot("setpoints", func(msg *bw2.SimpleMessage) {
+		fmt.Println("got message from slot setpoints:")
+		msg.Dump()
+		cm := make(map[string]interface{})
+
+		po := msg.GetOnePODF(PONUM)
+		if po == nil {
+			fmt.Println("Received actuation command without valid PO, dropping")
+			return
+		}
+
+		msgpo, err := bw2.LoadMsgPackPayloadObject(po.GetPONum(), po.GetContents())
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		var data map[string]interface{}
+		err = msgpo.ValueInto(&data)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		heat := data["heating_setpoint"].(float64)
+		cool := data["cooling_setpoint"].(float64)
+		d.SetSetpoints(
+			nil,
+			&heat,
+			&cool)
+	})
+
+	d.xbos_iface.SubscribeSlot("state", func(msg *bw2.SimpleMessage) {
+		fmt.Println("got message from slot state:")
+		msg.Dump()
+		cm := make(map[string]interface{})
+
+		po := msg.GetOnePODF(PONUM)
+		if po == nil {
+			fmt.Println("Received actuation command without valid PO, dropping")
+			return
+		}
+
+		msgpo, err := bw2.LoadMsgPackPayloadObject(po.GetPONum(), po.GetContents())
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		var data map[string]interface{}
+		err = msgpo.ValueInto(&data)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		mode := int(data["mode"].(uint64))
+		heat := data["heating_setpoint"].(float64)
+		cool := data["cooling_setpoint"].(float64)
+		d.SetSetpoints(
+			&mode,
+			&heat,
+			&cool)
+		d.override = data["override"].(bool)
+		d.fan = data["fan"].(bool)
+	})
+
 	for {
 
 		d.Scrape()
@@ -154,6 +247,17 @@ func (d *Driver) Scrape() {
 	po := inf.ToMsgPackPO()
 
 	d.iface.PublishSignal("info", po)
+	xbosPO := NewXbosInfoPO(
+		inf.Time,
+		inf.SpaceTemp,
+		0.0,
+		inf.HeatTemp,
+		inf.CoolTemp,
+		d.override,
+		d.fan,
+		inf.Mode,
+		inf.State)
+	d.xbos_iface.PublishSignal("info", xbosPO)
 	d.lastheat = inf.HeatTemp
 	d.lastcool = inf.CoolTemp
 }
