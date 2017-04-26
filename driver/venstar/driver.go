@@ -82,7 +82,6 @@ func (d *Driver) Start() {
 	d.xbos_iface.SubscribeSlot("setpoints", func(msg *bw2.SimpleMessage) {
 		fmt.Println("got message from slot setpoints:")
 		msg.Dump()
-		cm := make(map[string]interface{})
 
 		po := msg.GetOnePODF(PONUM)
 		if po == nil {
@@ -114,7 +113,6 @@ func (d *Driver) Start() {
 	d.xbos_iface.SubscribeSlot("state", func(msg *bw2.SimpleMessage) {
 		fmt.Println("got message from slot state:")
 		msg.Dump()
-		cm := make(map[string]interface{})
 
 		po := msg.GetOnePODF(PONUM)
 		if po == nil {
