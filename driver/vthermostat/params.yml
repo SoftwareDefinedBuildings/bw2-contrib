@@ -1,0 +1,8 @@
+svc_base_uri: scratch.ns/services
+poll_interval: 10s
+metadata:
+  s.vthermostat:
+    SourceName: "Virtual Thermostat"
+    Device: Thermostat
+  s.vthermostat/vthermostat/i.xbox.thermostat/signal/info:
+    Type: Temperature

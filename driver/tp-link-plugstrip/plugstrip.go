@@ -22,6 +22,7 @@ const TP_LINK_KEY_INIT = 171
 type Plugstrip struct {
 	address string
 	model   string
+	state   bool
 }
 
 type PowerStats struct {
@@ -50,8 +51,10 @@ func (ps *Plugstrip) SetRelayState(on bool) error {
 	var state int
 	if on {
 		state = 1
+		ps.state = true
 	} else {
 		state = 0
+		ps.state = false
 	}
 
 	payload := fmt.Sprintf(`{"system":{"set_relay_state":{"state":%d}}}`, state)
@@ -72,8 +75,10 @@ func (ps *Plugstrip) SetRelayStateDelay(on bool, delay time.Duration) error {
 	var state int
 	if on {
 		state = 1
+		ps.state = true
 	} else {
 		state = 0
+		ps.state = false
 	}
 
 	if err := ps.ClearDelayedAction(); err != nil {
@@ -89,6 +94,10 @@ func (ps *Plugstrip) SetRelayStateDelay(on bool, delay time.Duration) error {
 
 func (ps *Plugstrip) HasPowerStats() bool {
 	return strings.HasPrefix(ps.model, "HS110")
+}
+
+func (ps *Plugstrip) GetState() bool {
+	return ps.state
 }
 
 func (ps *Plugstrip) GetPowerStats() (*PowerStats, error) {
