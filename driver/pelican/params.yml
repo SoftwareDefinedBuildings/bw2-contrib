@@ -1,0 +1,6 @@
+svc_base_uri: <svc base uri>
+username: <pelican username>
+password: <pelican password>
+sitename: <pelican site name>
+name: <thermostat name>
+poll_interval: <status poll interval>
