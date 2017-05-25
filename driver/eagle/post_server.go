@@ -23,9 +23,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gtfierro/spawnpoint/spawnable"
 	"github.com/julienschmidt/httprouter"
 	"github.com/op/go-logging"
 	"golang.org/x/crypto/acme/autocert"
+	bw2 "gopkg.in/immesys/bw2bind.v5"
 )
 
 // logger
@@ -62,13 +64,29 @@ type EagleServer struct {
 	// HTTPS server
 	address string
 	router  *httprouter.Router
+
+	// bosswave
+	bwclient *bw2.BW2Client
+	svc      *bw2.Service
 }
 
 func StartEagleServer(cfg *Config) {
 	server := &EagleServer{
-		eagles: make(map[string]*Eagle),
-		router: httprouter.New(),
+		eagles:   make(map[string]*Eagle),
+		router:   httprouter.New(),
+		bwclient: bw2.ConnectOrExit(""),
 	}
+
+	// config bw2
+	server.bwclient.OverrideAutoChainTo(true)
+	server.bwclient.SetEntityFromEnvironOrExit()
+	params := spawnable.GetParamsOrExit()
+	baseuri := params.MustString("svc_base_uri")
+	params.MergeMetadata(server.bwclient)
+
+	// setup bosswave service
+	server.svc = server.bwclient.RegisterService(baseuri, "s.Eagle")
+	fmt.Println(server.svc.FullURI())
 
 	server.router.POST("/", server.handleData)
 	server.router.GET("/", server.handleHome)
@@ -111,7 +129,10 @@ func (srv *EagleServer) handleData(rw http.ResponseWriter, req *http.Request, ps
 		return
 	}
 	// TODO: have this method return any configuration struct
+	log.Debugf("%+v", resp)
 	srv.HandleMessage(resp)
+	rw.Header().Set("Connection", "close")
+	rw.Write([]byte{'\n', '\n'})
 }
 
 func (srv *EagleServer) handleHome(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
@@ -123,6 +144,7 @@ func (srv *EagleServer) HandleMessage(resp Response) {
 
 	// handle registration of a new eagle
 	if resp.NetworkInfo != nil {
+		log.Info("NETWORK INFO")
 		info := resp.NetworkInfo
 		srv.eagleLock.Lock()
 		defer srv.eagleLock.Unlock()
@@ -130,8 +152,12 @@ func (srv *EagleServer) HandleMessage(resp Response) {
 		var eagle *Eagle
 		var found bool
 
-		if eagle, found = srv.eagles[resp.MacID]; !found {
-			eagle = &Eagle{}
+		// create new eeeaaagleeeee
+		if eagle, found = srv.eagles[info.DeviceMacId]; !found {
+			eagle = &Eagle{
+				iface: srv.svc.RegisterInterface(info.DeviceMacId, "i.meter"),
+			}
+
 		}
 		eagle.DeviceMAC = info.DeviceMacId
 		eagle.InstallCode = info.InstallCode
@@ -142,7 +168,7 @@ func (srv *EagleServer) HandleMessage(resp Response) {
 		eagle.Manufacturer = info.Manufacturer
 		eagle.ModelID = info.ModelID
 		eagle.DateCode = info.DateCode
-		srv.eagles[resp.MacID] = eagle
+		srv.eagles[info.DeviceMacId] = eagle
 
 		if !found {
 			log.Noticef("Registering new Eagle with MAC %s", eagle.DeviceMAC)
@@ -155,21 +181,23 @@ func (srv *EagleServer) HandleMessage(resp Response) {
 
 	// handle meter data
 	if resp.InstantaneousDemand != nil {
+		info := resp.InstantaneousDemand
+		log.Info("INST DEMAND")
 		// update the object with the Meter MAC address
 		// but only if we've seen the Eagle before; else, drop this
 		srv.eagleLock.Lock()
-		defer srv.eagleLock.Unlock()
-		eagle, found := srv.eagles[resp.MacID]
+		eagle, found := srv.eagles[info.DeviceMacId]
+		srv.eagleLock.Unlock()
 		if !found {
+			log.Warning("Got Instantaneous demand for unregistered Eagle")
 			return
 		}
 
 		// adjust the timestamp with the EAGLE Epoch and get the actual kW demand as a float
-		info := resp.InstantaneousDemand
 		info.ActualTimestamp = int64(*info.TimeStamp + HexInt64(EAGLE_EPOCH))
 		info.ActualDemand = float64(*info.Demand) * float64(*info.Multiplier) / float64(*info.Divisor)
 		eagle.MeterMAC = info.MeterMacId
-		srv.eagles[resp.MacID] = eagle
+		srv.eagles[info.DeviceMacId] = eagle
 
 		srv.forwardDemandData(info)
 
@@ -177,32 +205,32 @@ func (srv *EagleServer) HandleMessage(resp Response) {
 	}
 
 	if resp.PriceCluster != nil {
-		log.Debugf("%+v", resp.PriceCluster)
+		log.Debugf("PriceCluster %+v", resp.PriceCluster)
 		return
 	}
 
 	if resp.MessageCluster != nil {
-		log.Debugf("%+v", resp.MessageCluster)
+		log.Debugf("MessageCluster %+v", resp.MessageCluster)
 		return
 	}
 
 	if resp.CurrentSummationDelivered != nil {
 		// update the object with the Meter MAC address
 		// but only if we've seen the Eagle before; else, drop this
+		info := resp.CurrentSummationDelivered
 		srv.eagleLock.Lock()
 		defer srv.eagleLock.Unlock()
-		eagle, found := srv.eagles[resp.MacID]
+		eagle, found := srv.eagles[info.DeviceMacId]
 		if !found {
 			return
 		}
 
-		info := resp.CurrentSummationDelivered
 		info.ActualTimestamp = int64(*info.TimeStamp + HexInt64(EAGLE_EPOCH))
 		info.ActualSummationDelivered = float64(*info.SummationDelivered) * float64(*info.Multiplier) / float64(*info.Divisor)
 		info.ActualSummationReceived = float64(*info.SummationReceived) * float64(*info.Multiplier) / float64(*info.Divisor)
 
 		eagle.MeterMAC = info.MeterMacId
-		srv.eagles[resp.MacID] = eagle
+		srv.eagles[info.DeviceMacId] = eagle
 
 		info.Dump()
 

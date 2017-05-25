@@ -41,6 +41,8 @@ import (
 	"encoding/xml"
 	"fmt"
 	"time"
+
+	bw2 "gopkg.in/immesys/bw2bind.v5"
 )
 
 var EAGLE_EPOCH int64
@@ -52,6 +54,8 @@ func init() {
 
 // Represents an instance of an Eagle
 type Eagle struct {
+	// MAC ID of Eagle
+	MacID string
 	// MAC address of Eagle
 	DeviceMAC string
 	// MAC address of meter
@@ -60,6 +64,8 @@ type Eagle struct {
 	Multiplier int64
 	// type of meter (Electric/Gas/Water/Other)
 	Type string
+	// bosswave publishing interface
+	iface *bw2.Interface
 	NetworkInfo
 }
 
