@@ -17,6 +17,7 @@ import (
 	"crypto/tls"
 	"encoding/xml"
 	"fmt"
+	"math"
 	"net"
 	"net/http"
 	"os"
@@ -194,18 +195,32 @@ func (srv *EagleServer) HandleMessage(resp Response) {
 		}
 
 		// adjust the timestamp with the EAGLE Epoch and get the actual kW demand as a float
-		info.ActualTimestamp = int64(*info.TimeStamp + HexInt64(EAGLE_EPOCH))
-		info.ActualDemand = float64(*info.Demand) * float64(*info.Multiplier) / float64(*info.Divisor)
+		eagle.current_time = int64(*info.TimeStamp + HexInt64(EAGLE_EPOCH))
+		eagle.current_demand = float64(*info.Demand) * float64(*info.Multiplier) / float64(*info.Divisor)
+
 		eagle.MeterMAC = info.MeterMacId
 		srv.eagles[info.DeviceMacId] = eagle
 
-		srv.forwardDemandData(info)
+		srv.forwardData(eagle)
 
 		return
 	}
 
 	if resp.PriceCluster != nil {
-		log.Debugf("PriceCluster %+v", resp.PriceCluster)
+		info := resp.PriceCluster
+		log.Info("PRICE CLUSTER")
+		srv.eagleLock.Lock()
+		eagle, found := srv.eagles[info.DeviceMacId]
+		srv.eagleLock.Unlock()
+		if !found {
+			log.Warning("Got price cluster for unregistered Eagle")
+			return
+		}
+		eagle.current_time = int64(*info.TimeStamp + HexInt64(EAGLE_EPOCH))
+		eagle.current_price = float64(*info.Price) / math.Pow(10, float64(*info.TrailingDigits))
+		srv.eagles[info.DeviceMacId] = eagle
+
+		srv.forwardData(eagle)
 		return
 	}
 
@@ -219,20 +234,21 @@ func (srv *EagleServer) HandleMessage(resp Response) {
 		// but only if we've seen the Eagle before; else, drop this
 		info := resp.CurrentSummationDelivered
 		srv.eagleLock.Lock()
-		defer srv.eagleLock.Unlock()
 		eagle, found := srv.eagles[info.DeviceMacId]
+		srv.eagleLock.Unlock()
 		if !found {
+			log.Warning("Got price cluster for unregistered Eagle")
 			return
 		}
 
-		info.ActualTimestamp = int64(*info.TimeStamp + HexInt64(EAGLE_EPOCH))
-		info.ActualSummationDelivered = float64(*info.SummationDelivered) * float64(*info.Multiplier) / float64(*info.Divisor)
-		info.ActualSummationReceived = float64(*info.SummationReceived) * float64(*info.Multiplier) / float64(*info.Divisor)
+		eagle.current_time = int64(*info.TimeStamp + HexInt64(EAGLE_EPOCH))
+		eagle.current_summation_delivered = float64(*info.SummationDelivered) * float64(*info.Multiplier) / float64(*info.Divisor)
+		eagle.current_summation_received = float64(*info.SummationReceived) * float64(*info.Multiplier) / float64(*info.Divisor)
 
 		eagle.MeterMAC = info.MeterMacId
 		srv.eagles[info.DeviceMacId] = eagle
 
-		info.Dump()
+		srv.forwardData(eagle)
 
 		return
 	}

@@ -42,6 +42,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/pkg/errors"
 	bw2 "gopkg.in/immesys/bw2bind.v5"
 )
 
@@ -66,6 +67,12 @@ type Eagle struct {
 	Type string
 	// bosswave publishing interface
 	iface *bw2.Interface
+	// current status of Eagle
+	current_demand              float64
+	current_price               float64
+	current_summation_delivered float64
+	current_summation_received  float64
+	current_time                int64
 	NetworkInfo
 }
 
@@ -117,16 +124,18 @@ type NetworkInfo struct {
 }
 
 type PriceCluster struct {
-	XMLName        xml.Name
-	DeviceMacId    string
-	MeterMacId     string
-	TimeStamp      string
-	Price          string
-	Currency       string
-	TrailingDigits string
-	Tier           string
-	TierLabel      string
-	RateLabel      string
+	XMLName         xml.Name
+	DeviceMacId     string
+	MeterMacId      string
+	TimeStamp       *HexInt64
+	Price           *HexInt64
+	ActualPrice     float64
+	ActualTimestamp int64
+	Currency        string
+	TrailingDigits  *HexInt64
+	Tier            string
+	TierLabel       string
+	RateLabel       string
 }
 
 type MessageCluster struct {
@@ -165,4 +174,19 @@ func (summ *CurrentSummation) Dump() {
 	fmt.Printf("  Delivered: %f, Received: %f, Timestamp: %d\n", summ.ActualSummationDelivered, summ.ActualSummationReceived, summ.ActualTimestamp)
 	fmt.Printf("  Divisor: %d, Multiplier: %d\n", summ.Divisor.Int64(), summ.Multiplier.Int64())
 	fmt.Printf("  Dig Left: %d, Dig Right: %d\n", summ.DigitsLeft.Int64(), summ.DigitsRight.Int64())
+}
+
+func (srv *EagleServer) forwardData(eagle *Eagle) {
+	msg := map[string]interface{}{
+		"current_demand":              eagle.current_demand,
+		"current_price":               eagle.current_price,
+		"current_summation_delivered": eagle.current_summation_delivered,
+		"current_summation_received":  eagle.current_summation_received,
+		"time": eagle.current_time,
+	}
+	po, _ := bw2.CreateMsgPackPayloadObject(bw2.FromDotForm("2.0.9.1"), msg)
+	err := eagle.iface.PublishSignal("meter", po)
+	if err != nil {
+		log.Error(errors.Wrap(err, "Could not publish i.meter"))
+	}
 }
