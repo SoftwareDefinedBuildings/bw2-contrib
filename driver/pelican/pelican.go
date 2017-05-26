@@ -47,10 +47,6 @@ type PelicanStatus struct {
 	Time            int64   `msgpack:"time"`
 }
 
-type apiResponse struct {
-	Result apiResult `xml:"result"`
-}
-
 type apiResult struct {
 	Thermostat apiThermostat `xml:"Thermostat"`
 	Success    int32         `xml:"success"`
@@ -100,12 +96,11 @@ func (pel *Pelican) GetStatus() (*PelicanStatus, error) {
 	}
 
 	defer resp.Body.Close()
-	var response apiResponse
+	var result apiResult
 	dec := xml.NewDecoder(resp.Body)
-	if err := dec.Decode(&response); err != nil {
+	if err := dec.Decode(&result); err != nil {
 		return nil, fmt.Errorf("Failed to decode response XML: %v", err)
 	}
-	result := response.Result
 	if result.Success == 0 {
 		return nil, fmt.Errorf("Error retrieving thermostat status: %s", result.Message)
 	}
@@ -156,12 +151,11 @@ func (pel *Pelican) ModifySetpoints(heatingSetpoint, coolingSetpoint float64) er
 	}
 
 	defer resp.Body.Close()
-	var response apiResponse
+	var result apiResult
 	dec := xml.NewDecoder(resp.Body)
-	if err := dec.Decode(&response); err != nil {
+	if err := dec.Decode(&result); err != nil {
 		return fmt.Errorf("Failed to decode response XML: %v", err)
 	}
-	result := response.Result
 	if result.Success == 0 {
 		return fmt.Errorf("Error modifying thermostat temp settings: %v", result.Message)
 	}
@@ -202,12 +196,11 @@ func (pel *Pelican) ModifyState(params *pelicanStateParams) error {
 	}
 
 	defer resp.Body.Close()
-	var response apiResponse
+	var result apiResult
 	dec := xml.NewDecoder(resp.Body)
-	if err := dec.Decode(&response); err != nil {
+	if err := dec.Decode(&result); err != nil {
 		return fmt.Errorf("Failed to decode response XML: %v", err)
 	}
-	result := response.Result
 	if result.Success == 0 {
 		return fmt.Errorf("Error modifying thermostat state: %s", result.Message)
 	}
