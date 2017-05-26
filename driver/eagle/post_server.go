@@ -14,7 +14,10 @@
 package main
 
 import (
+	"crypto/hmac"
+	"crypto/sha256"
 	"crypto/tls"
+	"encoding/hex"
 	"encoding/xml"
 	"fmt"
 	"math"
@@ -25,8 +28,9 @@ import (
 	"time"
 
 	"github.com/gtfierro/spawnpoint/spawnable"
-	"github.com/julienschmidt/httprouter"
 	"github.com/op/go-logging"
+	"github.com/xyproto/permissionbolt"
+	"github.com/xyproto/pinterface"
 	"golang.org/x/crypto/acme/autocert"
 	bw2 "gopkg.in/immesys/bw2bind.v5"
 )
@@ -44,6 +48,24 @@ func init() {
 	logging.SetFormatter(logging.MustStringFormatter(format))
 }
 
+type permissionHandler struct {
+	perm pinterface.IPermissions
+	mux  *http.ServeMux
+}
+
+// Implement the ServeHTTP method to make a permissionHandler a http.Handler
+func (ph *permissionHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	// Check if the user has the right admin/user rights
+	if ph.perm.Rejected(w, req) {
+		// Let the user know, by calling the custom "permission denied" function
+		ph.perm.DenyFunction()(w, req)
+		// Reject the request
+		return
+	}
+	// Serve the requested page if permissions were granted
+	ph.mux.ServeHTTP(w, req)
+}
+
 type EagleConfig struct {
 	PollRate time.Duration
 }
@@ -53,6 +75,7 @@ type Config struct {
 	Port          string
 	ListenAddress string
 	TLSHost       string
+	Hostname      string
 }
 
 type EagleServer struct {
@@ -63,41 +86,73 @@ type EagleServer struct {
 	eagleLock sync.RWMutex
 
 	// HTTPS server
-	address string
-	router  *httprouter.Router
+	address   string
+	hostname  string
+	userstate *permissionbolt.UserState
+	user      string
+	secretkey []byte
 
 	// bosswave
 	bwclient *bw2.BW2Client
+	vk       string
 	svc      *bw2.Service
 }
 
 func StartEagleServer(cfg *Config) {
 	server := &EagleServer{
 		eagles:   make(map[string]*Eagle),
-		router:   httprouter.New(),
+		hostname: cfg.Hostname,
 		bwclient: bw2.ConnectOrExit(""),
 	}
 
+	mux := http.NewServeMux()
+	perm, err := permissionbolt.New()
+	if err != nil {
+		log.Fatal(err)
+	}
+	// Custom handler for when permissions are denied
+	perm.SetDenyFunction(func(w http.ResponseWriter, req *http.Request) {
+		http.Error(w, "Permission denied!", http.StatusForbidden)
+	})
+
+	//perm.Clear() // -- no default permissions
+	server.userstate = perm.UserState().(*permissionbolt.UserState)
+
 	// config bw2
 	server.bwclient.OverrideAutoChainTo(true)
-	server.bwclient.SetEntityFromEnvironOrExit()
+	server.vk = server.bwclient.SetEntityFromEnvironOrExit()
 	params := spawnable.GetParamsOrExit()
 	baseuri := params.MustString("svc_base_uri")
 	params.MergeMetadata(server.bwclient)
+
+	// add admin user
+	user := params.MustString("user")
+	server.user = user
+	pass := params.MustString("pass")
+	server.userstate.AddUser(user, pass, "") // blank email
+	perm.AddPublicPath("/")
+	perm.AddPublicPath("/login")
+	perm.AddPublicPath("/eagle")
+	perm.AddUserPath("/config")
+
+	server.secretkey = []byte(params.MustString("secretkey"))
 
 	// setup bosswave service
 	server.svc = server.bwclient.RegisterService(baseuri, "s.Eagle")
 	fmt.Println(server.svc.FullURI())
 
-	server.router.POST("/", server.handleData)
-	server.router.GET("/", server.handleHome)
-
 	server.address = cfg.ListenAddress + ":" + cfg.Port
+	if cfg.Port != "80" {
+		server.hostname += ":" + cfg.Port
+	}
 	address, err := net.ResolveTCPAddr("tcp4", server.address)
 	if err != nil {
 		log.Fatalf("Error resolving address %s (%s)", server.address, err.Error())
 	}
-	http.Handle("/", server.router)
+	mux.HandleFunc("/", server.handleLogin)
+	mux.HandleFunc("/login", server.handleLogin)
+	mux.HandleFunc("/config", server.handleConfig)
+	mux.HandleFunc("/eagle", server.handleData)
 	log.Noticef("Starting HTTP Server on %s", server.address)
 	if cfg.TLSHost != "" {
 		m := autocert.Manager{
@@ -107,36 +162,140 @@ func StartEagleServer(cfg *Config) {
 		}
 		s := &http.Server{
 			Addr:      address.String(),
+			Handler:   &permissionHandler{perm, mux},
 			TLSConfig: &tls.Config{GetCertificate: m.GetCertificate},
 		}
 		log.Fatal(s.ListenAndServeTLS("", ""))
 	} else {
 		srv := &http.Server{
-			Addr: address.String(),
+			Addr:    address.String(),
+			Handler: &permissionHandler{perm, mux},
 		}
 		log.Fatal(srv.ListenAndServe())
 	}
 }
 
-func (srv *EagleServer) handleData(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
-	// parse XML
-	var resp Response
+func (srv *EagleServer) handleLogin(rw http.ResponseWriter, req *http.Request) {
 	defer req.Body.Close()
-	dec := xml.NewDecoder(req.Body)
-	if err := dec.Decode(&resp); err != nil {
-		log.Error(fmt.Sprintf("Could not decode response: %s", err))
-		rw.Write([]byte(fmt.Sprintf("Could not decode response: %s", err)))
-		rw.WriteHeader(500)
-		return
+	// if we have a GET
+	if req.Method == http.MethodGet {
+		log.Debug("is logged in?")
+		if !srv.userstate.IsLoggedIn(srv.user) {
+			rw.Write(_INDEX)
+			return
+		} else {
+			http.Redirect(rw, req, "/config", http.StatusSeeOther)
+			return
+		}
+	} else if req.Method == http.MethodPost {
+		// handle login
+		if srv.userstate.IsLoggedIn(srv.user) {
+			http.Redirect(rw, req, "/config", http.StatusSeeOther)
+		}
+		// pull values, check using srv.userstate.CorrectPassword(username, pass) => bool
+		// then if that's good, then run userstate.Login(rw, username)
+		if err := req.ParseForm(); err != nil {
+			http.Error(rw, err.Error(), 400)
+			return
+		}
+		user := req.Form.Get("user")
+		pass := req.Form.Get("pass")
+		if srv.userstate.CorrectPassword(user, pass) {
+			log.Debug("correct!")
+			srv.userstate.Login(rw, user)
+			http.Redirect(rw, req, "/config", http.StatusSeeOther)
+			rw.Write(_CONFIG)
+			return
+		} else {
+			log.Debug("incorrect...")
+			http.Redirect(rw, req, "/login", http.StatusSeeOther)
+		}
 	}
-	// TODO: have this method return any configuration struct
-	log.Debugf("%+v", resp)
-	srv.HandleMessage(resp)
-	rw.Header().Set("Connection", "close")
-	rw.Write([]byte{'\n', '\n'})
+	http.Redirect(rw, req, "/login", http.StatusSeeOther)
 }
 
-func (srv *EagleServer) handleHome(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
+func (srv *EagleServer) handleConfig(rw http.ResponseWriter, req *http.Request) {
+	defer req.Body.Close()
+	if req.Method == http.MethodGet {
+		rw.Write(_CONFIG)
+		return
+	} else if req.Method == http.MethodPost {
+		log.Debug("CONFIG POST")
+		if err := req.ParseForm(); err != nil {
+			http.Error(rw, err.Error(), 400)
+			return
+		}
+		// now can use req.Form
+		// when we get a config form, do the following
+		// 1. check that the URI is valid
+		// 2. see if we can build a chain onto uri/s.Eagle/*
+		// 3. generate some SHA1 hash and save that mapping somewhere (sha1 -> uri)
+		baseuri := req.Form.Get("baseuri")
+		useuri := baseuri + "/s.Eagle/*"
+		if chain, err := srv.bwclient.BuildAnyChain(useuri, "PC*", srv.vk); err != nil {
+			http.Error(rw, err.Error(), 500)
+			return
+		} else if chain == nil {
+			if err := _RESULT.Execute(rw, map[string]interface{}{"error": "No chain exists"}); err != nil {
+				http.Error(rw, err.Error(), 500)
+			}
+			return
+		}
+
+		// generate key
+		mac := hmac.New(sha256.New, srv.secretkey)
+		mac.Write([]byte(baseuri))
+		hash := mac.Sum(nil)
+		stringhash := hex.EncodeToString(hash)
+
+		eagleurl := fmt.Sprintf("%s/eagle?key=%s&baseuri=%s", srv.hostname, stringhash, baseuri)
+
+		if err := _RESULT.Execute(rw, map[string]interface{}{"error": "", "baseuri": baseuri, "hash": stringhash, "reporturl": eagleurl}); err != nil {
+			http.Error(rw, err.Error(), 500)
+		}
+
+		return
+	}
+}
+
+func (srv *EagleServer) handleData(rw http.ResponseWriter, req *http.Request) {
+	defer req.Body.Close()
+	if req.Method == http.MethodPost {
+
+		// get the request URL and verify that its good
+		values := req.URL.Query()
+		providedhash := values.Get("key")
+		baseuri := values.Get("baseuri")
+
+		// check if its authorized
+		mac := hmac.New(sha256.New, srv.secretkey)
+		mac.Write([]byte(baseuri))
+		hash := mac.Sum(nil)
+		expectedhash := hex.EncodeToString(hash)
+		log.Debug(providedhash, baseuri, expectedhash)
+		if providedhash != expectedhash {
+			http.Error(rw, "Not a valid key", 400)
+			return
+		}
+
+		// parse XML
+		var resp Response
+		dec := xml.NewDecoder(req.Body)
+		if err := dec.Decode(&resp); err != nil {
+			log.Error(fmt.Sprintf("Could not decode response: %s", err))
+			rw.Write([]byte(fmt.Sprintf("Could not decode response: %s", err)))
+			rw.WriteHeader(500)
+			return
+		}
+		// TODO: have this method return any configuration struct
+		log.Debugf("%+v", resp)
+		srv.HandleMessage(resp)
+		rw.Header().Set("Connection", "close")
+		rw.Write([]byte{'\n', '\n'})
+	} else if req.Method == http.MethodGet {
+		rw.Header().Set("Content-Type", "text/html")
+		rw.Write(_INDEX)
+	}
 }
 
 func (srv *EagleServer) HandleMessage(resp Response) {
