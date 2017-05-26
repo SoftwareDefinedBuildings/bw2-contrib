@@ -1,0 +1,8 @@
+svc_base_uri: <base uri>
+entityfile: <path to entity file>
+user: <admin user name>
+pass: <admin user password>
+secretkey: <this is my secret key>
+metadata:
+    s.Eagle:
+        SourceName: "Eagle"
