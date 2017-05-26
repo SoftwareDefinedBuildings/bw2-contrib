@@ -1,7 +1,18 @@
-svc_base_uri: <base uri>
+svc_base_uri: ""
+# entity we use to run
 entityfile: <path to entity file>
+# web interface admin account
 user: <admin user name>
 pass: <admin user password>
+# web interface configuration
+# port to listen on
+port: "80"
+# address to listen on
+listenaddress: 0.0.0.0
+# TLS host. Will use Let's Encrypt to generate a certificate for this host
+# setting this to a non-empty string will change port to 443
+tlshost: ""
+# used to generate API keys for the eagles
 secretkey: <this is my secret key>
 metadata:
     s.Eagle:
