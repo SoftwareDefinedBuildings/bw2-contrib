@@ -67,6 +67,7 @@ type Eagle struct {
 	Type string
 	// bosswave publishing interface
 	iface *bw2.Interface
+	svc   *bw2.Service
 	// current status of Eagle
 	current_demand              float64
 	current_price               float64
