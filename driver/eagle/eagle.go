@@ -73,6 +73,7 @@ type Eagle struct {
 	current_price               float64
 	current_summation_delivered float64
 	current_summation_received  float64
+	current_tier                int64
 	current_time                int64
 	NetworkInfo
 }
@@ -134,7 +135,7 @@ type PriceCluster struct {
 	ActualTimestamp int64
 	Currency        string
 	TrailingDigits  *HexInt64
-	Tier            string
+	Tier            *HexInt64
 	TierLabel       string
 	RateLabel       string
 }
@@ -181,6 +182,7 @@ func (srv *EagleServer) forwardData(eagle *Eagle) {
 	msg := map[string]interface{}{
 		"current_demand":              eagle.current_demand,
 		"current_price":               eagle.current_price,
+		"current_tier":                eagle.current_tier,
 		"current_summation_delivered": eagle.current_summation_delivered,
 		"current_summation_received":  eagle.current_summation_received,
 		"time": eagle.current_time,

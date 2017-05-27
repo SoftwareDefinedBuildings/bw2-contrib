@@ -67,8 +67,9 @@ func (ph *permissionHandler) ServeHTTP(w http.ResponseWriter, req *http.Request)
 
 type EagleServer struct {
 	// MAC address -> eagle instance
-	eagles    map[string]*Eagle
-	eagleLock sync.RWMutex
+	eagles     map[string]*Eagle
+	eagleLock  sync.RWMutex
+	multiplier float64
 
 	// HTTPS server
 	address   string
@@ -102,6 +103,7 @@ func StartEagleServer() {
 	server.userstate = perm.UserState().(*permissionbolt.UserState)
 
 	params := spawnable.GetParamsOrExit()
+	server.multiplier = float64(params.MustInt("multiplier"))
 
 	// config bw2
 	server.bwclient.OverrideAutoChainTo(true)
@@ -248,7 +250,7 @@ func (srv *EagleServer) handleConfig(rw http.ResponseWriter, req *http.Request) 
 		hash := mac.Sum(nil)
 		stringhash := hex.EncodeToString(hash)
 
-		eagleurl := fmt.Sprintf("%s/eagle?key=%s&baseuri=%s", srv.hostname, stringhash, baseuri)
+		eagleurl := fmt.Sprintf("https://%s/eagle?key=%s&baseuri=%s", srv.hostname, stringhash, baseuri)
 
 		if err := _RESULT.Execute(rw, map[string]interface{}{"error": "", "baseuri": baseuri, "hash": stringhash, "reporturl": eagleurl}); err != nil {
 			http.Error(rw, err.Error(), 500)
@@ -358,6 +360,7 @@ func (srv *EagleServer) HandleMessage(resp Response, baseuri string) {
 		// adjust the timestamp with the EAGLE Epoch and get the actual kW demand as a float
 		eagle.current_time = int64(*info.TimeStamp + HexInt64(EAGLE_EPOCH))
 		eagle.current_demand = float64(*info.Demand) * float64(*info.Multiplier) / float64(*info.Divisor)
+		eagle.current_demand *= srv.multiplier // extra multiplier
 
 		eagle.MeterMAC = info.MeterMacId
 		srv.eagles[info.DeviceMacId] = eagle
@@ -379,6 +382,7 @@ func (srv *EagleServer) HandleMessage(resp Response, baseuri string) {
 		}
 		eagle.current_time = int64(*info.TimeStamp + HexInt64(EAGLE_EPOCH))
 		eagle.current_price = float64(*info.Price) / math.Pow(10, float64(*info.TrailingDigits))
+		eagle.current_tier = int64(*info.Tier)
 		srv.eagles[info.DeviceMacId] = eagle
 
 		srv.forwardData(eagle)
