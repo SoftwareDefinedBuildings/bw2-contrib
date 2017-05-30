@@ -13,6 +13,8 @@ listenaddress: 0.0.0.0
 # TLS host. Will use Let's Encrypt to generate a certificate for this host
 # setting this to a non-empty string will change port to 443
 tlshost: ""
+# local ip or hostname to use in case we're operating locally (e.g. if tlshost is empty)
+hostname: ""
 # used to generate API keys for the eagles
 secretkey: <this is my secret key>
 metadata:

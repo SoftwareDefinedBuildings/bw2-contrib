@@ -74,6 +74,7 @@ type EagleServer struct {
 	// HTTPS server
 	address   string
 	hostname  string
+	tlshost   string
 	userstate *permissionbolt.UserState
 	user      string
 	secretkey []byte
@@ -139,7 +140,10 @@ func StartEagleServer() {
 		server.hostname = tlshost
 		port = "443"
 		server.address = listenaddr + ":" + port
+	} else {
+		server.hostname = params.MustString("hostname")
 	}
+	server.tlshost = params.MustString("tlshost")
 	address, err := net.ResolveTCPAddr("tcp4", server.address)
 	if err != nil {
 		log.Fatalf("Error resolving address %s (%s)", server.address, err.Error())
@@ -253,7 +257,12 @@ func (srv *EagleServer) handleConfig(rw http.ResponseWriter, req *http.Request) 
 		hash := mac.Sum(nil)
 		stringhash := hex.EncodeToString(hash)
 
-		eagleurl := fmt.Sprintf("https://%s/eagle?key=%s&baseuri=%s", srv.hostname, stringhash, baseuri)
+		var eagleurl string
+		if srv.tlshost != "" {
+			eagleurl = fmt.Sprintf("https://%s/eagle?key=%s&baseuri=%s", srv.hostname, stringhash, baseuri)
+		} else {
+			eagleurl = fmt.Sprintf("http://%s/eagle?key=%s&baseuri=%s", srv.hostname, stringhash, baseuri)
+		}
 
 		if err := _RESULT.Execute(rw, map[string]interface{}{"error": "", "baseuri": baseuri, "hash": stringhash, "reporturl": eagleurl}); err != nil {
 			http.Error(rw, err.Error(), 500)
