@@ -101,6 +101,7 @@ func StartEagleServer() {
 
 	//perm.Clear() // -- no default permissions
 	server.userstate = perm.UserState().(*permissionbolt.UserState)
+	server.userstate.SetCookieTimeout(120) // 2 min
 
 	params := spawnable.GetParamsOrExit()
 	server.multiplier = float64(params.MustInt("multiplier"))
@@ -175,10 +176,12 @@ func (srv *EagleServer) handleLogin(rw http.ResponseWriter, req *http.Request) {
 	if req.Method == http.MethodGet {
 		log.Debug("is logged in?")
 		if !srv.userstate.IsLoggedIn(srv.user) {
+			log.Debug("NO")
 			rw.Write(_INDEX)
 			return
 		} else {
-			http.Redirect(rw, req, "/config", http.StatusSeeOther)
+			log.Debug("YES")
+			rw.Write(_INDEX)
 			return
 		}
 	} else if req.Method == http.MethodPost {
@@ -196,7 +199,7 @@ func (srv *EagleServer) handleLogin(rw http.ResponseWriter, req *http.Request) {
 		pass := req.Form.Get("pass")
 		if srv.userstate.CorrectPassword(user, pass) {
 			log.Debug("correct!")
-			srv.userstate.Login(rw, user)
+			log.Error(srv.userstate.Login(rw, user))
 			http.Redirect(rw, req, "/config", http.StatusSeeOther)
 			rw.Write(_CONFIG)
 			return
@@ -228,7 +231,7 @@ func (srv *EagleServer) handleConfig(rw http.ResponseWriter, req *http.Request) 
 		baseuri := req.Form.Get("baseuri")
 		useuri := baseuri + "/s.Eagle/*"
 		log.Debug(useuri, srv.vk)
-		if chain, err := srv.bwclient.BuildAnyChain(useuri, "PC*", srv.vk); err != nil {
+		if chain, err := srv.bwclient.BuildAnyChain(useuri, "P", srv.vk); err != nil {
 			if err.Error() == "No result" {
 				rw.Write([]byte(fmt.Sprintf("Chain does not exist on %s to %s", useuri, srv.vk)))
 				return
