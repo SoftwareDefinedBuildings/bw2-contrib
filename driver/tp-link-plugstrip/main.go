@@ -56,31 +56,6 @@ func main() {
 		os.Exit(1)
 	}
 	svc := bwClient.RegisterService(baseURI+deviceName, "s.tplink.v0")
-	// relayIface := svc.RegisterInterface("0", "i.xbos.plug")
-	// relayIface.SubscribeSlot("state", func(msg *bw2.SimpleMessage) {
-	// 	po := msg.GetOnePODF(bw2.PODFBinaryActuation)
-	// 	if po == nil {
-	// 		fmt.Println("Received actuation command w/o proper PO type, dropping")
-	// 		return
-	// 	} else if len(po.GetContents()) < 1 {
-	// 		fmt.Println("Received actuation command with invalid PO, dropping")
-	// 		return
-	// 	}
-	//
-	// 	if po.GetContents()[0] == 0 {
-	// 		err = ps.SetRelayState(false)
-	// 		if err != nil {
-	// 			fmt.Println(err)
-	// 		}
-	// 	} else if po.GetContents()[0] == 1 {
-	// 		err = ps.SetRelayState(true)
-	// 		if err != nil {
-	// 			fmt.Println(err)
-	// 		}
-	// 	} else {
-	// 		fmt.Println("Actuation command contents must be 0x00 or 0x01, dropping")
-	// 	}
-	// })
 
 	xbosIface := svc.RegisterInterface("0", "i.xbos.plug")
 	xbosIface.SubscribeSlot("state", func(msg *bw2.SimpleMessage) {
