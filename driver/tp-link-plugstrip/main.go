@@ -7,39 +7,29 @@ import (
 	"time"
 
 	"github.com/immesys/spawnpoint/spawnable"
-	uuid "github.com/satori/go.uuid"
 	bw2 "gopkg.in/immesys/bw2bind.v5"
 )
 
 const (
-	NAMESPACE_UUID_STR = "d8b61708-2797-11e6-836b-0cc47a0f7eea"
-	PONUM              = "2.1.1.2"
+	PONUM = "2.1.1.2"
 )
 
-type TimeSeriesReading struct {
-	UUID  string
-	Time  int64
-	Value float64
+type XBOSPlugReading struct {
+	Time       int64
+	Voltage    float64
+	Power      float64
+	Current    float64
+	Cumulative float64
+	State      bool
 }
 
-func (tsr *TimeSeriesReading) ToMsgPackPO() bw2.PayloadObject {
-	po, err := bw2.CreateMsgPackPayloadObject(bw2.PONumTimeseriesReading, tsr)
+func (tpl *XBOSPlugReading) ToMsgPackPO() bw2.PayloadObject {
+	po, err := bw2.CreateMsgPackPayloadObject(bw2.FromDotForm(PONUM), tpl)
 	if err != nil {
 		panic(err)
 	} else {
 		return po
 	}
-}
-
-func NewInfoPO(time int64, state bool) bw2.PayloadObject {
-	msg := map[string]interface{}{
-		"time":  time,
-		"state": state}
-	po, err := bw2.CreateMsgPackPayloadObject(bw2.FromDotForm(PONUM), msg)
-	if err != nil {
-		panic(err)
-	}
-	return po
 }
 
 func main() {
@@ -65,10 +55,60 @@ func main() {
 	if deviceName == "" {
 		os.Exit(1)
 	}
-	svc := bwClient.RegisterService(baseURI+deviceName, "s.powerup.v0")
-	relayIface := svc.RegisterInterface("relay", "i.binact")
-	relayIface.SubscribeSlot("state", func(msg *bw2.SimpleMessage) {
-		po := msg.GetOnePODF(bw2.PODFBinaryActuation)
+	svc := bwClient.RegisterService(baseURI+deviceName, "s.tplink.v0")
+	// relayIface := svc.RegisterInterface("0", "i.xbos.plug")
+	// relayIface.SubscribeSlot("state", func(msg *bw2.SimpleMessage) {
+	// 	po := msg.GetOnePODF(bw2.PODFBinaryActuation)
+	// 	if po == nil {
+	// 		fmt.Println("Received actuation command w/o proper PO type, dropping")
+	// 		return
+	// 	} else if len(po.GetContents()) < 1 {
+	// 		fmt.Println("Received actuation command with invalid PO, dropping")
+	// 		return
+	// 	}
+	//
+	// 	if po.GetContents()[0] == 0 {
+	// 		err = ps.SetRelayState(false)
+	// 		if err != nil {
+	// 			fmt.Println(err)
+	// 		}
+	// 	} else if po.GetContents()[0] == 1 {
+	// 		err = ps.SetRelayState(true)
+	// 		if err != nil {
+	// 			fmt.Println(err)
+	// 		}
+	// 	} else {
+	// 		fmt.Println("Actuation command contents must be 0x00 or 0x01, dropping")
+	// 	}
+	// })
+
+	xbosIface := svc.RegisterInterface("0", "i.xbos.plug")
+	xbosIface.SubscribeSlot("state", func(msg *bw2.SimpleMessage) {
+		po := msg.GetOnePODF(PONUM)
+		if po != nil {
+
+			msgpo, err := bw2.LoadMsgPackPayloadObject(po.GetPONum(), po.GetContents())
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+
+			var data map[string]interface{}
+
+			err = msgpo.ValueInto(&data)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+			state := data["state"].(bool)
+			ps.SetRelayState(state)
+			return
+		}
+
+		//Although this is not part of the i.xbos.plug spec, it is quite handy
+		//to be able to support simple binary actuation. We do this only if there
+		//is no XBOS Plug PO in the message
+		po = msg.GetOnePODF(bw2.PODFBinaryActuation)
 		if po == nil {
 			fmt.Println("Received actuation command w/o proper PO type, dropping")
 			return
@@ -92,31 +132,6 @@ func main() {
 		}
 	})
 
-	xbosIface := svc.RegisterInterface("relay", "i.xbos.plug")
-	xbosIface.SubscribeSlot("state", func(msg *bw2.SimpleMessage) {
-		po := msg.GetOnePODF(PONUM)
-		if po == nil {
-			fmt.Println("Received actuation command without valid PO, dropping")
-			return
-		}
-
-		msgpo, err := bw2.LoadMsgPackPayloadObject(po.GetPONum(), po.GetContents())
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-
-		var data map[string]interface{}
-
-		err = msgpo.ValueInto(&data)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-		state := data["state"].(bool)
-		ps.SetRelayState(state)
-	})
-
 	if ps.HasPowerStats() {
 		go func() {
 			intervalStr := params.MustString("poll_interval")
@@ -125,13 +140,6 @@ func main() {
 				fmt.Println("Invalid Poll Interval Length:", pollInterval)
 				os.Exit(1)
 			}
-			namespaceUUID := uuid.FromStringOrNil(NAMESPACE_UUID_STR)
-			currentUUID := uuid.NewV3(namespaceUUID, deviceName+"current").String()
-			bwClient.SetMetadata(relayIface.SignalURI("Current"), "UnitOfMeasure", "A")
-			voltageUUID := uuid.NewV3(namespaceUUID, deviceName+"voltage").String()
-			bwClient.SetMetadata(relayIface.SignalURI("Voltage"), "UnitOfMeasure", "V")
-			powerUUID := uuid.NewV3(namespaceUUID, deviceName+"power").String()
-			bwClient.SetMetadata(relayIface.SignalURI("Power"), "UnitOfMeasure", "W")
 
 			for {
 				stats, err := ps.GetPowerStats()
@@ -140,15 +148,18 @@ func main() {
 					os.Exit(1)
 				}
 				timestamp := time.Now().UnixNano()
-				currentMsg := TimeSeriesReading{UUID: currentUUID, Time: timestamp, Value: stats.Current}
-				relayIface.PublishSignal("current", currentMsg.ToMsgPackPO())
-				voltageMsg := TimeSeriesReading{UUID: voltageUUID, Time: timestamp, Value: stats.Voltage}
-				relayIface.PublishSignal("voltage", voltageMsg.ToMsgPackPO())
-				powerMsg := TimeSeriesReading{UUID: powerUUID, Time: timestamp, Value: stats.Power}
-				relayIface.PublishSignal("power", powerMsg.ToMsgPackPO())
-
-				xbosPO := NewInfoPO(timestamp, ps.GetState())
-				xbosIface.PublishSignal("info", xbosPO)
+				reading := &XBOSPlugReading{
+					Time:       timestamp,
+					Voltage:    stats.Voltage,
+					Current:    stats.Current,
+					Cumulative: stats.Total,
+					Power:      stats.Power,
+					//The plug reports its internal power draw (~2W) only when the plug is on, so
+					//we can use this to infer relay state without having to query separately for it
+					State: stats.Power != 0,
+				}
+				po := reading.ToMsgPackPO()
+				xbosIface.PublishSignal("info", po)
 
 				time.Sleep(pollInterval)
 			}

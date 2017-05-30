@@ -29,6 +29,7 @@ type PowerStats struct {
 	Current float64
 	Voltage float64
 	Power   float64
+	Total   float64
 }
 
 func NewPlugstrip(ip string) (*Plugstrip, error) {
@@ -136,11 +137,19 @@ func (ps *Plugstrip) GetPowerStats() (*PowerStats, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Failed to parse power statistics: %v", err)
 	}
-
+	match = regexp.MustCompile(`\"total\":(\d+(\.\d+)?)`).FindStringSubmatch(response)
+	if match == nil {
+		return nil, fmt.Errorf("Power statistics did not include valid total value")
+	}
+	total, err := strconv.ParseFloat(match[1], 64)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to parse total statistics: %v", err)
+	}
 	return &PowerStats{
 		Current: current,
 		Voltage: voltage,
 		Power:   power,
+		Total:   total,
 	}, nil
 }
 
