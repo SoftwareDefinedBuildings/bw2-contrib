@@ -385,6 +385,10 @@ func (srv *EagleServer) HandleMessage(resp Response, baseuri string) {
 	if resp.PriceCluster != nil {
 		info := resp.PriceCluster
 		log.Infof("PRICE CLUSTER %+v", info)
+		// if this is MAX, then we don't get price
+		if info.Price.Int64() == 0xffffffff {
+			return
+		}
 		srv.eagleLock.Lock()
 		eagle, found := srv.eagles[info.DeviceMacId]
 		srv.eagleLock.Unlock()
