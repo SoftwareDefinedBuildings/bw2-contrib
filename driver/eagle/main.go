@@ -26,7 +26,7 @@ import (
 	"os"
 	"sync"
 
-	"github.com/gtfierro/spawnpoint/spawnable"
+	"github.com/immesys/spawnpoint/spawnable"
 	"github.com/op/go-logging"
 	"github.com/xyproto/permissionbolt"
 	"github.com/xyproto/pinterface"
@@ -384,7 +384,7 @@ func (srv *EagleServer) HandleMessage(resp Response, baseuri string) {
 
 	if resp.PriceCluster != nil {
 		info := resp.PriceCluster
-		log.Info("PRICE CLUSTER")
+		log.Infof("PRICE CLUSTER %+v", info)
 		srv.eagleLock.Lock()
 		eagle, found := srv.eagles[info.DeviceMacId]
 		srv.eagleLock.Unlock()
