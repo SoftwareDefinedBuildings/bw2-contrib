@@ -26,7 +26,7 @@ import (
 	"os"
 	"sync"
 
-	"github.com/gtfierro/spawnpoint/spawnable"
+	"github.com/immesys/spawnpoint/spawnable"
 	"github.com/op/go-logging"
 	"github.com/xyproto/permissionbolt"
 	"github.com/xyproto/pinterface"
@@ -74,6 +74,7 @@ type EagleServer struct {
 	// HTTPS server
 	address   string
 	hostname  string
+	tlshost   string
 	userstate *permissionbolt.UserState
 	user      string
 	secretkey []byte
@@ -101,6 +102,7 @@ func StartEagleServer() {
 
 	//perm.Clear() // -- no default permissions
 	server.userstate = perm.UserState().(*permissionbolt.UserState)
+	server.userstate.SetCookieTimeout(120) // 2 min
 
 	params := spawnable.GetParamsOrExit()
 	server.multiplier = float64(params.MustInt("multiplier"))
@@ -138,7 +140,10 @@ func StartEagleServer() {
 		server.hostname = tlshost
 		port = "443"
 		server.address = listenaddr + ":" + port
+	} else {
+		server.hostname = params.MustString("hostname")
 	}
+	server.tlshost = params.MustString("tlshost")
 	address, err := net.ResolveTCPAddr("tcp4", server.address)
 	if err != nil {
 		log.Fatalf("Error resolving address %s (%s)", server.address, err.Error())
@@ -175,10 +180,12 @@ func (srv *EagleServer) handleLogin(rw http.ResponseWriter, req *http.Request) {
 	if req.Method == http.MethodGet {
 		log.Debug("is logged in?")
 		if !srv.userstate.IsLoggedIn(srv.user) {
+			log.Debug("NO")
 			rw.Write(_INDEX)
 			return
 		} else {
-			http.Redirect(rw, req, "/config", http.StatusSeeOther)
+			log.Debug("YES")
+			rw.Write(_INDEX)
 			return
 		}
 	} else if req.Method == http.MethodPost {
@@ -196,7 +203,7 @@ func (srv *EagleServer) handleLogin(rw http.ResponseWriter, req *http.Request) {
 		pass := req.Form.Get("pass")
 		if srv.userstate.CorrectPassword(user, pass) {
 			log.Debug("correct!")
-			srv.userstate.Login(rw, user)
+			log.Error(srv.userstate.Login(rw, user))
 			http.Redirect(rw, req, "/config", http.StatusSeeOther)
 			rw.Write(_CONFIG)
 			return
@@ -228,7 +235,7 @@ func (srv *EagleServer) handleConfig(rw http.ResponseWriter, req *http.Request) 
 		baseuri := req.Form.Get("baseuri")
 		useuri := baseuri + "/s.Eagle/*"
 		log.Debug(useuri, srv.vk)
-		if chain, err := srv.bwclient.BuildAnyChain(useuri, "PC*", srv.vk); err != nil {
+		if chain, err := srv.bwclient.BuildAnyChain(useuri, "P", srv.vk); err != nil {
 			if err.Error() == "No result" {
 				rw.Write([]byte(fmt.Sprintf("Chain does not exist on %s to %s", useuri, srv.vk)))
 				return
@@ -250,7 +257,12 @@ func (srv *EagleServer) handleConfig(rw http.ResponseWriter, req *http.Request) 
 		hash := mac.Sum(nil)
 		stringhash := hex.EncodeToString(hash)
 
-		eagleurl := fmt.Sprintf("https://%s/eagle?key=%s&baseuri=%s", srv.hostname, stringhash, baseuri)
+		var eagleurl string
+		if srv.tlshost != "" {
+			eagleurl = fmt.Sprintf("https://%s/eagle?key=%s&baseuri=%s", srv.hostname, stringhash, baseuri)
+		} else {
+			eagleurl = fmt.Sprintf("http://%s/eagle?key=%s&baseuri=%s", srv.hostname, stringhash, baseuri)
+		}
 
 		if err := _RESULT.Execute(rw, map[string]interface{}{"error": "", "baseuri": baseuri, "hash": stringhash, "reporturl": eagleurl}); err != nil {
 			http.Error(rw, err.Error(), 500)
@@ -358,7 +370,7 @@ func (srv *EagleServer) HandleMessage(resp Response, baseuri string) {
 		}
 
 		// adjust the timestamp with the EAGLE Epoch and get the actual kW demand as a float
-		eagle.current_time = int64(*info.TimeStamp + HexInt64(EAGLE_EPOCH))
+		eagle.current_time = int64(*info.TimeStamp+HexInt64(EAGLE_EPOCH)) * 1e9
 		eagle.current_demand = float64(*info.Demand) * float64(*info.Multiplier) / float64(*info.Divisor)
 		eagle.current_demand *= srv.multiplier // extra multiplier
 
@@ -372,7 +384,11 @@ func (srv *EagleServer) HandleMessage(resp Response, baseuri string) {
 
 	if resp.PriceCluster != nil {
 		info := resp.PriceCluster
-		log.Info("PRICE CLUSTER")
+		log.Infof("PRICE CLUSTER %+v", info)
+		// if this is MAX, then we don't get price
+		if info.Price.Int64() == 0xffffffff {
+			return
+		}
 		srv.eagleLock.Lock()
 		eagle, found := srv.eagles[info.DeviceMacId]
 		srv.eagleLock.Unlock()
@@ -380,7 +396,7 @@ func (srv *EagleServer) HandleMessage(resp Response, baseuri string) {
 			log.Warning("Got price cluster for unregistered Eagle")
 			return
 		}
-		eagle.current_time = int64(*info.TimeStamp + HexInt64(EAGLE_EPOCH))
+		eagle.current_time = int64(*info.TimeStamp+HexInt64(EAGLE_EPOCH)) * 1e9
 		eagle.current_price = float64(*info.Price) / math.Pow(10, float64(*info.TrailingDigits))
 		eagle.current_tier = int64(*info.Tier)
 		srv.eagles[info.DeviceMacId] = eagle
@@ -406,7 +422,7 @@ func (srv *EagleServer) HandleMessage(resp Response, baseuri string) {
 			return
 		}
 
-		eagle.current_time = int64(*info.TimeStamp + HexInt64(EAGLE_EPOCH))
+		eagle.current_time = int64(*info.TimeStamp+HexInt64(EAGLE_EPOCH)) * 1e9
 		eagle.current_summation_delivered = float64(*info.SummationDelivered) * float64(*info.Multiplier) / float64(*info.Divisor)
 		eagle.current_summation_received = float64(*info.SummationReceived) * float64(*info.Multiplier) / float64(*info.Divisor)
 
