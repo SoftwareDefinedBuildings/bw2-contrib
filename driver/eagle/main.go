@@ -332,7 +332,7 @@ func (srv *EagleServer) HandleMessage(resp Response, baseuri string) {
 		if eagle, found = srv.eagles[info.DeviceMacId]; !found {
 			eagle = &Eagle{}
 			// TODO: set metadata on these uris
-			eagle.svc = srv.bwclient.RegisterService(baseuri, "s.Eagle")
+			eagle.svc = srv.bwclient.RegisterService(baseuri, "s.eagle")
 			eagle.iface = eagle.svc.RegisterInterface(info.DeviceMacId, "i.meter")
 		}
 		eagle.DeviceMAC = info.DeviceMacId
@@ -373,6 +373,7 @@ func (srv *EagleServer) HandleMessage(resp Response, baseuri string) {
 		eagle.current_time = int64(*info.TimeStamp+HexInt64(EAGLE_EPOCH)) * 1e9
 		eagle.current_demand = float64(*info.Demand) * float64(*info.Multiplier) / float64(*info.Divisor)
 		eagle.current_demand *= srv.multiplier // extra multiplier
+		eagle.current_demand *= 1000           // convert to Watts
 
 		eagle.MeterMAC = info.MeterMacId
 		srv.eagles[info.DeviceMacId] = eagle
