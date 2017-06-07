@@ -75,8 +75,8 @@ func main() {
 				fmt.Println(err)
 				return
 			}
-			state := data["state"].(bool)
-			ps.SetRelayState(state)
+			state := data["state"].(int)
+			ps.SetRelayState(state != 0)
 			return
 		}
 
