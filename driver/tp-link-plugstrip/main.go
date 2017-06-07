@@ -15,12 +15,12 @@ const (
 )
 
 type XBOSPlugReading struct {
-	Time       int64 `msgpack:"time"`
+	Time       int64   `msgpack:"time"`
 	Voltage    float64 `msgpack:"voltage"`
 	Power      float64 `msgpack:"power"`
 	Current    float64 `msgpack:"current"`
 	Cumulative float64 `msgpack:"cumulative"`
-	State      int `msgpack:"state"`
+	State      int     `msgpack:"state"`
 }
 
 func (tpl *XBOSPlugReading) ToMsgPackPO() bw2.PayloadObject {
@@ -75,7 +75,7 @@ func main() {
 				fmt.Println(err)
 				return
 			}
-			state := data["state"].(int)
+			state := int(data["state"].(float64))
 			ps.SetRelayState(state != 0)
 			return
 		}
