@@ -261,12 +261,14 @@ func (d *Driver) Control(sm *bw2.SimpleMessage) {
 func (d *Driver) Scrape() {
 	resp, err := http.Get("http://" + d.r.IP + "/query/info")
 	if err != nil {
-		panic(err)
+		fmt.Println(err)
+		return
 	}
 
 	contents, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		panic(err)
+		fmt.Println(err)
+		return
 	}
 
 	resp.Body.Close()
