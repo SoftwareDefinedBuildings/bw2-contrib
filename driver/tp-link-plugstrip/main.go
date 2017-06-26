@@ -75,6 +75,7 @@ func main() {
 				fmt.Println(err)
 				return
 			}
+			fmt.Println(data)
 			state := int(data["state"].(float64))
 			ps.SetRelayState(state != 0)
 			return
@@ -123,19 +124,13 @@ func main() {
 					os.Exit(1)
 				}
 				timestamp := time.Now().UnixNano()
-				stateInt := 0
-				if stats.Power != 0 {
-					stateInt = 1
-				}
 				reading := &XBOSPlugReading{
 					Time:       timestamp,
 					Voltage:    stats.Voltage,
 					Current:    stats.Current,
 					Cumulative: stats.Total,
 					Power:      stats.Power,
-					//The plug reports its internal power draw (~2W) only when the plug is on, so
-					//we can use this to infer relay state without having to query separately for it
-					State: stateInt,
+					State:      stats.State,
 				}
 				po := reading.ToMsgPackPO()
 				xbosIface.PublishSignal("info", po)

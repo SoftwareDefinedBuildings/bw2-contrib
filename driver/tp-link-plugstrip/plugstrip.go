@@ -6,6 +6,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -30,6 +31,26 @@ type PowerStats struct {
 	Voltage float64
 	Power   float64
 	Total   float64
+	State   int
+}
+
+type SystemResponse struct {
+	System struct {
+		Get_sysinfo struct {
+			Relay_state int
+		}
+	}
+}
+
+type GetRealtimeResponse struct {
+	Emeter struct {
+		Get_realtime struct {
+			Current float64
+			Voltage float64
+			Power   float64
+			Total   float64
+		}
+	}
 }
 
 func NewPlugstrip(ip string) (*Plugstrip, error) {
@@ -52,10 +73,8 @@ func (ps *Plugstrip) SetRelayState(on bool) error {
 	var state int
 	if on {
 		state = 1
-		ps.state = true
 	} else {
 		state = 0
-		ps.state = false
 	}
 
 	payload := fmt.Sprintf(`{"system":{"set_relay_state":{"state":%d}}}`, state)
@@ -76,10 +95,8 @@ func (ps *Plugstrip) SetRelayStateDelay(on bool, delay time.Duration) error {
 	var state int
 	if on {
 		state = 1
-		ps.state = true
 	} else {
 		state = 0
-		ps.state = false
 	}
 
 	if err := ps.ClearDelayedAction(); err != nil {
@@ -106,50 +123,35 @@ func (ps *Plugstrip) GetPowerStats() (*PowerStats, error) {
 		return nil, fmt.Errorf("Power statistics require HS110 model plug")
 	}
 
+	system_response, err := ps.transact(`{"system":{"get_sysinfo":{}}}`)
+	if err != nil {
+		fmt.Println(err)
+		return nil, fmt.Errorf("Failed to retrieve system response: %v", err)
+	}
+
+	var sysresp = &SystemResponse{}
+	if err := json.Unmarshal([]byte(system_response), sysresp); err != nil {
+		return nil, fmt.Errorf("Failed to parse JSON response: %v", err)
+	}
+	fmt.Println(sysresp)
+
 	response, err := ps.transact(`{"emeter":{"get_realtime":{}}}`)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to retrieve power statistics: %v", err)
 	}
+	fmt.Println(response)
+	var resp = &GetRealtimeResponse{}
+	if err := json.Unmarshal([]byte(response), resp); err != nil {
+		return nil, fmt.Errorf("Failed to parse JSON response: %v", err)
+	}
+	fmt.Println(resp)
 
-	match := regexp.MustCompile(`\"current\":(\d+(\.\d+)?)`).FindStringSubmatch(response)
-	if match == nil {
-		return nil, fmt.Errorf("Power statistics did not include valid current value")
-	}
-	current, err := strconv.ParseFloat(match[1], 64)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to parse current statistic: %v", err)
-	}
-
-	match = regexp.MustCompile(`\"voltage\":(\d+(\.\d+)?)`).FindStringSubmatch(response)
-	if match == nil {
-		return nil, fmt.Errorf("Power statistics did not include valid voltage value")
-	}
-	voltage, err := strconv.ParseFloat(match[1], 64)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to parse voltage statistic: %v", err)
-	}
-
-	match = regexp.MustCompile(`\"power\":(\d+(\.\d+)?)`).FindStringSubmatch(response)
-	if match == nil {
-		return nil, fmt.Errorf("Power statistics did not include valid power value")
-	}
-	power, err := strconv.ParseFloat(match[1], 64)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to parse power statistics: %v", err)
-	}
-	match = regexp.MustCompile(`\"total\":(\d+(\.\d+)?)`).FindStringSubmatch(response)
-	if match == nil {
-		return nil, fmt.Errorf("Power statistics did not include valid total value")
-	}
-	total, err := strconv.ParseFloat(match[1], 64)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to parse total statistics: %v", err)
-	}
 	return &PowerStats{
-		Current: current,
-		Voltage: voltage,
-		Power:   power,
-		Total:   total,
+		Current: resp.Emeter.Get_realtime.Current,
+		Voltage: resp.Emeter.Get_realtime.Voltage,
+		Power:   resp.Emeter.Get_realtime.Power,
+		Total:   resp.Emeter.Get_realtime.Total,
+		State:   sysresp.System.Get_sysinfo.Relay_state,
 	}, nil
 }
 
