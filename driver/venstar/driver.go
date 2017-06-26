@@ -25,7 +25,7 @@ func (ir *InfoResponse) ToMsgPackPO() bw2.PayloadObject {
 	return po
 }
 
-func NewXbosInfoPO(time int64, temp float64, relHumidity float64, heatingSetpoint float64, coolingSetpoint float64, override bool, fan bool, mode int, state int) bw2.PayloadObject {
+func NewXbosInfoPO(time int64, temp float64, relHumidity float64, heatingSetpoint float64, coolingSetpoint float64, override bool, fan int, mode int, state int) bw2.PayloadObject {
 	msg := map[string]interface{}{
 		"temperature":       temp,
 		"relative_humidity": relHumidity,
@@ -53,8 +53,9 @@ type Driver struct {
 	xbos_iface     *bw2.Interface
 	lastheat       float64
 	lastcool       float64
+	lastfan        int
 	override       bool
-	fan            bool
+	fan            int
 	timeseriesUUID string
 }
 
@@ -102,12 +103,17 @@ func (d *Driver) Start() {
 			return
 		}
 
-		heat := data["heating_setpoint"].(float64)
-		cool := data["cooling_setpoint"].(float64)
-		d.SetSetpoints(
-			nil,
-			&heat,
-			&cool)
+		var heat *float64
+		var cool *float64
+		if _hsp, found := data["heating_setpoint"]; found {
+			x := _hsp.(float64)
+			heat = &x
+		}
+		if _csp, found := data["cooling_setpoint"]; found {
+			x := _csp.(float64)
+			cool = &x
+		}
+		d.SetSetpoints(nil, heat, cool, nil)
 	})
 
 	d.xbos_iface.SubscribeSlot("state", func(msg *bw2.SimpleMessage) {
@@ -133,30 +139,49 @@ func (d *Driver) Start() {
 			return
 		}
 
-		mode := int(data["mode"].(uint64))
-		heat := data["heating_setpoint"].(float64)
-		cool := data["cooling_setpoint"].(float64)
-		d.SetSetpoints(
-			&mode,
-			&heat,
-			&cool)
-		d.override = data["override"].(bool)
-		d.fan = data["fan"].(bool)
+		var mode *int
+		var fan *int
+		var heat *float64
+		var cool *float64
+		if _mode, found := data["mode"]; found {
+			x := int(_mode.(float64))
+			mode = &x
+		}
+		if _hsp, found := data["heating_setpoint"]; found {
+			x := _hsp.(float64)
+			heat = &x
+		}
+		if _csp, found := data["cooling_setpoint"]; found {
+			x := _csp.(float64)
+			cool = &x
+		}
+		if _override, found := data["override"]; found {
+			d.override = _override.(bool)
+		}
+		if _fan, found := data["fan"]; found {
+			x := int(_fan.(float64))
+			fan = &x
+		}
+
+		d.SetSetpoints(mode, heat, cool, fan)
+
 	})
 
 	for {
-
 		d.Scrape()
 		time.Sleep(10 * time.Second)
 	}
 }
 
-func (d *Driver) SetSetpoints(mode *int, heat *float64, cool *float64) {
+func (d *Driver) SetSetpoints(mode *int, heat *float64, cool *float64, fan *int) {
 	if heat == nil {
 		heat = &d.lastheat
 	}
 	if cool == nil {
 		cool = &d.lastcool
+	}
+	if fan == nil {
+		fan = &d.lastfan
 	}
 	if mode == nil {
 		auto := 3
@@ -164,6 +189,7 @@ func (d *Driver) SetSetpoints(mode *int, heat *float64, cool *float64) {
 	}
 	resp, err := http.PostForm("http://"+d.r.IP+"/control", url.Values{
 		"mode":     {fmt.Sprintf("%d", *mode)},
+		"fan":      {fmt.Sprintf("%d", *fan)},
 		"heattemp": {fmt.Sprintf("%d", int(*heat))},
 		"cooltemp": {fmt.Sprintf("%d", int(*cool))},
 	})
@@ -185,6 +211,7 @@ func (d *Driver) SetAway(val int) {
 	fmt.Println("set response: ", string(contents))
 	resp.Body.Close()
 }
+
 func (d *Driver) Control(sm *bw2.SimpleMessage) {
 	//Commands:
 	//{"cmd":"set_away","value": 1 / 0}
@@ -223,7 +250,7 @@ func (d *Driver) Control(sm *bw2.SimpleMessage) {
 						if cok {
 							ct = &cooltemp
 						}
-						d.SetSetpoints(nil, ht, ct)
+						d.SetSetpoints(nil, ht, ct, nil)
 					}
 				}
 			}
@@ -248,6 +275,7 @@ func (d *Driver) Scrape() {
 	inf.Time = time.Now().UnixNano()
 	inf.UUID = d.timeseriesUUID
 	po := inf.ToMsgPackPO()
+	fmt.Printf("%+v\n", inf)
 
 	d.iface.PublishSignal("info", po)
 	xbosPO := NewXbosInfoPO(
@@ -257,10 +285,11 @@ func (d *Driver) Scrape() {
 		inf.HeatTemp,
 		inf.CoolTemp,
 		d.override,
-		d.fan,
+		inf.Fan,
 		inf.Mode,
 		inf.State)
 	d.xbos_iface.PublishSignal("info", xbosPO)
 	d.lastheat = inf.HeatTemp
 	d.lastcool = inf.CoolTemp
+	d.lastfan = inf.Fan
 }
