@@ -1,11 +1,13 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"sync"
 	"time"
 
 	"github.com/satori/go.uuid"
@@ -57,6 +59,7 @@ type Driver struct {
 	override       bool
 	fan            int
 	timeseriesUUID string
+	sync.Mutex
 }
 
 func newThermostat(base string, bwc *bw2.BW2Client, r DiscoveryRecord) chan DiscoveryRecord {
@@ -174,6 +177,8 @@ func (d *Driver) Start() {
 }
 
 func (d *Driver) SetSetpoints(mode *int, heat *float64, cool *float64, fan *int) {
+	d.Lock()
+	defer d.Unlock()
 	if heat == nil {
 		heat = &d.lastheat
 	}
@@ -187,18 +192,26 @@ func (d *Driver) SetSetpoints(mode *int, heat *float64, cool *float64, fan *int)
 		auto := 3
 		mode = &auto
 	}
+	fmt.Println(*mode, *fan, *heat, *cool)
 	resp, err := http.PostForm("http://"+d.r.IP+"/control", url.Values{
 		"mode":     {fmt.Sprintf("%d", *mode)},
 		"fan":      {fmt.Sprintf("%d", *fan)},
 		"heattemp": {fmt.Sprintf("%d", int(*heat))},
 		"cooltemp": {fmt.Sprintf("%d", int(*cool))},
 	})
+	defer resp.Body.Close()
 	if err != nil {
 		fmt.Println("SET FAILURE: ", err)
+		return
 	}
 	contents, _ := ioutil.ReadAll(resp.Body)
 	fmt.Println("set response: ", string(contents))
-	resp.Body.Close()
+	if !bytes.Contains(contents, []byte{error}) {
+		// if no errors, then update internal state
+		d.lastheat = *heat
+		d.lastcool = *cool
+		d.lastfan = *fan
+	}
 }
 func (d *Driver) SetAway(val int) {
 	resp, err := http.PostForm("http://"+d.r.IP+"/settings", url.Values{
