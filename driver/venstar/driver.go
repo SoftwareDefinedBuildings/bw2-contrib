@@ -206,7 +206,7 @@ func (d *Driver) SetSetpoints(mode *int, heat *float64, cool *float64, fan *int)
 	}
 	contents, _ := ioutil.ReadAll(resp.Body)
 	fmt.Println("set response: ", string(contents))
-	if !bytes.Contains(contents, []byte{error}) {
+	if !bytes.Contains(contents, []byte("error")) {
 		// if no errors, then update internal state
 		d.lastheat = *heat
 		d.lastcool = *cool
