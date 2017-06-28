@@ -13,16 +13,16 @@ import (
 const TSTAT_PO_DF = "2.1.1.0"
 
 type setpointsMsg struct {
-	HeatingSetpoint float64 `msgpack:"heating_setpoint"`
-	CoolingSetpoint float64 `msgpack:"cooling_setpoint"`
+	HeatingSetpoint *float64 `msgpack:"heating_setpoint"`
+	CoolingSetpoint *float64 `msgpack:"cooling_setpoint"`
 }
 
 type stateMsg struct {
-	HeatingSetpoint float64 `msgpack:"heating_setpoint"`
-	CoolingSetpoint float64 `msgpack:"cooling_setpoint"`
-	Override        bool    `msgpack:"override"`
-	Mode            int32   `msgpack:"mode"`
-	Fan             bool    `msgpack:"fan"`
+	HeatingSetpoint *float64 `msgpack:"heating_setpoint"`
+	CoolingSetpoint *float64 `msgpack:"cooling_setpoint"`
+	Override        *float64 `msgpack:"override"`
+	Mode            *float64 `msgpack:"mode"`
+	Fan             *float64 `msgpack:"fan"`
 }
 
 func main() {
@@ -60,11 +60,11 @@ func main() {
 
 		var setpoints setpointsMsg
 		if err := po.(bw2.MsgPackPayloadObject).ValueInto(&setpoints); err != nil {
-			fmt.Println("Received malformed PO on setpoints slot. Dropping.")
+			fmt.Println("Received malformed PO on setpoints slot. Dropping.", err)
 			return
 		}
 
-		if err := pelican.ModifySetpoints(setpoints.HeatingSetpoint, setpoints.CoolingSetpoint); err != nil {
+		if err := pelican.ModifySetpoints(&setpoints); err != nil {
 			fmt.Println(err)
 		} else {
 			fmt.Printf("Set heating setpoint to %v and cooling setpoint to %v\n",
@@ -81,7 +81,7 @@ func main() {
 
 		var state stateMsg
 		if err := po.(bw2.MsgPackPayloadObject).ValueInto(&state); err != nil {
-			fmt.Println("Received malformed PO on state slot. Dropping.")
+			fmt.Println("Received malformed PO on state slot. Dropping.", err)
 			return
 		}
 
