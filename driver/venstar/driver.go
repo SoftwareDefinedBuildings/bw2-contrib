@@ -99,24 +99,18 @@ func (d *Driver) Start() {
 			return
 		}
 
-		var data map[string]interface{}
+		var data struct {
+			Heating_setpoint *float64 `msgpack:"heating_setpoint"`
+			Cooling_setpoint *float64 `msgpack:"cooling_setpoint"`
+		}
+
 		err = msgpo.ValueInto(&data)
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
 
-		var heat *float64
-		var cool *float64
-		if _hsp, found := data["heating_setpoint"]; found {
-			x := _hsp.(float64)
-			heat = &x
-		}
-		if _csp, found := data["cooling_setpoint"]; found {
-			x := _csp.(float64)
-			cool = &x
-		}
-		d.SetSetpoints(nil, heat, cool, nil)
+		d.SetSetpoints(nil, data.Heating_setpoint, data.Cooling_setpoint, nil)
 	})
 
 	d.xbos_iface.SubscribeSlot("state", func(msg *bw2.SimpleMessage) {
@@ -135,38 +129,20 @@ func (d *Driver) Start() {
 			return
 		}
 
-		var data map[string]interface{}
+		var data struct {
+			Heating_setpoint *float64 `msgpack:"heating_setpoint"`
+			Cooling_setpoint *float64 `msgpack:"cooling_setpoint"`
+			Mode             *int     `msgpack:"mode"`
+			Override         *int     `msgpack:"override"`
+			Fan              *int     `msgpack:"fan"`
+		}
 		err = msgpo.ValueInto(&data)
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
 
-		var mode *int
-		var fan *int
-		var heat *float64
-		var cool *float64
-		if _mode, found := data["mode"]; found {
-			x := int(_mode.(float64))
-			mode = &x
-		}
-		if _hsp, found := data["heating_setpoint"]; found {
-			x := _hsp.(float64)
-			heat = &x
-		}
-		if _csp, found := data["cooling_setpoint"]; found {
-			x := _csp.(float64)
-			cool = &x
-		}
-		if _override, found := data["override"]; found {
-			d.override = _override.(bool)
-		}
-		if _fan, found := data["fan"]; found {
-			x := int(_fan.(float64))
-			fan = &x
-		}
-
-		d.SetSetpoints(mode, heat, cool, fan)
+		d.SetSetpoints(data.Mode, data.Heating_setpoint, data.Cooling_setpoint, data.Fan)
 
 	})
 
