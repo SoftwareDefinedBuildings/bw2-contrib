@@ -65,11 +65,11 @@ type apiThermostat struct {
 }
 
 type pelicanStateParams struct {
-	HeatingSetpoint float64
-	CoolingSetpoint float64
-	Override        bool
-	Mode            int32
-	Fan             bool
+	HeatingSetpoint *float64
+	CoolingSetpoint *float64
+	Override        *float64
+	Mode            *float64
+	Fan             *float64
 }
 
 func NewPelican(username, password, sitename, name string) *Pelican {
@@ -137,14 +137,23 @@ func (pel *Pelican) GetStatus() (*PelicanStatus, error) {
 	}, nil
 }
 
-func (pel *Pelican) ModifySetpoints(heatingSetpoint, coolingSetpoint float64) error {
+func (pel *Pelican) ModifySetpoints(setpoints *setpointsMsg) error {
+	var value string
+	// heating setpoint
+	if setpoints.HeatingSetpoint != nil {
+		value += fmt.Sprintf("heatSetting:%d;", int(*setpoints.HeatingSetpoint))
+	}
+	// cooling setpoint
+	if setpoints.CoolingSetpoint != nil {
+		value += fmt.Sprintf("coolSetting:%d;", int(*setpoints.CoolingSetpoint))
+	}
 	resp, _, errs := pel.req.Get(pel.target).
 		Param("username", pel.username).
 		Param("password", pel.password).
 		Param("request", "set").
 		Param("object", "thermostat").
 		Param("selection", fmt.Sprintf("name:%s;", pel.name)).
-		Param("value", fmt.Sprintf("heatSetting:%d;coolSetting:%d;", int(heatingSetpoint), int(coolingSetpoint))).
+		Param("value", value).
 		End()
 	if errs != nil {
 		return fmt.Errorf("Error modifying thermostat temp settings: %v", errs)
@@ -164,22 +173,47 @@ func (pel *Pelican) ModifySetpoints(heatingSetpoint, coolingSetpoint float64) er
 }
 
 func (pel *Pelican) ModifyState(params *pelicanStateParams) error {
-	if params.Mode < 0 || params.Mode > 3 {
-		return fmt.Errorf("Specified thermostat mode %d is invalid", params.Mode)
+	var value string
+
+	// mode
+	if params.Mode != nil {
+		mode := int(*params.Mode)
+		if mode < 0 || mode > 3 {
+			return fmt.Errorf("Specified thermostat mode %d is invalid", mode)
+		}
+		systemVal := modeValMappings[mode]
+		value += fmt.Sprintf("system:%s;", systemVal)
 	}
 
-	var scheduleVal string
-	if params.Override {
-		scheduleVal = "Off"
-	} else {
-		scheduleVal = "On"
+	// override
+	if params.Override != nil {
+		var scheduleVal string
+		if *params.Override == 1 {
+			scheduleVal = "Off"
+		} else {
+			scheduleVal = "On"
+		}
+		value += fmt.Sprintf("schedule:%s;", scheduleVal)
 	}
-	systemVal := modeValMappings[params.Mode]
-	var fanVal string
-	if params.Fan {
-		fanVal = "On"
-	} else {
-		fanVal = "Auto"
+
+	// fan
+	if params.Fan != nil {
+		var fanVal string
+		if *params.Fan == 1 {
+			fanVal = "On"
+		} else {
+			fanVal = "Auto"
+		}
+		value += fmt.Sprintf("fan:%s;", fanVal)
+	}
+
+	// heating setpoint
+	if params.HeatingSetpoint != nil {
+		value += fmt.Sprintf("heatSetting:%d;", int(*params.HeatingSetpoint))
+	}
+	// cooling setpoint
+	if params.CoolingSetpoint != nil {
+		value += fmt.Sprintf("coolSetting:%d;", int(*params.CoolingSetpoint))
 	}
 
 	resp, _, errs := pel.req.Get(pel.target).
@@ -188,8 +222,7 @@ func (pel *Pelican) ModifyState(params *pelicanStateParams) error {
 		Param("request", "set").
 		Param("object", "thermostat").
 		Param("selection", fmt.Sprintf("name:%s;", pel.name)).
-		Param("value", fmt.Sprintf("heatSetting:%d;coolSetting:%d;schedule:%s;system:%s;fan:%s;",
-			int(params.HeatingSetpoint), int(params.CoolingSetpoint), scheduleVal, systemVal, fanVal)).
+		Param("value", value).
 		End()
 	if errs != nil {
 		return fmt.Errorf("Error modifying thermostat state: %v", errs)
