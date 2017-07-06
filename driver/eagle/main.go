@@ -104,7 +104,13 @@ func StartEagleServer() {
 	server.userstate = perm.UserState().(*permissionbolt.UserState)
 	server.userstate.SetCookieTimeout(120) // 2 min
 
-	params := spawnable.GetParamsOrExit()
+	params, err := spawnable.GetParams()
+	if err != nil {
+		params, err = spawnable.GetParamsFile("/etc/eagle/params.yml")
+	}
+	if err != nil {
+		log.Fatal(err)
+	}
 	server.multiplier = float64(params.MustInt("multiplier"))
 
 	// config bw2
