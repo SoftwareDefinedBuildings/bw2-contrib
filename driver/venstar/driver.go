@@ -266,6 +266,10 @@ func (d *Driver) Scrape() {
 	inf.Time = time.Now().UnixNano()
 	inf.UUID = d.timeseriesUUID
 	po := inf.ToMsgPackPO()
+	// detect broken state
+	if inf.HeatTemp == 0 && inf.CoolTemp == 0 {
+		return
+	}
 	fmt.Printf("%+v\n", inf)
 
 	d.iface.PublishSignal("info", po)
