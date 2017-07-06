@@ -1,0 +1,19 @@
+[Unit]
+Description=Eagle
+
+[Service]
+Restart=always
+RestartSec=5s
+ExecStartPre=/usr/bin/docker pull gtfierro/eagle
+ExecStart=/usr/bin/docker run \
+    --name %p \
+    -v /etc/eagle:/etc/eagle \
+    -p 80:80 \
+    -p 443:443 \
+    -e BW2_AGENT=172.17.0.1:28589 \
+    gtfierro/eagle
+
+ExecStop=/usr/bin/docker stop -t 5 %p ; /usr/bin/docker rm -f %p
+
+[Install]
+WantedBy=multi-user.target
