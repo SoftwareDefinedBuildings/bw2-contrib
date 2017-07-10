@@ -102,7 +102,7 @@ func (pel *Pelican) GetStatus() (*PelicanStatus, error) {
 		return nil, fmt.Errorf("Failed to decode response XML: %v", err)
 	}
 	if result.Success == 0 {
-		return nil, fmt.Errorf("Error retrieving thermostat status: %s", result.Message)
+		return nil, fmt.Errorf("Error retrieving thermostat status from %s : %s", resp.Request.URL, result.Message)
 	}
 
 	thermostat := result.Thermostat
