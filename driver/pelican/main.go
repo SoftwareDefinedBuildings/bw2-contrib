@@ -49,7 +49,7 @@ func main() {
 	}
 
 	service := bwClient.RegisterService(baseURI, "s.pelican")
-	tstatIface := service.RegisterInterface("thermostat", "i.xbos.thermostat")
+	tstatIface := service.RegisterInterface(name, "i.xbos.thermostat")
 
 	tstatIface.SubscribeSlot("setpoints", func(msg *bw2.SimpleMessage) {
 		po := msg.GetOnePODF(TSTAT_PO_DF)
