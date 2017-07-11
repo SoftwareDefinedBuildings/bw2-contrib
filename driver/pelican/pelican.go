@@ -92,7 +92,7 @@ func (pel *Pelican) GetStatus() (*PelicanStatus, error) {
 		Param("value", "temperature;humidity;heatSetting;coolSetting;setBy;HeatNeedsFan;system;runStatus").
 		End()
 	if errs != nil {
-		return nil, fmt.Errorf("Error retrieving thermostat status: %v", errs)
+		return nil, fmt.Errorf("Error retrieving thermostat status from %s: %v", resp.Request.URL, errs)
 	}
 
 	defer resp.Body.Close()
@@ -102,7 +102,7 @@ func (pel *Pelican) GetStatus() (*PelicanStatus, error) {
 		return nil, fmt.Errorf("Failed to decode response XML: %v", err)
 	}
 	if result.Success == 0 {
-		return nil, fmt.Errorf("Error retrieving thermostat status: %s", result.Message)
+		return nil, fmt.Errorf("Error retrieving thermostat status from %s: %s", resp.Request.URL, result.Message)
 	}
 
 	thermostat := result.Thermostat
@@ -225,7 +225,7 @@ func (pel *Pelican) ModifyState(params *pelicanStateParams) error {
 		Param("value", value).
 		End()
 	if errs != nil {
-		return fmt.Errorf("Error modifying thermostat state: %v", errs)
+		return fmt.Errorf("Error modifying thermostat state: %v (%s)", errs, resp.Request.URL)
 	}
 
 	defer resp.Body.Close()
