@@ -34,7 +34,7 @@ func NewXbosInfoPO(time int64, temp float64, relHumidity float64, heatingSetpoin
 		"heating_setpoint":  heatingSetpoint,
 		"cooling_setpoint":  coolingSetpoint,
 		"override":          override,
-		"fan":               fan,
+		"fan":               fan == 1,
 		"mode":              mode,
 		"state":             state,
 		"time":              time}
