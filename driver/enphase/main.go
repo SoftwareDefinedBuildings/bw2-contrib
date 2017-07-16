@@ -2,30 +2,20 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"strings"
 	"time"
 
 	"github.com/immesys/spawnpoint/spawnable"
-	"github.com/satori/go.uuid"
 	bw2 "gopkg.in/immesys/bw2bind.v5"
 )
 
-const rootUUIDStr = "d8b61708-2797-11e6-836b-0cc47a0f7eea"
-
-type TimeseriesReading struct {
-	UUID  string
-	Time  int64
-	Value uint64
-}
-
-func (tsr *TimeseriesReading) ToMsgPackPO() bw2.PayloadObject {
-	po, err := bw2.CreateMsgPackPayloadObject(bw2.PONumTimeseriesReading, tsr)
-	if err != nil {
-		panic(err)
-	} else {
-		return po
-	}
+type XBOS_PV_Meter struct {
+	Current_power         float64 `msgpack:"current_power"`
+	Total_energy_lifetime float64 `msgpack:"total_energy_lifetime"`
+	Total_energy_today    float64 `msgpack:"total_energy_today"`
+	Time                  int64   `msgpack:"time"`
 }
 
 func main() {
@@ -53,15 +43,7 @@ func main() {
 	}
 
 	svc := bwClient.RegisterService(baseURI, "s.Enphase")
-	iface := svc.RegisterInterface("enphase1", "i.meter")
-	rootUUID := uuid.FromStringOrNil(rootUUIDStr)
-
-	bwClient.SetMetadata(iface.SignalURI("CurrentPower"), "UnitofMeasure", "W")
-	currentPowerUUID := uuid.NewV3(rootUUID, "CurrentPower")
-	bwClient.SetMetadata(iface.SignalURI("EnergyLifetime"), "UnitofMeasure", "Wh")
-	energyLifetimeUUID := uuid.NewV3(rootUUID, "EnergyLifetime")
-	bwClient.SetMetadata(iface.SignalURI("EnergyToday"), "UnitofMeasure", "Wh")
-	energyTodayUUID := uuid.NewV3(rootUUID, "EnergyToday")
+	iface := svc.RegisterInterface("enphase1", "i.xbos.pv_meter")
 
 	enphase, err := NewEnphase(apiKey, userID, sysName)
 	if err != nil {
@@ -70,25 +52,20 @@ func main() {
 	}
 	summCh := enphase.PollSummary(pollInterval)
 	for summary := range summCh {
-		currentPowerReading := TimeseriesReading{
-			UUID:  currentPowerUUID.String(),
-			Time:  time.Now().UnixNano(),
-			Value: summary.CurrentPower,
+		fmt.Println(summary)
+		msg := XBOS_PV_Meter{
+			Current_power:         float64(summary.CurrentPower),
+			Total_energy_lifetime: float64(summary.EnergyLifetime),
+			Total_energy_today:    float64(summary.EnergyToday),
+			Time:                  time.Now().UnixNano(),
 		}
-		iface.PublishSignal("CurrentPower", currentPowerReading.ToMsgPackPO())
 
-		energyLifetimeReading := TimeseriesReading{
-			UUID:  energyLifetimeUUID.String(),
-			Time:  time.Now().UnixNano(),
-			Value: summary.EnergyLifetime,
+		po, err := bw2.CreateMsgPackPayloadObject(bw2.FromDotForm(PV_PO_DF), msg)
+		if err != nil {
+			log.Println(err)
+			continue
 		}
-		iface.PublishSignal("EnergyLifetime", energyLifetimeReading.ToMsgPackPO())
 
-		energyTodayReading := TimeseriesReading{
-			UUID:  energyTodayUUID.String(),
-			Time:  time.Now().UnixNano(),
-			Value: summary.EnergyToday,
-		}
-		iface.PublishSignal("EnergyToday", energyTodayReading.ToMsgPackPO())
+		iface.PublishSignal("info", po)
 	}
 }

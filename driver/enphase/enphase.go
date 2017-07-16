@@ -11,6 +11,7 @@ import (
 )
 
 const uriBase = "https://api.enphaseenergy.com/api/v2"
+const PV_PO_DF = "2.1.1.6"
 
 type Enphase struct {
 	APIKey string
