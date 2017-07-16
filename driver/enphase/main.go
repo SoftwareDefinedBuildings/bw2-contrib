@@ -42,7 +42,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	svc := bwClient.RegisterService(baseURI, "s.Enphase")
+	svc := bwClient.RegisterService(baseURI, "s.enphase")
 	iface := svc.RegisterInterface("enphase1", "i.xbos.pv_meter")
 
 	enphase, err := NewEnphase(apiKey, userID, sysName)
