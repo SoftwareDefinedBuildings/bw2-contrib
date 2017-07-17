@@ -1,55 +1,24 @@
-Prefix: <Your Prefix Here>
+Prefix: <base service uri here>
+
 Archive:
-  - AttachURI: devices
-    ArchiveURI: devices/tedmain/s.TED/MTU1/i.meter/signal/Voltage
-    Value: Value
-    Name: Voltage
-    MetadataURIs:
-    - devices/tedmain/s.TED
-    - devices/tedmain/s.TED/MTU1/i.meter
-    - devices/tedmain/s.TED/MTU1/i.meter/signal/Voltage
-
-  - AttachURI: devices
-    ArchiveURI: devices/tedmain/s.TED/MTU1/i.meter/signal/PowerNow
-    Value: Value
-    Name: PowerNow
-    MetadataURIs:
-    - devices/tedmain/s.TED
-    - devices/tedmain/s.TED/MTU1/i.meter
-    - devices/tedmain/s.TED/MTU1/i.meter/signal/PowerNow
-
-  - AttachURI: devices
-    ArchiveURI: devices/tedmain/s.TED/MTU1/i.meter/signal/KVA
-    Value: Value
-    Name: KVA
-    MetadataURIs:
-    - devices/tedmain/s.TED
-    - devices/tedmain/s.TED/MTU1/i.meter
-    - devices/tedmain/s.TED/MTU1/i.meter/signal/KVA
-
-  - AttachURI: devices
-    ArchiveURI: devices/tedmain/s.TED/MTU2/i.meter/signal/Voltage
-    Value: Value
-    Name: Voltage
-    MetadataURIs:
-    - devices/tedmain/s.TED
-    - devices/tedmain/s.TED/MTU1/i.meter
-    - devices/tedmain/s.TED/MTU2/i.meter/signal/Voltage
-
-  - AttachURI: devices
-    ArchiveURI: devices/tedmain/s.TED/MTU2/i.meter/signal/PowerNow
-    Value: Value
-    Name: PowerNow
-    MetadataURIs:
-    - devices/tedmain/s.TED
-    - devices/tedmain/s.TED/MTU1/i.meter
-    - devices/tedmain/s.TED/MTU2/i.meter/signal/PowerNow
-
-  - AttachURI: devices
-    ArchiveURI: devices/tedmain/s.TED/MTU2/i.meter/signal/KVA
-    Value: Value
-    Name: KVA
-    MetadataURIs:
-    - devices/tedmain/s.TED
-    - devices/tedmain/s.TED/MTU1/i.meter
-    - devices/tedmain/s.TED/MTU2/i.meter/signal/KVA
+  - AttachURI:
+    ArchiveURI: s.ted/+/i.xbos.meter/signal/info
+    Value: apparent_power
+    Name: apparent_power
+    Unit: kVA
+    Time: time
+    PO: 2.1.1.4/32
+  - AttachURI:
+    ArchiveURI: s.ted/+/i.xbos.meter/signal/info
+    Value: power
+    Name: power
+    Unit: kW
+    Time: time
+    PO: 2.1.1.4/32
+  - AttachURI:
+    ArchiveURI: s.ted/+/i.xbos.meter/signal/info
+    Value: voltage
+    Name: voltage
+    Unit: V
+    Time: time
+    PO: 2.1.1.4/32

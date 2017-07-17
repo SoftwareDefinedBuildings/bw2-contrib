@@ -3,26 +3,23 @@ package main
 import (
 	"fmt"
 	"github.com/gtfierro/spawnpoint/spawnable"
-	"github.com/satori/go.uuid"
 	bw2 "gopkg.in/immesys/bw2bind.v5"
+	"log"
 	"time"
 )
 
-var NAMESPACE_UUID uuid.UUID
+const PONUM = `2.1.1.4`
 
-func init() {
-	NAMESPACE_UUID = uuid.FromStringOrNil("d8b61708-2797-11e6-836b-0cc47a0f7eea")
-}
+//func (msg TimeseriesReading) ToMsgPackBW() (po bw2.PayloadObject) {
+//	po, _ = bw2.CreateMsgPackPayloadObject(bw2.FromDotForm("2.0.9.1"), msg)
+//	return
+//}
 
-type TimeseriesReading struct {
-	UUID  string
-	Time  int64
-	Value float64
-}
-
-func (msg TimeseriesReading) ToMsgPackBW() (po bw2.PayloadObject) {
-	po, _ = bw2.CreateMsgPackPayloadObject(bw2.FromDotForm("2.0.9.1"), msg)
-	return
+type XBOSMeter struct {
+	Power          float64 `msgpack:"power"`
+	Voltage        float64 `msgpack:"voltage"`
+	Apparent_power float64 `msgpack:"apparent_power"`
+	Time           int64   `msgpack:"time"`
 }
 
 func main() {
@@ -40,32 +37,39 @@ func main() {
 
 	params.MergeMetadata(bw)
 
-	svc := bw.RegisterService(baseuri, "s.TED")
+	svc := bw.RegisterService(baseuri, "s.ted")
 	fmt.Println(svc.FullURI())
 	meters := make(map[string]*bw2.Interface)
-	uuids := make(map[string]string)
 
-	for _, name := range toExtract {
-		iface := svc.RegisterInterface(name, "i.meter")
-		meters[name] = iface
-		uuids[name+"voltage"] = uuid.NewV3(NAMESPACE_UUID, name+"voltage").String()
-		uuids[name+"powernow"] = uuid.NewV3(NAMESPACE_UUID, name+"powernow").String()
-		uuids[name+"kva"] = uuid.NewV3(NAMESPACE_UUID, name+"kva").String()
-		fmt.Println(iface.FullURI())
-	}
+	//for _, name := range toExtract {
+	//	iface := svc.RegisterInterface(name, "i.meter")
+	//	meters[name] = iface
+	//	uuids[name+"voltage"] = uuid.NewV3(NAMESPACE_UUID, name+"voltage").String()
+	//	uuids[name+"powernow"] = uuid.NewV3(NAMESPACE_UUID, name+"powernow").String()
+	//	uuids[name+"kva"] = uuid.NewV3(NAMESPACE_UUID, name+"kva").String()
+	//	fmt.Println(iface.FullURI())
+	//}
 
 	src := NewTEDSource(url, poll_interval, toExtract)
 	data := src.Start()
 	for d := range data {
 		fmt.Printf("Values: %+v\n", d)
-		volt_msg := TimeseriesReading{UUID: uuids[d.Name+"voltage"], Time: time.Now().Unix(), Value: d.VoltageNow}
-		meters[d.Name].PublishSignal("Voltage", volt_msg.ToMsgPackBW())
-
-		power_msg := TimeseriesReading{UUID: uuids[d.Name+"powernow"], Time: time.Now().Unix(), Value: d.PowerNow}
-		meters[d.Name].PublishSignal("PowerNow", power_msg.ToMsgPackBW())
-
-		ap_msg := TimeseriesReading{UUID: uuids[d.Name+"kva"], Time: time.Now().Unix(), Value: d.KVA}
-		meters[d.Name].PublishSignal("KVA", ap_msg.ToMsgPackBW())
+		iface, found := meters[d.Name]
+		if !found {
+			iface = svc.RegisterInterface(d.Name, "i.xbos.meter")
+			meters[d.Name] = iface
+		}
+		msg := XBOSMeter{
+			Time:           time.Now().UnixNano(),
+			Voltage:        d.Voltage.VoltageNow,
+			Apparent_power: d.Power.KVA,
+			Power:          d.Power.PowerNow,
+		}
+		if po, err := bw2.CreateMsgPackPayloadObject(bw2.FromDotForm(PONUM), msg); err != nil {
+			log.Println(err)
+		} else if err = iface.PublishSignal("info", po); err != nil {
+			log.Println(err)
+		}
 	}
 
 }
