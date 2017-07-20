@@ -3,7 +3,9 @@ package main
 import (
 	"crypto/tls"
 	"encoding/json"
+	"fmt"
 	"log"
+	"strconv"
 
 	"github.com/parnurzeal/gorequest"
 	"github.com/pkg/errors"
@@ -133,4 +135,54 @@ func (acc *Account) read_devices() []JuiceDevice {
 		devices = append(devices, *jd)
 	}
 	return devices
+}
+
+type write_params struct {
+	State       *bool    `msgpack:"state"`
+	ChargeLimit *float64 `msgpack:"current_limit"`
+}
+
+func (acc *Account) write_device(unit_id string, params write_params) error {
+	jd, found := acc.Devices[unit_id]
+	if !found {
+		return errors.New(fmt.Sprintf("No device found with that ID (%s)", unit_id))
+	}
+	var amperage int64
+	if params.State != nil && !(*params.State) {
+		amperage = 0
+	} else if params.ChargeLimit != nil {
+		amperage = int64(*params.ChargeLimit)
+	}
+
+	// clamp at 40 amps (juiceplug limit)
+	if amperage > 40 {
+		amperage = 40
+	}
+	req := gorequest.New()
+	resp, _, err := req.
+		TLSClientConfig(&tls.Config{InsecureSkipVerify: true}).
+		Post(JuiceNetDeviceURI).Type("json").
+		SendMap(map[string]string{
+			"cmd":           "set_limit",
+			"device_id":     "JuicePlug",
+			"account_token": acc.AccountToken,
+			"token":         jd.Token,
+			"amperage":      strconv.FormatInt(amperage, 10),
+		}).End()
+	if len(err) > 0 {
+		log.Fatal(errors.Wrap(err[0], "Could not fetch device"))
+	}
+	defer resp.Body.Close()
+
+	var m map[string]interface{}
+	dec := json.NewDecoder(resp.Body)
+	if err := dec.Decode(&m); err != nil {
+		log.Fatal(errors.Wrap(err, "Could not decode device"))
+	}
+	fmt.Println("actuation result:", m)
+	if m["success"].(bool) {
+		return nil
+	} else {
+		return errors.New("Could not set current limit")
+	}
 }
