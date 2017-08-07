@@ -340,6 +340,7 @@ func (srv *EagleServer) HandleMessage(resp Response, baseuri string) {
 			// TODO: set metadata on these uris
 			eagle.svc = srv.bwclient.RegisterService(baseuri, "s.eagle")
 			eagle.iface = eagle.svc.RegisterInterface(info.DeviceMacId, "i.meter")
+			eagle.xbosiface = eagle.svc.RegisterInterface(info.DeviceMacId, "i.xbos.meter")
 		}
 		eagle.DeviceMAC = info.DeviceMacId
 		eagle.InstallCode = info.InstallCode

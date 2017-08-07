@@ -66,8 +66,9 @@ type Eagle struct {
 	// type of meter (Electric/Gas/Water/Other)
 	Type string
 	// bosswave publishing interface
-	iface *bw2.Interface
-	svc   *bw2.Service
+	iface     *bw2.Interface
+	xbosiface *bw2.Interface
+	svc       *bw2.Service
 	// current status of Eagle
 	current_demand              float64
 	current_price               float64
@@ -191,5 +192,15 @@ func (srv *EagleServer) forwardData(eagle *Eagle) {
 	err := eagle.iface.PublishSignal("meter", po)
 	if err != nil {
 		log.Error(errors.Wrap(err, "Could not publish i.meter"))
+	}
+
+	xbos_msg := map[string]interface{}{
+		"power": eagle.current_demand,
+		"time":  eagle.current_time,
+	}
+	po, _ = bw2.CreateMsgPackPayloadObject(bw2.FromDotForm("2.1.1.4"), xbos_msg)
+	err = eagle.xbosiface.PublishSignal("info", po)
+	if err != nil {
+		log.Error(errors.Wrap(err, "Could not publish i.xbos.meter"))
 	}
 }
