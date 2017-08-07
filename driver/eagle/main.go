@@ -163,7 +163,7 @@ func StartEagleServer() {
 		m := autocert.Manager{
 			Prompt:     autocert.AcceptTOS,
 			HostPolicy: autocert.HostWhitelist(tlshost),
-			Cache:      autocert.DirCache("certs"),
+			Cache:      autocert.DirCache(params.MustString("certdir")),
 		}
 		s := &http.Server{
 			Addr:      address.String(),

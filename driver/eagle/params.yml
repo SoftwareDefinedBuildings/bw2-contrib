@@ -1,6 +1,7 @@
 svc_base_uri: ""
 # entity we use to run
 entityfile: <path to entity file>
+certdir: <path to certificate directory (for https)>
 # web interface admin account
 user: <admin user name>
 pass: <admin user password>

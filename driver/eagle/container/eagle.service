@@ -4,7 +4,7 @@ Description=Eagle
 [Service]
 Restart=always
 RestartSec=5s
-ExecStartPre=/usr/bin/docker pull gtfierro/eagle
+#ExecStartPre=/usr/bin/docker pull gtfierro/eagle
 ExecStart=/usr/bin/docker run \
     --name %p \
     -v /etc/eagle:/etc/eagle \
