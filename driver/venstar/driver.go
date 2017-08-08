@@ -27,14 +27,14 @@ func (ir *InfoResponse) ToMsgPackPO() bw2.PayloadObject {
 	return po
 }
 
-func NewXbosInfoPO(time int64, temp float64, relHumidity float64, heatingSetpoint float64, coolingSetpoint float64, override bool, fan int, mode int, state int) bw2.PayloadObject {
+func NewXbosInfoPO(time int64, temp float64, relHumidity float64, heatingSetpoint float64, coolingSetpoint float64, override bool, fan bool, mode int, state int) bw2.PayloadObject {
 	msg := map[string]interface{}{
 		"temperature":       temp,
 		"relative_humidity": relHumidity,
 		"heating_setpoint":  heatingSetpoint,
 		"cooling_setpoint":  coolingSetpoint,
 		"override":          override,
-		"fan":               fan == 1,
+		"fan":               fan,
 		"mode":              mode,
 		"state":             state,
 		"time":              time}
@@ -55,9 +55,9 @@ type Driver struct {
 	xbos_iface     *bw2.Interface
 	lastheat       float64
 	lastcool       float64
-	lastfan        int
+	lastfan        bool
 	override       bool
-	fan            int
+	fan            bool
 	timeseriesUUID string
 	sync.Mutex
 }
@@ -110,7 +110,7 @@ func (d *Driver) Start() {
 			return
 		}
 
-		d.SetSetpoints(nil, data.Heating_setpoint, data.Cooling_setpoint, nil)
+		d.SetSetpoints(nil, data.Heating_setpoint, data.Cooling_setpoint, nil, nil)
 	})
 
 	d.xbos_iface.SubscribeSlot("state", func(msg *bw2.SimpleMessage) {
@@ -133,8 +133,8 @@ func (d *Driver) Start() {
 			Heating_setpoint *float64 `msgpack:"heating_setpoint"`
 			Cooling_setpoint *float64 `msgpack:"cooling_setpoint"`
 			Mode             *int     `msgpack:"mode"`
-			Override         *int     `msgpack:"override"`
-			Fan              *int     `msgpack:"fan"`
+			Override         *bool    `msgpack:"override"`
+			Fan              *bool    `msgpack:"fan"`
 		}
 		err = msgpo.ValueInto(&data)
 		if err != nil {
@@ -142,7 +142,7 @@ func (d *Driver) Start() {
 			return
 		}
 
-		d.SetSetpoints(data.Mode, data.Heating_setpoint, data.Cooling_setpoint, data.Fan)
+		d.SetSetpoints(data.Mode, data.Heating_setpoint, data.Cooling_setpoint, data.Fan, data.Override)
 
 	})
 
@@ -152,7 +152,7 @@ func (d *Driver) Start() {
 	}
 }
 
-func (d *Driver) SetSetpoints(mode *int, heat *float64, cool *float64, fan *int) {
+func (d *Driver) SetSetpoints(mode *int, heat *float64, cool *float64, fan *bool, override *bool) {
 	d.Lock()
 	defer d.Unlock()
 	if heat == nil {
@@ -168,13 +168,34 @@ func (d *Driver) SetSetpoints(mode *int, heat *float64, cool *float64, fan *int)
 		auto := 3
 		mode = &auto
 	}
-	fmt.Println(*mode, *fan, *heat, *cool)
-	resp, err := http.PostForm("http://"+d.r.IP+"/control", url.Values{
+	values := url.Values{
 		"mode":     {fmt.Sprintf("%d", *mode)},
 		"fan":      {fmt.Sprintf("%d", *fan)},
 		"heattemp": {fmt.Sprintf("%d", int(*heat))},
 		"cooltemp": {fmt.Sprintf("%d", int(*cool))},
-	})
+	}
+
+	// set schedule to the opposite of override; for the venstar, we disable the schedule when we enable override
+	if override != nil {
+		schedValues := url.Values{}
+		if *override {
+			schedValues.Add("schedule", "0")
+		} else {
+			schedValues.Add("schedule", "1")
+		}
+		d.override = *override
+		resp, err := http.PostForm("http://"+d.r.IP+"/settings", schedValues)
+		defer resp.Body.Close()
+		if err != nil {
+			fmt.Println("SET FAILURE: ", err)
+			return
+		}
+		contents, _ := ioutil.ReadAll(resp.Body)
+		fmt.Println("set response: ", string(contents))
+	}
+
+	fmt.Println(*mode, *fan, *heat, *cool)
+	resp, err := http.PostForm("http://"+d.r.IP+"/control", values)
 	defer resp.Body.Close()
 	if err != nil {
 		fmt.Println("SET FAILURE: ", err)
@@ -239,7 +260,7 @@ func (d *Driver) Control(sm *bw2.SimpleMessage) {
 						if cok {
 							ct = &cooltemp
 						}
-						d.SetSetpoints(nil, ht, ct, nil)
+						d.SetSetpoints(nil, ht, ct, nil, nil)
 					}
 				}
 			}
@@ -280,11 +301,11 @@ func (d *Driver) Scrape() {
 		inf.HeatTemp,
 		inf.CoolTemp,
 		d.override,
-		inf.Fan,
+		inf.Fan == 1,
 		inf.Mode,
 		inf.State)
 	d.xbos_iface.PublishSignal("info", xbosPO)
 	d.lastheat = inf.HeatTemp
 	d.lastcool = inf.CoolTemp
-	d.lastfan = inf.Fan
+	d.lastfan = inf.Fan == 1
 }
