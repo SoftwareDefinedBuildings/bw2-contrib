@@ -11,7 +11,9 @@ import (
 	bw2 "gopkg.in/immesys/bw2bind.v5"
 )
 
-const PONUM = `2.1.1.1`
+const LIGHT_PONUM = `2.1.1.1`
+const METER_PONUM = `2.1.1.4`
+const OCC_PONUM = `2.1.2.1`
 
 type Fixture struct {
 	id          string
@@ -104,7 +106,7 @@ func (f *Fixture) ListenActuation() {
 			Brightness int64 `msgpack:"state"`
 		}
 
-		po := msg.GetOnePODF(PONUM)
+		po := msg.GetOnePODF(LIGHT_PONUM)
 		pom, ok := po.(bw2.MsgPackPayloadObject)
 		if !ok {
 			log.Println("Invalid payload")
@@ -143,7 +145,7 @@ func (f *Fixture) PollAndReport(dur time.Duration) {
 			Time:       ts,
 		}
 		fmt.Printf("%s %+v\n", f.id, state)
-		if po, err := bw2.CreateMsgPackPayloadObject(bw2.FromDotForm(PONUM), msg); err != nil {
+		if po, err := bw2.CreateMsgPackPayloadObject(bw2.FromDotForm(LIGHT_PONUM), msg); err != nil {
 			log.Println(err)
 		} else if err = f.light_iface.PublishSignal("info", po); err != nil {
 			log.Println(err)
@@ -157,7 +159,7 @@ func (f *Fixture) PollAndReport(dur time.Duration) {
 			Occupied: state.Last_occupancy_seen < 30,
 			Time:     ts,
 		}
-		if po, err := bw2.CreateMsgPackPayloadObject(bw2.FromDotForm(PONUM), occmsg); err != nil {
+		if po, err := bw2.CreateMsgPackPayloadObject(bw2.FromDotForm(OCC_PONUM), occmsg); err != nil {
 			log.Println(err)
 		} else if err = f.occ_iface.PublishSignal("info", po); err != nil {
 			log.Println(err)
@@ -171,7 +173,7 @@ func (f *Fixture) PollAndReport(dur time.Duration) {
 			Power: state.Power / 1000, // needs to be kW
 			Time:  ts,
 		}
-		if po, err := bw2.CreateMsgPackPayloadObject(bw2.FromDotForm(PONUM), metermsg); err != nil {
+		if po, err := bw2.CreateMsgPackPayloadObject(bw2.FromDotForm(METER_PONUM), metermsg); err != nil {
 			log.Println(err)
 		} else if err = f.meter_iface.PublishSignal("info", po); err != nil {
 			log.Println(err)
