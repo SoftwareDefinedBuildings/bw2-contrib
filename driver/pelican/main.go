@@ -89,16 +89,25 @@ func main() {
 			HeatingSetpoint: state.HeatingSetpoint,
 			CoolingSetpoint: state.CoolingSetpoint,
 		}
-		*params.Mode = float64(*state.Mode)
-		if *state.Override {
-			*params.Override = float64(1)
-		} else {
-			*params.Override = float64(0)
+		fmt.Printf("%+v", state)
+		if state.Mode != nil {
+			*params.Mode = float64(*state.Mode)
 		}
-		if *state.Fan {
-			*params.Fan = float64(1)
+
+		if state.Override != nil && *state.Override {
+			f := float64(1)
+			params.Override = &f
 		} else {
-			*params.Fan = float64(0)
+			f := float64(0)
+			params.Override = &f
+		}
+
+		if state.Fan != nil && *state.Fan {
+			f := float64(1)
+			params.Fan = &f
+		} else {
+			f := float64(0)
+			params.Fan = &f
 		}
 
 		if err := pelican.ModifyState(&params); err != nil {
