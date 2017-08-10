@@ -140,7 +140,7 @@ func (f *Fixture) PollAndReport(dur time.Duration) {
 
 		ts := time.Now().UnixNano()
 		msg := &signal{
-			State:      state.Power == 0,
+			State:      state.Power > 0,
 			Brightness: state.Light_level,
 			Time:       ts,
 		}
