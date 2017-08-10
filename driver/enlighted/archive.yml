@@ -1,0 +1,34 @@
+Prefix: < base uri here >
+
+Archive:
+  - AttachURI: 
+    ArchiveURI: s.enlighted/+/i.xbos.light/signal/info
+    Value: brightness
+    Name: brightness
+    Unit: percentage
+    Time: time
+    PO: 2.1.1.1/32
+
+  - AttachURI: 
+    ArchiveURI: s.enlighted/+/i.xbos.light/signal/info
+    Value: state
+    Name: state
+    Unit: on/off
+    Time: time
+    PO: 2.1.1.1/32
+
+  - AttachURI: 
+    ArchiveURI: s.enlighted/+/i.xbos.meter/signal/info
+    Value: power
+    Name: power
+    Unit: kW
+    Time: time
+    PO: 2.1.1.4/32
+
+  - AttachURI: 
+    ArchiveURI: s.enlighted/+/i.xbos.occupancy_sensor/signal/info
+    Value: occupancy
+    Name: occupancy
+    Unit: on/off
+    Time: time
+    PO: 2.1.2.1/32

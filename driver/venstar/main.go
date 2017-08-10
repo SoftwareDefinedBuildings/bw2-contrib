@@ -22,9 +22,12 @@ func main() {
 	if !strings.HasSuffix(baseURI, "/") {
 		baseURI += "/"
 	}
+	var err error
 	socks, err := openSockets()
-	if err != nil {
-		panic(err)
+	for err != nil {
+		fmt.Println(err)
+		socks, err = openSockets()
+		time.Sleep(5 * time.Second)
 	}
 	ch := make(chan DiscoveryRecord, 10)
 	go Discovery(socks, ch)

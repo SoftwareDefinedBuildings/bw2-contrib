@@ -20,9 +20,9 @@ type setpointsMsg struct {
 type stateMsg struct {
 	HeatingSetpoint *float64 `msgpack:"heating_setpoint"`
 	CoolingSetpoint *float64 `msgpack:"cooling_setpoint"`
-	Override        *float64 `msgpack:"override"`
-	Mode            *float64 `msgpack:"mode"`
-	Fan             *float64 `msgpack:"fan"`
+	Override        *bool    `msgpack:"override"`
+	Mode            *int     `msgpack:"mode"`
+	Fan             *bool    `msgpack:"fan"`
 }
 
 func main() {
@@ -88,10 +88,28 @@ func main() {
 		params := pelicanStateParams{
 			HeatingSetpoint: state.HeatingSetpoint,
 			CoolingSetpoint: state.CoolingSetpoint,
-			Override:        state.Override,
-			Mode:            state.Mode,
-			Fan:             state.Fan,
 		}
+		fmt.Printf("%+v", state)
+		if state.Mode != nil {
+			*params.Mode = float64(*state.Mode)
+		}
+
+		if state.Override != nil && *state.Override {
+			f := float64(1)
+			params.Override = &f
+		} else {
+			f := float64(0)
+			params.Override = &f
+		}
+
+		if state.Fan != nil && *state.Fan {
+			f := float64(1)
+			params.Fan = &f
+		} else {
+			f := float64(0)
+			params.Fan = &f
+		}
+
 		if err := pelican.ModifyState(&params); err != nil {
 			fmt.Println(err)
 		} else {
