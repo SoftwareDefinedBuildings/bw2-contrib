@@ -103,7 +103,7 @@ func (f *Fixture) ListenActuation() {
 	f.light_iface.SubscribeSlot("state", func(msg *bw2.SimpleMessage) {
 		type actuation struct {
 			State      bool  `msgpack:"state"`
-			Brightness int64 `msgpack:"state"`
+			Brightness int64 `msgpack:"brightness"`
 		}
 
 		po := msg.GetOnePODF(LIGHT_PONUM)
