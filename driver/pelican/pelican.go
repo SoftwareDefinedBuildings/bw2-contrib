@@ -117,6 +117,7 @@ func (pel *Pelican) GetStatus() (*PelicanStatus, error) {
 	thermState, ok := stateMappings[thermostat.RunStatus]
 	if !ok {
 		// Thermostat is not calling for heating or cooling
+		log.Debug(thermostat.RunStatus)
 		if thermostat.System == "Off" {
 			thermState = 0 // Off
 		} else {
