@@ -1,0 +1,6 @@
+{
+    "port": "/dev/ttyACM0",
+    "agent": "172.17.0.1:28589",
+    "entity": "entity file",
+    "baseuri": "base service uri"
+}
