@@ -1,0 +1,33 @@
+Prefix: prefix
+
+Archive:
+    - AttachURI:
+      ArchiveURI: /+/i.meter/signal/meter
+      Value: current_demand
+      Name: demand
+      Unit: W
+      PO: 2.0.9.1/32
+    - AttachURI:
+      ArchiveURI: /+/i.meter/signal/meter
+      Value: current_price
+      Name: price
+      Unit: $
+      PO: 2.0.9.1/32
+    - AttachURI:
+      ArchiveURI: /+/i.meter/signal/meter
+      Value: current_summation_delivered
+      Name: summation_delivered
+      Unit: kWh
+      PO: 2.0.9.1/32
+    - AttachURI:
+      ArchiveURI: /+/i.meter/signal/meter
+      Value: current_summation_received
+      Name: summation_received
+      Unit: kWh
+      PO: 2.0.9.1/32
+    - AttachURI:
+      ArchiveURI: /+/i.meter/signal/meter
+      Value: tier
+      Name: tier
+      Unit: tier
+      PO: 2.0.9.1/32
