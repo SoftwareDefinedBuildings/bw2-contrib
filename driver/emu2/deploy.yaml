@@ -1,0 +1,7 @@
+entity: <entity file>
+image: gtfierro/xbospy
+cpuShares: 256
+memAlloc: 512M
+build: [apt install -y libxml2-dev libxslt-dev python-dev ; pip install -r requirements.txt]
+includedFiles: [driver.py, params.json, requirements.txt]
+run: [python, driver.py]
