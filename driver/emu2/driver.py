@@ -26,7 +26,7 @@ while not hasattr(emu_instance, 'NetworkInfo'):
 
 c = get_client(agent=params["agent"], entity=params["entity"])
 
-PONUM = (2,1,1,4)
+PONUM = (2,0,9,1)
 baseuri = params["baseuri"]
 signaluri = "{0}/s.emu2/{1}/i.meter/signal/meter".format(baseuri, macid)
 print ">",signaluri
@@ -68,7 +68,7 @@ while True:
         d = emu_instance.CurrentSummationDelivered
         multiplier = int(d.Multiplier, 16)
         divisor = float(int(d.Divisor, 16))
-        msg['current_summation_delivered'] = int(SummationDelivered, 16) * multiplier / divisor
-        msg['current_summation_received'] = int(SummationReceived, 16) * multiplier / divisor
+        msg['current_summation_delivered'] = int(d.SummationDelivered, 16) * multiplier / divisor
+        msg['current_summation_received'] = int(d.SummationReceived, 16) * multiplier / divisor
     send_message(msg)
 emu_instance.stop_serial()
