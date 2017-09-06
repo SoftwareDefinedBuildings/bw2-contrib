@@ -20,8 +20,9 @@ emu_instance.start_serial()
 
 # get network info
 emu_instance.get_network_info()
-time.sleep(10)
-macid =  emu_instance.NetworkInfo.DeviceMacId
+while not hasattr(emu_instance, 'NetworkInfo'):
+    time.sleep(10)
+    macid =  emu_instance.NetworkInfo.DeviceMacId
 
 c = get_client(agent=params["agent"], entity=params["entity"])
 
