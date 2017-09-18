@@ -91,7 +91,8 @@ func main() {
 		}
 		fmt.Printf("%+v", state)
 		if state.Mode != nil {
-			*params.Mode = float64(*state.Mode)
+			m := float64(*state.Mode)
+			params.Mode = &m
 		}
 
 		if state.Override != nil && *state.Override {
