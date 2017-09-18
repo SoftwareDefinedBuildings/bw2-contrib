@@ -1,15 +1,7 @@
-svc_base_uri: gabe.pantry/drivers/weather
-API_KEY:  <api key here>
-city: Berkeley
+svc_base_uri: scratch.ns/drivers/weather
+API_KEY:  < api key here >
+location: <zip code e.g. "94709">
 read_rate: 5m
 metadata:
     s.weatherunderground:
         SourceName: "WeatherUnderground"
-    s.weatherunderground/Berkeley:
-        Location/City: Berkeley
-    s.weatherunderground/Berkeley/i.weather/signal/fahrenheit:
-        UnitofMeasure: "F"
-    s.weatherunderground/Berkeley/i.weather/signal/celsius:
-        UnitofMeasure: "C"
-    s.weatherunderground/Berkeley/i.weather/signal/relative_humidity:
-        UnitofMeasure: "RH%"

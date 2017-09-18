@@ -15,10 +15,10 @@ type WeatherResponse struct {
 }
 
 type WeatherData struct {
-	F    float64 `json:"temp_f"`
-	C    float64 `json:"temp_c"`
-	RH_s string  `json:"relative_humidity"`
-	RH   float64
+	Temperature float64 `json:"temp_f"`
+	RH_s        string  `json:"relative_humidity"`
+	RH          float64
+	WindSpeed   float64 `json:"wind_mph"`
 }
 
 type WeatherUndergroundSource struct {

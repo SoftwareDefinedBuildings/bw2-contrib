@@ -1,28 +1,19 @@
 package main
 
 import (
-	"fmt"
 	"github.com/immesys/spawnpoint/spawnable"
-	"github.com/satori/go.uuid"
 	bw2 "gopkg.in/immesys/bw2bind.v5"
+	"log"
 	"time"
 )
 
-var NAMESPACE_UUID uuid.UUID
+const WEATHERSTATION_DF = "2.1.1.8"
 
-func init() {
-	NAMESPACE_UUID = uuid.FromStringOrNil("d8b61708-2797-11e6-836b-0cc47a0f7eea")
-}
-
-type TimeseriesReading struct {
-	UUID  string
-	Time  int64
-	Value float64
-}
-
-func (msg TimeseriesReading) ToMsgPackBW() (po bw2.PayloadObject) {
-	po, _ = bw2.CreateMsgPackPayloadObject(bw2.FromDotForm("2.0.9.1"), msg)
-	return
+type XBOS_WEATHER_STATION struct {
+	Temperature      float64 `msgpack:"temperature"`
+	RelativeHumidity float64 `msgpack:"relative_humidity"`
+	WindSpeed        float64 `msgpack:"wind_speed"`
+	Time             int64   `msgpack:"time"`
 }
 
 func main() {
@@ -37,30 +28,26 @@ func main() {
 	bw.OverrideAutoChainTo(true)
 	bw.SetEntityFromEnvironOrExit()
 	svc := bw.RegisterService(baseuri, "s.weatherunderground")
-	iface := svc.RegisterInterface(location, "i.weather")
+	iface := svc.RegisterInterface(location, "i.xbos.weather_station")
 
 	params.MergeMetadata(bw)
 
-	fmt.Println(iface.FullURI())
-	fmt.Println(iface.SignalURI("fahrenheit"))
-
 	// generate UUIDs from location + metric name
-	temp_f_uuid := uuid.NewV3(NAMESPACE_UUID, location+"fahrenheit").String()
-	temp_c_uuid := uuid.NewV3(NAMESPACE_UUID, location+"celsius").String()
-	relative_humidity_uuid := uuid.NewV3(NAMESPACE_UUID, location+"relative_humidity").String()
-
 	src := NewWeatherUndergroundSource(apikey, location, read_rate)
 	data := src.Start()
 	for point := range data {
-		timestamp := time.Now().UnixNano()
-		fmt.Println(point)
-		temp_f := TimeseriesReading{UUID: temp_f_uuid, Time: timestamp, Value: point.F}
-		iface.PublishSignal("fahrenheit", temp_f.ToMsgPackBW())
-
-		temp_c := TimeseriesReading{UUID: temp_c_uuid, Time: timestamp, Value: point.C}
-		iface.PublishSignal("celsius", temp_c.ToMsgPackBW())
-
-		rh := TimeseriesReading{UUID: relative_humidity_uuid, Time: timestamp, Value: point.RH}
-		iface.PublishSignal("relative_humidity", rh.ToMsgPackBW())
+		signal := XBOS_WEATHER_STATION{
+			Temperature:      point.Temperature,
+			RelativeHumidity: point.RH,
+			WindSpeed:        point.WindSpeed,
+			Time:             time.Now().UnixNano(),
+		}
+		log.Printf("%+v", signal)
+		po, err := bw2.CreateMsgPackPayloadObject(bw2.FromDotForm(WEATHERSTATION_DF), signal)
+		if err != nil {
+			log.Println("Could not publish", err)
+			continue
+		}
+		iface.PublishSignal("info", po)
 	}
 }
