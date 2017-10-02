@@ -1,4 +1,4 @@
-entity: echola.ent
+entity: <entity file>
 container: jhkolb/spawnpoint:amd64
 build: [go get github.com/SoftwareDefinedBuildings/bw2-contrib/driver/echola]
 run: [echola]

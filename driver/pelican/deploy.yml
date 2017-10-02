@@ -1,0 +1,8 @@
+entity: <entity file>
+image: jhkolb/spawnpoint:amd64
+build: [go get -u github.com/SoftwareDefinedBuildings/bw2-contrib/driver/pelican]
+run: [pelican]
+memAlloc: 512M
+cpuShares: 512
+includedFiles: [params.yml]
+autoRestart: true

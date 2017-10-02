@@ -1,8 +1,7 @@
-entity: /Users/Peter/go/src/github.com/peterxu30/sdb/caiso/caiso_driver.ent
+entity: <entity file>
 container: jhkolb/spawnpoint:amd64
-build: [go get github.com/peterxu30/sdb/caiso]
+build: [go get github.com/SoftwareDefinedBuildings/caiso]
 run: [caiso]
 memAlloc: 256M
 cpuShares: 14
 includedFiles: [params.yml]
-

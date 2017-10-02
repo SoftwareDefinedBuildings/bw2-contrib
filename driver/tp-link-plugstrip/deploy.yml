@@ -1,0 +1,9 @@
+entity: <entity file>
+container: immesys/spawnpoint:amd64
+build: [go get github.com/immesys/bw2-contrib/driver/tp-link-plugstrip]
+run: [tp-link-plugstrip]
+memAlloc: 512M
+useHostNet: true
+cpuShares: 512
+includedFiles: [params.yml]
+autoRestart: true

@@ -1,0 +1,9 @@
+entity: <entity file>
+image: jhkolb/spawnpoint:amd64
+build: [go get -u github.com/SoftwareDefinedBuildings/bw2-contrib/driver/juiceplug]
+run: [juiceplug]
+memAlloc: 512M
+useHostNet: false
+cpuShares: 512
+includedFiles: [params.yml]
+autoRestart: true
