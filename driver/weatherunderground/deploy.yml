@@ -1,0 +1,9 @@
+entity: <entity file>
+image: jhkolb/spawnpoint:amd64
+build: [go get -u github.com/SoftwareDefinedBuildings/bw2-contrib/driver/weatherunderground]
+run: [weatherunderground]
+memAlloc: 512M
+useHostNet: true
+cpuShares: 512
+includedFiles: [params.yml]
+autoRestart: true

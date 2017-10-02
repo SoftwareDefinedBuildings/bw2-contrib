@@ -1,0 +1,9 @@
+entity: <entity file>
+image: jhkolb/spawnpoint:amd64
+build: [go get -u github.com/SoftwareDefinedBuildings/bw2-contrib/driver/enlighted]
+run: [enlighted]
+memAlloc: 128M
+useHostNet: true
+cpuShares: 128
+includedFiles: [params.yml]
+autoRestart: true
