@@ -1,0 +1,46 @@
+Prefix: <prefix here>
+Archive:
+    - AttachURI:
+      ArchiveURI: +/s.tplink.v0/0/i.xbos.plug/signal/info
+      Value: state
+      Name: State
+      Unit: on/off
+      PO: 2.1.1.2/32
+      URIMatch: .*/devices/(.*)/s.tplink.v0/0/i.xbos.plug/.*
+      URIReplace: ciee/plugs/state/$1
+
+    - AttachURI:
+      ArchiveURI: +/s.tplink.v0/0/i.xbos.plug/signal/info
+      Value: power
+      Name: Power
+      Unit: W
+      PO: 2.1.1.2/32
+      URIMatch: .*/devices/(.*)/s.tplink.v0/0/i.xbos.plug/.*
+      URIReplace: ciee/plugs/power/$1
+
+    - AttachURI:
+      ArchiveURI: +/s.tplink.v0/0/i.xbos.plug/signal/info
+      Value: current
+      Name: Current
+      Unit: A
+      PO: 2.1.1.2/32
+      URIMatch: .*/devices/(.*)/s.tplink.v0/0/i.xbos.plug/.*
+      URIReplace: ciee/plugs/current/$1
+
+    - AttachURI:
+      ArchiveURI: +/s.tplink.v0/0/i.xbos.plug/signal/info
+      Value: voltage
+      Name: Voltage
+      Unit: V
+      PO: 2.1.1.2/32
+      URIMatch: .*/devices/(.*)/s.tplink.v0/0/i.xbos.plug/.*
+      URIReplace: ciee/plugs/voltage/$1
+
+    - AttachURI:
+      ArchiveURI: +/s.tplink.v0/0/i.xbos.plug/signal/info
+      Value: cumulative
+      Name: Cumulative
+      Unit: V/off
+      PO: 2.1.1.2/32
+      URIMatch: .*/devices/(.*)/s.tplink.v0/0/i.xbos.plug/.*
+      URIReplace: ciee/plugs/cumulative/$1

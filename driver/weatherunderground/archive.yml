@@ -1,0 +1,30 @@
+Prefix: <prefix here>
+
+Archive:
+  - AttachURI: 
+    ArchiveURI: /s.weatherunderground/+/i.xbos.weather_station/signal/info
+    Value: temperature
+    Name: temperature
+    Unit: temperature
+    Time: time
+    PO: 2.1.1.8/32
+    URIMatch: .*/s.weatherunderground/(.*)/i.xbos.weather_station/.*
+    URIReplace: ciee/weather/$1/temperature
+  - AttachURI: 
+    ArchiveURI: /s.weatherunderground/+/i.xbos.weather_station/signal/info
+    Value: relative_humidity
+    Name: relative_humidity
+    Unit: relative_humidity
+    Time: time
+    PO: 2.1.1.8/32
+    URIMatch: .*/s.weatherunderground/(.*)/i.xbos.weather_station/.*
+    URIReplace: ciee/weather/$1/relative_humidity
+  - AttachURI: 
+    ArchiveURI: /s.weatherunderground/+/i.xbos.weather_station/signal/info
+    Value: wind_speed
+    Name: wind_speed
+    Unit: wind_speed
+    Time: time
+    PO: 2.1.1.8/32
+    URIMatch: .*/s.weatherunderground/(.*)/i.xbos.weather_station/.*
+    URIReplace: ciee/weather/$1/wind_speed
