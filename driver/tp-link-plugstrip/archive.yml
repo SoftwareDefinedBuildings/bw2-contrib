@@ -7,7 +7,7 @@ Archive:
       Unit: on/off
       PO: 2.1.1.2/32
       URIMatch: .*/devices/(.*)/s.tplink.v0/0/i.xbos.plug/.*
-      URIReplace: ciee/plugs/state/$1
+      URIReplace: <namespace>/plugs/state/$1
 
     - AttachURI:
       ArchiveURI: +/s.tplink.v0/0/i.xbos.plug/signal/info
@@ -16,7 +16,7 @@ Archive:
       Unit: W
       PO: 2.1.1.2/32
       URIMatch: .*/devices/(.*)/s.tplink.v0/0/i.xbos.plug/.*
-      URIReplace: ciee/plugs/power/$1
+      URIReplace: <namespace>/plugs/power/$1
 
     - AttachURI:
       ArchiveURI: +/s.tplink.v0/0/i.xbos.plug/signal/info
@@ -25,7 +25,7 @@ Archive:
       Unit: A
       PO: 2.1.1.2/32
       URIMatch: .*/devices/(.*)/s.tplink.v0/0/i.xbos.plug/.*
-      URIReplace: ciee/plugs/current/$1
+      URIReplace: <namespace>/plugs/current/$1
 
     - AttachURI:
       ArchiveURI: +/s.tplink.v0/0/i.xbos.plug/signal/info
@@ -34,7 +34,7 @@ Archive:
       Unit: V
       PO: 2.1.1.2/32
       URIMatch: .*/devices/(.*)/s.tplink.v0/0/i.xbos.plug/.*
-      URIReplace: ciee/plugs/voltage/$1
+      URIReplace: <namespace>/plugs/voltage/$1
 
     - AttachURI:
       ArchiveURI: +/s.tplink.v0/0/i.xbos.plug/signal/info
@@ -43,4 +43,4 @@ Archive:
       Unit: V/off
       PO: 2.1.1.2/32
       URIMatch: .*/devices/(.*)/s.tplink.v0/0/i.xbos.plug/.*
-      URIReplace: ciee/plugs/cumulative/$1
+      URIReplace: <namespace>/plugs/cumulative/$1

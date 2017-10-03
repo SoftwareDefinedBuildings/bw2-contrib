@@ -9,7 +9,7 @@ Archive:
     Time: time
     PO: 2.1.1.0/32
     URIMatch: .*/s.pelican/(.*)/i.xbos.thermostat/.*
-    URIReplace: ciee/thermostats/mode/$1
+    URIReplace: <namespace>/thermostats/mode/$1
   - AttachURI: 
     ArchiveURI: s.pelican/+/i.xbos.thermostat/signal/info
     Value: cooling_setpoint
@@ -18,7 +18,7 @@ Archive:
     Time: time
     PO: 2.1.1.0/32
     URIMatch: .*/s.pelican/(.*)/i.xbos.thermostat/.*
-    URIReplace: ciee/thermostats/cooling_setpoint/$1
+    URIReplace: <namespace>/thermostats/cooling_setpoint/$1
   - AttachURI: 
     ArchiveURI: s.pelican/+/i.xbos.thermostat/signal/info
     Value: heating_setpoint
@@ -27,7 +27,7 @@ Archive:
     Time: time
     PO: 2.1.1.0/32
     URIMatch: .*/s.pelican/(.*)/i.xbos.thermostat/.*
-    URIReplace: ciee/thermostats/heating_setpoint/$1
+    URIReplace: <namespace>/thermostats/heating_setpoint/$1
   - AttachURI: 
     ArchiveURI: s.pelican/+/i.xbos.thermostat/signal/info
     Value: fan
@@ -36,7 +36,7 @@ Archive:
     Time: time
     PO: 2.1.1.0/32
     URIMatch: .*/s.pelican/(.*)/i.xbos.thermostat/.*
-    URIReplace: ciee/thermostats/fan/$1
+    URIReplace: <namespace>/thermostats/fan/$1
   - AttachURI: 
     ArchiveURI: s.pelican/+/i.xbos.thermostat/signal/info
     Value: state
@@ -45,7 +45,7 @@ Archive:
     Time: time
     PO: 2.1.1.0/32
     URIMatch: .*/s.pelican/(.*)/i.xbos.thermostat/.*
-    URIReplace: ciee/thermostats/state/$1
+    URIReplace: <namespace>/thermostats/state/$1
   - AttachURI: 
     ArchiveURI: s.pelican/+/i.xbos.thermostat/signal/info
     Value: temperature
@@ -54,7 +54,7 @@ Archive:
     Time: time
     PO: 2.1.1.0/32
     URIMatch: .*/s.pelican/(.*)/i.xbos.thermostat/.*
-    URIReplace: ciee/thermostats/temperature/$1
+    URIReplace: <namespace>/thermostats/temperature/$1
   - AttachURI: 
     ArchiveURI: s.pelican/+/i.xbos.thermostat/signal/info
     Value: override
@@ -63,4 +63,4 @@ Archive:
     Time: time
     PO: 2.1.1.0/32
     URIMatch: .*/s.pelican/(.*)/i.xbos.thermostat/.*
-    URIReplace: ciee/thermostats/override/$1
+    URIReplace: <namespace>/thermostats/override/$1
