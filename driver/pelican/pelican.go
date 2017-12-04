@@ -161,7 +161,9 @@ func (pel *Pelican) GetStatus() (*PelicanStatus, error) {
 		if thermostat.System == "Off" {
 			thermState = 0 // Off
 		} else {
-			thermState = 3 // Auto
+			// Thermostat is not heating or cooling, but fan is still running
+			// Report this as off
+			thermState = 0 //Off
 		}
 	}
 
