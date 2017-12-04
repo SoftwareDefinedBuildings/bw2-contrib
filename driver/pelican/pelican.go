@@ -72,6 +72,17 @@ type pelicanStateParams struct {
 	Fan             *float64
 }
 
+type thermostatInfo struct {
+	Name        string `xml:"name"`
+	Description string `xml:"description"`
+}
+
+type discoverApiResult struct {
+	Thermostats []thermostatInfo `xml:"Thermostat"`
+	Success     int32            `xml:"success"`
+	Message     string           `xml:"message"`
+}
+
 func NewPelican(username, password, sitename, name string) *Pelican {
 	return &Pelican{
 		username: username,
@@ -80,6 +91,36 @@ func NewPelican(username, password, sitename, name string) *Pelican {
 		name:     name,
 		req:      gorequest.New(),
 	}
+}
+
+func DiscoverPelicans(username, password, sitename string) ([]*Pelican, error) {
+	target := fmt.Sprintf("https://%s.officeclimatecontrol.net/api.cgi", sitename)
+	resp, _, errs := gorequest.New().Get(target).
+		Param("username", username).
+		Param("password", password).
+		Param("request", "get").
+		Param("object", "Thermostat").
+		Param("value", "name;description").
+		End()
+	if errs != nil {
+		return nil, fmt.Errorf("Error retrieving thermostat name from %s: %s", resp.Request.URL, errs)
+	}
+
+	defer resp.Body.Close()
+	var result discoverApiResult
+	dec := xml.NewDecoder(resp.Body)
+	if err := dec.Decode(&result); err != nil {
+		return nil, fmt.Errorf("Failed to decode response XML: %v", err)
+	}
+	if result.Success == 0 {
+		return nil, fmt.Errorf("Error retrieving thermostat status from %s: %s", resp.Request.URL, result.Message)
+	}
+
+	pelicans := make([]*Pelican, len(result.Thermostats))
+	for i, thermInfo := range result.Thermostats {
+		pelicans[i] = NewPelican(username, password, sitename, thermInfo.Name)
+	}
+	return pelicans, nil
 }
 
 func (pel *Pelican) GetStatus() (*PelicanStatus, error) {
@@ -117,7 +158,6 @@ func (pel *Pelican) GetStatus() (*PelicanStatus, error) {
 	thermState, ok := stateMappings[thermostat.RunStatus]
 	if !ok {
 		// Thermostat is not calling for heating or cooling
-		fmt.Println(thermostat.RunStatus)
 		if thermostat.System == "Off" {
 			thermState = 0 // Off
 		} else {
