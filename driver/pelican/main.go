@@ -56,7 +56,10 @@ func main() {
 	service := bwClient.RegisterService(baseURI, "s.pelican")
 	tstatIfaces := make([]*bw2.Interface, len(pelicans))
 	for i, pelican := range pelicans {
-		tstatIfaces[i] = service.RegisterInterface(pelican.name, "i.xbos.thermostat")
+		name := strings.Replace(pelican.name, " ", "_", -1)
+		name = strings.Replace(name, "&", "_and_", -1)
+		fmt.Println("Transforming", pelican.name, "=>", name)
+		tstatIfaces[i] = service.RegisterInterface(name, "i.xbos.thermostat")
 
 		tstatIfaces[i].SubscribeSlot("setpoints", func(msg *bw2.SimpleMessage) {
 			po := msg.GetOnePODF(TSTAT_PO_DF)
@@ -139,7 +142,7 @@ func main() {
 					fmt.Printf("Failed to retrieve Pelican status: %v\n", err)
 					return
 				}
-
+				fmt.Printf("%s %+v\n", currentPelican.name, status)
 				po, err := bw2.CreateMsgPackPayloadObject(bw2.FromDotForm(TSTAT_PO_DF), status)
 				if err != nil {
 					fmt.Printf("Failed to create msgpack PO: %v", err)
