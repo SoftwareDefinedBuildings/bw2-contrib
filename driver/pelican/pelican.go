@@ -103,7 +103,7 @@ func DiscoverPelicans(username, password, sitename string) ([]*Pelican, error) {
 		Param("value", "name;description").
 		End()
 	if errs != nil {
-		return nil, fmt.Errorf("Error retrieving thermostat name from %s: %s", resp.Request.URL, errs)
+		return nil, fmt.Errorf("Error retrieving thermostat name from %s: %s", target, errs)
 	}
 
 	defer resp.Body.Close()
