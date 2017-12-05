@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/immesys/spawnpoint/spawnable"
@@ -129,30 +128,27 @@ func main() {
 		})
 	}
 
-	wg := sync.WaitGroup{}
+	done := make(chan bool)
 	for i, pelican := range pelicans {
-		wg.Add(1)
 		currentPelican := pelican
 		currentIface := tstatIfaces[i]
 		go func() {
-			defer wg.Done()
 			for {
 				status, err := currentPelican.GetStatus()
 				if err != nil {
 					fmt.Printf("Failed to retrieve Pelican status: %v\n", err)
-					return
+					done <- true
 				}
-				fmt.Printf("%s %+v\n", currentPelican.name, status)
+
 				po, err := bw2.CreateMsgPackPayloadObject(bw2.FromDotForm(TSTAT_PO_DF), status)
 				if err != nil {
 					fmt.Printf("Failed to create msgpack PO: %v", err)
-					return
+					done <- true
 				}
 				currentIface.PublishSignal("info", po)
 				time.Sleep(pollInt)
 			}
 		}()
 	}
-
-	wg.Wait()
+	<-done
 }
