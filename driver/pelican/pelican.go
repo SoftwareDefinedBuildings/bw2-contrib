@@ -116,9 +116,11 @@ func DiscoverPelicans(username, password, sitename string) ([]*Pelican, error) {
 		return nil, fmt.Errorf("Error retrieving thermostat status from %s: %s", resp.Request.URL, result.Message)
 	}
 
-	pelicans := make([]*Pelican, len(result.Thermostats))
-	for i, thermInfo := range result.Thermostats {
-		pelicans[i] = NewPelican(username, password, sitename, thermInfo.Name)
+	var pelicans []*Pelican
+	for _, thermInfo := range result.Thermostats {
+		if thermInfo.Name != "" {
+			pelicans = append(pelicans, NewPelican(username, password, sitename, thermInfo.Name))
+		}
 	}
 	return pelicans, nil
 }
