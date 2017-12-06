@@ -130,7 +130,7 @@ func StartEagleServer() {
 	server.secretkey = []byte(params.MustString("secretkey"))
 
 	// setup bosswave service
-	//server.svc = server.bwclient.RegisterService(baseuri, "s.Eagle")
+	//server.svc = server.bwclient.RegisterService(baseuri, "s.eagle")
 	//fmt.Println(server.svc.FullURI())
 
 	port := params.MustString("port")
@@ -236,10 +236,10 @@ func (srv *EagleServer) handleConfig(rw http.ResponseWriter, req *http.Request) 
 		// now can use req.Form
 		// when we get a config form, do the following
 		// 1. check that the URI is valid
-		// 2. see if we can build a chain onto uri/s.Eagle/*
+		// 2. see if we can build a chain onto uri/s.eagle/*
 		// 3. generate some SHA1 hash and save that mapping somewhere (sha1 -> uri)
 		baseuri := req.Form.Get("baseuri")
-		useuri := baseuri + "/s.Eagle/*"
+		useuri := baseuri + "/s.eagle/*"
 		log.Debug(useuri, srv.vk)
 		if chain, err := srv.bwclient.BuildAnyChain(useuri, "P", srv.vk); err != nil {
 			if err.Error() == "No result" {
