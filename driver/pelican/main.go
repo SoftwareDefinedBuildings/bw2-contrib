@@ -139,6 +139,7 @@ func main() {
 					fmt.Printf("Failed to retrieve Pelican status: %v\n", err)
 					done <- true
 				}
+				fmt.Printf("%s %+v\n", currentPelican.name, status)
 
 				po, err := bw2.CreateMsgPackPayloadObject(bw2.FromDotForm(TSTAT_PO_DF), status)
 				if err != nil {
