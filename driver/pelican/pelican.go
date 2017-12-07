@@ -135,7 +135,7 @@ func (pel *Pelican) GetStatus() (*PelicanStatus, error) {
 		Param("value", "temperature;humidity;heatSetting;coolSetting;setBy;HeatNeedsFan;system;runStatus").
 		End()
 	if errs != nil {
-		return nil, fmt.Errorf("Error retrieving thermostat status from %s: %v", resp.Request.URL, errs)
+		return nil, fmt.Errorf("Error retrieving thermostat status from %s: %v", pel.target, errs)
 	}
 
 	defer resp.Body.Close()
