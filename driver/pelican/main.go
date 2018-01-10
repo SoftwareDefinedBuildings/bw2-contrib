@@ -57,6 +57,7 @@ func main() {
 	for i, pelican := range pelicans {
 		name := strings.Replace(pelican.name, " ", "_", -1)
 		name = strings.Replace(name, "&", "_and_", -1)
+		name = strings.Replace(name, "'", "", -1)
 		fmt.Println("Transforming", pelican.name, "=>", name)
 		tstatIfaces[i] = service.RegisterInterface(name, "i.xbos.thermostat")
 
