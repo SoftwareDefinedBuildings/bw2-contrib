@@ -108,7 +108,7 @@ type InstantaneousDemand struct {
 func (demand *InstantaneousDemand) Dump() {
 	fmt.Println("Data Reading: ")
 	fmt.Printf("  Device: %s, Meter: %s\n", demand.DeviceMacId, demand.MeterMacId)
-	fmt.Printf("  Demand: %f, Timestamp: %d\n", demand.ActualDemand, demand.ActualTimestamp)
+	fmt.Printf("  Demand: %f (%d), Timestamp: %d\n", demand.ActualDemand, demand.Demand.Int64(), demand.ActualTimestamp)
 	fmt.Printf("  Divisor: %d, Multiplier: %d\n", demand.Divisor.Int64(), demand.Multiplier.Int64())
 	fmt.Printf("  Dig Left: %d, Dig Right: %d\n", demand.DigitsLeft.Int64(), demand.DigitsRight.Int64())
 }
