@@ -117,12 +117,15 @@ func (f *Fixture) ListenActuation() {
 		if err := pom.ValueInto(&act); err != nil {
 			log.Println(errors.Wrap(err, "Could not unmarshal actuation request"))
 		}
+		log.Printf("ACTUATION %+v", act)
 
 		if act.Brightness > 100 {
 			act.Brightness = 100
 		}
 		if act.Brightness > 0 {
 			f.SetState(act.Brightness, 60) // set for 1 hour
+		} else if !act.State {
+			f.SetState(0, 60)
 		} else if act.State {
 			f.SetState(80, 60) // set to 80% for 1 hour
 		}
