@@ -49,7 +49,7 @@ func main() {
 			Time:           time.Now().UnixNano(),
 			Voltage:        d.VoltageNow,
 			Apparent_power: d.KVANow,
-			Power:          d.PowerNow,
+			Power:          d.PowerNow / 1000,
 		}
 		if po, err := bw2.CreateMsgPackPayloadObject(bw2.FromDotForm(PONUM), msg); err != nil {
 			log.Println(err)
