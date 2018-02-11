@@ -1,0 +1,32 @@
+Prefix: prefix/s.ted/
+
+Archive:
+  - AttachURI:
+    ArchiveURI: +/i.xbos.meter/signal/info
+    Value: apparent_power
+    Name: apparent_power
+    Unit: kVA
+    Time: time
+    PO: 2.1.1.4/32
+    URIMatch: .*/s.ted/(.*)/i.xbos.meter/.*
+    URIReplace: <namespace>/devices/meter/$1
+
+  - AttachURI:
+    ArchiveURI: +/i.xbos.meter/signal/info
+    Value: current_demand
+    Name: power
+    Unit: kW
+    Time: time
+    PO: 2.1.1.4/32
+    URIMatch: .*/s.ted/(.*)/i.xbos.meter/.*
+    URIReplace: <namespace>/devices/meter/$1
+
+  - AttachURI:
+    ArchiveURI: +/i.xbos.meter/signal/info
+    Value: voltage
+    Name: voltage
+    Unit: V
+    Time: time
+    PO: 2.1.1.4/32
+    URIMatch: .*/s.ted/(.*)/i.xbos.meter/.*
+    URIReplace: <namespace>/devices/meter/$1
