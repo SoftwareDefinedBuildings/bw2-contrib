@@ -33,22 +33,20 @@ type Result struct {
 //}
 
 type TED struct {
-	URL       string
-	toExtract []string
-	interval  time.Duration
-	req       *gorequest.SuperAgent
+	URL      string
+	interval time.Duration
+	req      *gorequest.SuperAgent
 }
 
-func NewTEDSource(url, poll_interval string, toExtract []string) *TED {
+func NewTEDSource(url, poll_interval string) *TED {
 	dur, err := time.ParseDuration(poll_interval)
 	if err != nil {
 		log.Fatalln(errors.Wrap(err, "Could not parse given poll interval"))
 	}
 	return &TED{
-		URL:       url,
-		interval:  dur,
-		toExtract: toExtract,
-		req:       gorequest.New(),
+		URL:      url,
+		interval: dur,
+		req:      gorequest.New(),
 	}
 }
 

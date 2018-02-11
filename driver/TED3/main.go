@@ -25,8 +25,6 @@ func main() {
 	bw.SetEntityFromEnvironOrExit()
 
 	url := params.MustString("URL")
-	toExtract := params.MustStringSlice("extract")
-	fmt.Println(toExtract)
 	baseuri := params.MustString("svc_base_uri")
 	poll_interval := params.MustString("poll_interval")
 
@@ -36,7 +34,7 @@ func main() {
 	fmt.Println(svc.FullURI())
 	meters := make(map[string]*bw2.Interface)
 
-	src := NewTEDSource(url, poll_interval, toExtract)
+	src := NewTEDSource(url, poll_interval)
 	data := src.Start()
 	for d := range data {
 		fmt.Printf("Values: %+v\n", d)
