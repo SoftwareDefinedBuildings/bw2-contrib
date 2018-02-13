@@ -46,7 +46,7 @@ func main() {
 		msg := XBOSMeter{
 			Time:           time.Now().UnixNano(),
 			Voltage:        d.VoltageNow,
-			Apparent_power: d.KVANow,
+			Apparent_power: d.KVANow / 1000,
 			Power:          d.PowerNow / 1000,
 		}
 		if po, err := bw2.CreateMsgPackPayloadObject(bw2.FromDotForm(PONUM), msg); err != nil {
