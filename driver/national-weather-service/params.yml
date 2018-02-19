@@ -1,0 +1,21 @@
+svc_base_uri: nws
+read_rate: 15m
+contact:  XBOS-Weather-Driver https://docs.xbos.io 
+stations:
+    - AT565
+    - KTOA
+    - D3835
+    - KOAK
+    - KHWD
+    - D7213
+    - LSFC1
+    - LBNL1
+    - KSUU
+    - D0553
+    - LTRC1
+    - KTLC1
+    - KSBD
+    - PLEC1
+    - KSNA
+    - KBFL
+metadata: {}

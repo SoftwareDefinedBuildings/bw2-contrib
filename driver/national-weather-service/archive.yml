@@ -1,0 +1,32 @@
+Prefix: <prefix here>
+
+Archive:
+    - AttachURI:
+      ArchiveURI: /s.national-weather-service/+/i.xbos.weather_station/signal/info
+      Value: temperature
+      Name: temperature
+      Unit: fahrenheit
+      Time: time
+      PO: 2.1.1.8/32
+      URIMatch: .*/s.national-weather-service/(.*)/i.xbos.weather_station/.*
+      URIReplace: <namespace>/weather/$1/temperature
+
+    - AttachURI:
+      ArchiveURI: /s.national-weather-service/+/i.xbos.weather_station/signal/info
+      Value: relative_humidity
+      Name: relative_humidity
+      Unit: %RH
+      Time: time
+      PO: 2.1.1.8/32
+      URIMatch: .*/s.national-weather-service/(.*)/i.xbos.weather_station/.*
+      URIReplace: <namespace>/weather/$1/temperature
+
+    - AttachURI:
+      ArchiveURI: /s.national-weather-service/+/i.xbos.weather_station/signal/info
+      Value: wind_speed
+      Name: wind_speed
+      Unit: meter/sec
+      Time: time
+      PO: 2.1.1.8/32
+      URIMatch: .*/s.national-weather-service/(.*)/i.xbos.weather_station/.*
+      URIReplace: <namespace>/weather/$1/temperature
