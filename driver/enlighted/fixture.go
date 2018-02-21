@@ -26,6 +26,7 @@ type Fixture struct {
 type signal struct {
 	State      bool  `msgpack:"state"`
 	Brightness int64 `msgpack:"brightness"`
+	Ambient    int64 `msgpack:"ambient"`
 	Time       int64 `msgpack:"time"`
 }
 
