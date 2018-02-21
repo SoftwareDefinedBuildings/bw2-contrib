@@ -1,7 +1,7 @@
 Prefix: < base uri here >
 
 Archive:
-  - AttachURI: 
+  - AttachURI:
     ArchiveURI: s.enlighted/+/i.xbos.light/signal/info
     Value: brightness
     Name: brightness
@@ -9,7 +9,7 @@ Archive:
     Time: time
     PO: 2.1.1.1/32
 
-  - AttachURI: 
+  - AttachURI:
     ArchiveURI: s.enlighted/+/i.xbos.light/signal/info
     Value: state
     Name: state
@@ -17,7 +17,15 @@ Archive:
     Time: time
     PO: 2.1.1.1/32
 
-  - AttachURI: 
+  - AttachURI:
+    ArchiveURI: s.enlighted/+/i.xbos.light/signal/info
+    Value: ambient
+    Name: ambient
+    Unit: footcandle
+    Time: time
+    PO: 2.1.1.1/32
+
+  - AttachURI:
     ArchiveURI: s.enlighted/+/i.xbos.meter/signal/info
     Value: power
     Name: power
@@ -25,7 +33,7 @@ Archive:
     Time: time
     PO: 2.1.1.4/32
 
-  - AttachURI: 
+  - AttachURI:
     ArchiveURI: s.enlighted/+/i.xbos.occupancy_sensor/signal/info
     Value: occupancy
     Name: occupancy

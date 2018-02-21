@@ -33,6 +33,7 @@ type enlightedState struct {
 	Wattage             int64 `json:"wattage,string"`
 	Last_occupancy_seen int64 `json:"lastoccupancyseen,string"`
 	Light_level         int64 `json:"lightlevel,string"`
+	Ambient_light_level int64 `json:"ambientLight,string"`
 	Lumens              int64
 	Temperature         float64 `json:"temperature,string"`
 	Power               float64 `json:"power,string"`
@@ -145,6 +146,7 @@ func (f *Fixture) PollAndReport(dur time.Duration) {
 		msg := &signal{
 			State:      state.Power > 0,
 			Brightness: state.Light_level,
+			Ambient:    state.Ambient_light_level,
 			Time:       ts,
 		}
 		fmt.Printf("%s %+v\n", f.id, state)
