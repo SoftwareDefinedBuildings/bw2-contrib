@@ -13,6 +13,7 @@ type XBOS_WEATHER_STATION struct {
 	Temperature      float64 `msgpack:"temperature"`
 	RelativeHumidity float64 `msgpack:"relative_humidity"`
 	WindSpeed        float64 `msgpack:"wind_speed"`
+	WindDirection    float64 `msgpack:"wind_direction"`
 	Time             int64   `msgpack:"time"`
 }
 
@@ -61,10 +62,16 @@ func main() {
 			log.Printf("BAD WINDSPEED UNIT %+v", point)
 			continue
 		}
+
+		if point.Resp.Properties.WindDirection.UnitCode != "unit:degree_(angle)" {
+			log.Printf("BAD WINDDIRECTION UNIT %+v", point)
+			continue
+		}
 		var send = XBOS_WEATHER_STATION{
 			Temperature:      t,
 			RelativeHumidity: point.Resp.Properties.RelativeHumidity.Value,
 			WindSpeed:        point.Resp.Properties.WindSpeed.Value,
+			WindDirection:    point.Resp.Properties.WindDirection.Value,
 			Time:             time.Now().UnixNano(),
 		}
 

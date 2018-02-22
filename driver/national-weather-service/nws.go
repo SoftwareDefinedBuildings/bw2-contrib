@@ -49,6 +49,10 @@ type Response struct {
 			UnitCode string  `json:"unitCode"`
 			Value    float64 `json:"value"`
 		} `json:"windSpeed"`
+		WindDirection struct {
+			UnitCode string  `json:"unitCode"`
+			Value    float64 `json:"value"`
+		} `json:"windDirection"`
 	} `json:"properties"`
 }
 
