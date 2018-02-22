@@ -30,3 +30,13 @@ Archive:
       PO: 2.1.1.8/32
       URIMatch: .*/s.national-weather-service/(.*)/i.xbos.weather_station/.*
       URIReplace: nws/weather/$1/wind_speed
+
+    - AttachURI:
+      ArchiveURI: /s.national-weather-service/+/i.xbos.weather_station/signal/info
+      Value: wind_direction
+      Name: wind_direction
+      Unit: degrees
+      Time: time
+      PO: 2.1.1.8/32
+      URIMatch: .*/s.national-weather-service/(.*)/i.xbos.weather_station/.*
+      URIReplace: nws/weather/$1/wind_direction
