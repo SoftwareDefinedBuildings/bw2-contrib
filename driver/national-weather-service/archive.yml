@@ -40,3 +40,23 @@ Archive:
       PO: 2.1.1.8/32
       URIMatch: .*/s.national-weather-service/(.*)/i.xbos.weather_station/.*
       URIReplace: nws/weather/$1/wind_direction
+
+    - AttachURI:
+      ArchiveURI: /s.national-weather-service/+/i.xbos.weather_station/signal/info
+      Value: cloud_coverage
+      Name: cloud_coverage
+      Unit: okta
+      Time: time
+      PO: 2.1.1.8/32
+      URIMatch: .*/s.national-weather-service/(.*)/i.xbos.weather_station/.*
+      URIReplace: nws/weather/$1/cloud_coverage
+
+    - AttachURI:
+      ArchiveURI: /s.national-weather-service/+/i.xbos.weather_station/signal/info
+      Value: cloud_height
+      Name: cloud_height
+      Unit: m
+      Time: time
+      PO: 2.1.1.8/32
+      URIMatch: .*/s.national-weather-service/(.*)/i.xbos.weather_station/.*
+      URIReplace: nws/weather/$1/cloud_height

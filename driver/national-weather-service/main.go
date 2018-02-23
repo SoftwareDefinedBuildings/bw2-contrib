@@ -7,6 +7,36 @@ import (
 	"time"
 )
 
+type Cloud int
+
+const (
+	CLR Cloud = iota
+	FEW
+	SCT
+	BKN
+	OVC
+	VV
+)
+
+func parseCloud(s string) Cloud {
+	switch s {
+	case "CLR":
+		return CLR
+	case "FEW":
+		return FEW
+	case "SCT":
+		return SCT
+	case "BKN":
+		return BKN
+	case "OVC":
+		return OVC
+	case "VV":
+		return VV
+	default:
+		panic("unknown code: " + s)
+	}
+}
+
 const WEATHERSTATION_DF = "2.1.1.8"
 
 type XBOS_WEATHER_STATION struct {
@@ -14,6 +44,8 @@ type XBOS_WEATHER_STATION struct {
 	RelativeHumidity float64 `msgpack:"relative_humidity"`
 	WindSpeed        float64 `msgpack:"wind_speed"`
 	WindDirection    float64 `msgpack:"wind_direction"`
+	CloudCover       Cloud   `msgpack:"cloud_coverage"`
+	CloudHeight      float64 `msgpack:"cloud_height"`
 	Time             int64   `msgpack:"time"`
 }
 
@@ -67,12 +99,33 @@ func main() {
 			log.Printf("BAD WINDDIRECTION UNIT %+v", point)
 			continue
 		}
-		var send = XBOS_WEATHER_STATION{
-			Temperature:      t,
-			RelativeHumidity: point.Resp.Properties.RelativeHumidity.Value,
-			WindSpeed:        point.Resp.Properties.WindSpeed.Value,
-			WindDirection:    point.Resp.Properties.WindDirection.Value,
-			Time:             time.Now().UnixNano(),
+
+		var send XBOS_WEATHER_STATION
+		if len(point.Resp.Properties.CloudLayers) > 0 {
+			cloud := point.Resp.Properties.CloudLayers[0]
+			id := parseCloud(cloud.Amount)
+			log.Println("id", id)
+			if cloud.Base.UnitCode != "unit:m" {
+				log.Printf("BAD CLOUDHEIGHT UNIT %+v", point)
+				continue
+			}
+			send = XBOS_WEATHER_STATION{
+				Temperature:      t,
+				RelativeHumidity: point.Resp.Properties.RelativeHumidity.Value,
+				WindSpeed:        point.Resp.Properties.WindSpeed.Value,
+				WindDirection:    point.Resp.Properties.WindDirection.Value,
+				CloudCover:       id,
+				CloudHeight:      cloud.Base.Value,
+				Time:             time.Now().UnixNano(),
+			}
+		} else {
+			send = XBOS_WEATHER_STATION{
+				Temperature:      t,
+				RelativeHumidity: point.Resp.Properties.RelativeHumidity.Value,
+				WindSpeed:        point.Resp.Properties.WindSpeed.Value,
+				WindDirection:    point.Resp.Properties.WindDirection.Value,
+				Time:             time.Now().UnixNano(),
+			}
 		}
 
 		po, err := bw2.CreateMsgPackPayloadObject(bw2.FromDotForm(WEATHERSTATION_DF), send)
