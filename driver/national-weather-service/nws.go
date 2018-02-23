@@ -53,6 +53,13 @@ type Response struct {
 			UnitCode string  `json:"unitCode"`
 			Value    float64 `json:"value"`
 		} `json:"windDirection"`
+		CloudLayers []struct {
+			Base struct {
+				Value    float64 `json:"value"`
+				UnitCode string  `json:"unitCode"`
+			} `json:"base"`
+			Amount string `json:"amount"`
+		} `json:"cloudLayers"`
 	} `json:"properties"`
 }
 
