@@ -32,6 +32,7 @@ type Pelican struct {
 	password string
 	name     string
 	target   string
+	location string
 	req      *gorequest.SuperAgent
 }
 
@@ -44,8 +45,10 @@ type PelicanStatus struct {
 	Fan             bool    `msgpack:"fan"`
 	Mode            int32   `msgpack:"mode"`
 	State           int32   `msgpack:"state"`
-	Time            int64   `msgpack:"time"`
+	Time            string   `msgpack:"time"`
 }
+
+// Thermostat Object API Result Structs
 
 type apiResult struct {
 	Thermostat apiThermostat `xml:"Thermostat"`
@@ -63,6 +66,26 @@ type apiThermostat struct {
 	System          string  `xml:"system"`
 	RunStatus       string  `xml:"runStatus"`
 }
+
+// Thermostat History Object API Result Structs
+
+type apiResultHistory struct {
+	XMLName xml.Name `xml:"result"`
+	Success int      `xml:"success"`
+	Message string   `xml:"message"`
+	Records apiRecords  `xml:"ThermostatHistory"`
+}
+
+type apiRecords struct {
+	Name    string    `xml:"name"`
+	History []apiHistory `xml:"History"`
+}
+
+type apiHistory struct {
+	TimeStamp   string  `xml:"timestamp"`
+}
+
+// Miscellaneous Structs
 
 type pelicanStateParams struct {
 	HeatingSetpoint *float64
@@ -83,17 +106,18 @@ type discoverApiResult struct {
 	Message     string           `xml:"message"`
 }
 
-func NewPelican(username, password, sitename, name string) *Pelican {
+func NewPelican(username, password, sitename, name, location string) *Pelican {
 	return &Pelican{
 		username: username,
 		password: password,
 		target:   fmt.Sprintf("https://%s.officeclimatecontrol.net/api.cgi", sitename),
 		name:     name,
 		req:      gorequest.New(),
+		location: location,
 	}
 }
 
-func DiscoverPelicans(username, password, sitename string) ([]*Pelican, error) {
+func DiscoverPelicans(username, password, sitename, location string) ([]*Pelican, error) {
 	target := fmt.Sprintf("https://%s.officeclimatecontrol.net/api.cgi", sitename)
 	resp, _, errs := gorequest.New().Get(target).
 		Param("username", username).
@@ -119,7 +143,7 @@ func DiscoverPelicans(username, password, sitename string) ([]*Pelican, error) {
 	var pelicans []*Pelican
 	for _, thermInfo := range result.Thermostats {
 		if thermInfo.Name != "" {
-			pelicans = append(pelicans, NewPelican(username, password, sitename, thermInfo.Name))
+			pelicans = append(pelicans, NewPelican(username, password, sitename, thermInfo.Name, location))
 		}
 	}
 	return pelicans, nil
@@ -169,6 +193,43 @@ func (pel *Pelican) GetStatus() (*PelicanStatus, error) {
 		}
 	}
 
+	// Thermostat History Object Request to retrieve time stamp
+	// Retrieves all time stamps from the past 4 hours
+	location, locErr := time.LoadLocation(pel.location)
+	if locErr != nil {
+		return nil, fmt.Errorf("Location definition error in get request: %v\n", locErr)
+	}
+	diff := time.Now().Add(-4 * time.Hour)
+	endTime := time.Now().In(location).Format(time.RFC3339)
+	startTime := diff.In(location).Format(time.RFC3339)
+
+	respHist, _, errsHist := pel.req.Get(pel.target).
+		Param("username", pel.username).
+		Param("password", pel.password).
+		Param("request", "get").
+		Param("object", "ThermostatHistory").
+		Param("selection", fmt.Sprintf("startDateTime:%s;endDateTime:%s;", startTime, endTime)).
+		Param("value", "timestamp").
+		End()
+	defer respHist.Body.Close()
+
+	if errsHist != nil {
+		return nil, fmt.Errorf("Error retrieving thermostat status from %s: %v", pel.target, errsHist)
+	}
+
+	var histResult apiResultHistory
+  histDec := xml.NewDecoder(respHist.Body)
+	if histErr := histDec.Decode(&histResult); histErr != nil {
+		return nil, fmt.Errorf("Failed to decode response XML: %v", histErr)
+	}
+	if histResult.Success == 0 {
+		return nil, fmt.Errorf("Error retrieving thermostat status from %s: %s", respHist.Request.URL, histResult.Message)
+	}
+	if len(histResult.Records.History) <= 0 {
+		return nil, fmt.Errorf("Error: No timestamp records found in past %v from %s", diff, pel.target)
+	}
+	match := histResult.Records.History[len(histResult.Records.History)-1]
+
 	return &PelicanStatus{
 		Temperature:     thermostat.Temperature,
 		RelHumidity:     float64(thermostat.RelHumidity),
@@ -178,7 +239,7 @@ func (pel *Pelican) GetStatus() (*PelicanStatus, error) {
 		Fan:             fanState,
 		Mode:            modeNameMappings[thermostat.System],
 		State:           thermState,
-		Time:            time.Now().UnixNano(),
+		Time:            match.TimeStamp,
 	}, nil
 }
 

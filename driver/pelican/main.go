@@ -38,8 +38,9 @@ func main() {
 	username := params.MustString("username")
 	password := params.MustString("password")
 	sitename := params.MustString("sitename")
+	location := params.MustString("location")
 
-	pelicans, err := DiscoverPelicans(username, password, sitename)
+	pelicans, err := DiscoverPelicans(username, password, sitename, location)
 	if err != nil {
 		fmt.Printf("Failed to discover thermostats: %v\n", err)
 		os.Exit(1)
