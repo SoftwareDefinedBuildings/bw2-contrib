@@ -45,7 +45,7 @@ type PelicanStatus struct {
 	Fan             bool    `msgpack:"fan"`
 	Mode            int32   `msgpack:"mode"`
 	State           int32   `msgpack:"state"`
-	Time            string   `msgpack:"time"`
+	Time            string  `msgpack:"time"`
 }
 
 // Thermostat Object API Result Structs
@@ -70,19 +70,19 @@ type apiThermostat struct {
 // Thermostat History Object API Result Structs
 
 type apiResultHistory struct {
-	XMLName xml.Name `xml:"result"`
-	Success int      `xml:"success"`
-	Message string   `xml:"message"`
-	Records apiRecords  `xml:"ThermostatHistory"`
+	XMLName xml.Name   `xml:"result"`
+	Success int        `xml:"success"`
+	Message string     `xml:"message"`
+	Records apiRecords `xml:"ThermostatHistory"`
 }
 
 type apiRecords struct {
-	Name    string    `xml:"name"`
+	Name    string       `xml:"name"`
 	History []apiHistory `xml:"History"`
 }
 
 type apiHistory struct {
-	TimeStamp   string  `xml:"timestamp"`
+	TimeStamp string `xml:"timestamp"`
 }
 
 // Miscellaneous Structs
@@ -218,7 +218,7 @@ func (pel *Pelican) GetStatus() (*PelicanStatus, error) {
 	}
 
 	var histResult apiResultHistory
-  histDec := xml.NewDecoder(respHist.Body)
+	histDec := xml.NewDecoder(respHist.Body)
 	if histErr := histDec.Decode(&histResult); histErr != nil {
 		return nil, fmt.Errorf("Failed to decode response XML: %v", histErr)
 	}
