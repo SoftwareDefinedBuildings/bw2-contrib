@@ -32,7 +32,7 @@ type Pelican struct {
 	password string
 	name     string
 	target   string
-	location string
+	timezone string
 	req      *gorequest.SuperAgent
 }
 
@@ -49,7 +49,6 @@ type PelicanStatus struct {
 }
 
 // Thermostat Object API Result Structs
-
 type apiResult struct {
 	Thermostat apiThermostat `xml:"Thermostat"`
 	Success    int32         `xml:"success"`
@@ -68,7 +67,6 @@ type apiThermostat struct {
 }
 
 // Thermostat History Object API Result Structs
-
 type apiResultHistory struct {
 	XMLName xml.Name   `xml:"result"`
 	Success int        `xml:"success"`
@@ -106,18 +104,18 @@ type discoverApiResult struct {
 	Message     string           `xml:"message"`
 }
 
-func NewPelican(username, password, sitename, name, location string) *Pelican {
+func NewPelican(username, password, sitename, name, timezone string) *Pelican {
 	return &Pelican{
 		username: username,
 		password: password,
 		target:   fmt.Sprintf("https://%s.officeclimatecontrol.net/api.cgi", sitename),
 		name:     name,
 		req:      gorequest.New(),
-		location: location,
+		timezone: timezone,
 	}
 }
 
-func DiscoverPelicans(username, password, sitename, location string) ([]*Pelican, error) {
+func DiscoverPelicans(username, password, sitename, timezone string) ([]*Pelican, error) {
 	target := fmt.Sprintf("https://%s.officeclimatecontrol.net/api.cgi", sitename)
 	resp, _, errs := gorequest.New().Get(target).
 		Param("username", username).
@@ -143,7 +141,7 @@ func DiscoverPelicans(username, password, sitename, location string) ([]*Pelican
 	var pelicans []*Pelican
 	for _, thermInfo := range result.Thermostats {
 		if thermInfo.Name != "" {
-			pelicans = append(pelicans, NewPelican(username, password, sitename, thermInfo.Name, location))
+			pelicans = append(pelicans, NewPelican(username, password, sitename, thermInfo.Name, timezone))
 		}
 	}
 	return pelicans, nil
@@ -195,13 +193,13 @@ func (pel *Pelican) GetStatus() (*PelicanStatus, error) {
 
 	// Thermostat History Object Request to retrieve time stamp
 	// Retrieves all time stamps from the past 4 hours
-	location, locErr := time.LoadLocation(pel.location)
-	if locErr != nil {
-		return nil, fmt.Errorf("Location definition error in get request: %v\n", locErr)
+	timezone, timeErr := time.LoadLocation(pel.timezone)
+	if timeErr != nil {
+		return nil, fmt.Errorf("Invalid Timezone specified in pelican struct: %v\n", timeErr)
 	}
 	diff := time.Now().Add(-4 * time.Hour)
-	endTime := time.Now().In(location).Format(time.RFC3339)
-	startTime := diff.In(location).Format(time.RFC3339)
+	endTime := time.Now().In(timezone).Format(time.RFC3339)
+	startTime := diff.In(timezone).Format(time.RFC3339)
 
 	respHist, _, errsHist := pel.req.Get(pel.target).
 		Param("username", pel.username).
