@@ -45,7 +45,7 @@ type PelicanStatus struct {
 	Fan             bool    `msgpack:"fan"`
 	Mode            int32   `msgpack:"mode"`
 	State           int32   `msgpack:"state"`
-	Time            string  `msgpack:"time"`
+	Time            int64   `msgpack:"time"`
 }
 
 // Thermostat Object API Result Structs
@@ -80,7 +80,7 @@ type apiRecords struct {
 }
 
 type apiHistory struct {
-	TimeStamp string `xml:"timestamp"`
+	TimeStamp int `xml:"timestamp"`
 }
 
 // Miscellaneous Structs
@@ -223,7 +223,7 @@ func (pel *Pelican) GetStatus() (*PelicanStatus, error) {
 	if histResult.Success == 0 {
 		return nil, fmt.Errorf("Error retrieving thermostat status from %s: %s", respHist.Request.URL, histResult.Message)
 	}
-	if len(histResult.Records.History) <= 0 {
+	if len(histResult.Records.History) == 0 {
 		return nil, fmt.Errorf("Error: No timestamp records found in past %v from %s", diff, pel.target)
 	}
 	match := histResult.Records.History[len(histResult.Records.History)-1]
