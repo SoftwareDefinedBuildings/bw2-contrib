@@ -84,7 +84,6 @@ type apiHistory struct {
 }
 
 // Miscellaneous Structs
-
 type pelicanStateParams struct {
 	HeatingSetpoint *float64
 	CoolingSetpoint *float64
@@ -191,8 +190,7 @@ func (pel *Pelican) GetStatus() (*PelicanStatus, error) {
 		}
 	}
 
-	// Thermostat History Object Request to retrieve time stamp
-	// Retrieves all time stamps from the past 4 hours
+	// Thermostat History Object Request to retrieve time stamps from past hour
 	timezone, timeErr := time.LoadLocation(pel.timezone)
 	if timeErr != nil {
 		return nil, fmt.Errorf("Invalid Timezone specified in pelican struct: %v\n", timeErr)
