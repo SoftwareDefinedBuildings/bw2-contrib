@@ -4,4 +4,4 @@ password: <pelican password>
 sitename: <pelican site name>
 name: <thermostat name>
 poll_interval: <status poll interval>
-location: <thermostat location>
+timezone: <IANA timezone> # Must Be Recognized IANA Timezone Format

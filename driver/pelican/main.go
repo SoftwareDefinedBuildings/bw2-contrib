@@ -143,12 +143,15 @@ func main() {
 				}
 				fmt.Printf("%s %+v\n", currentPelican.name, status)
 
-				po, err := bw2.CreateMsgPackPayloadObject(bw2.FromDotForm(TSTAT_PO_DF), status)
-				if err != nil {
-					fmt.Printf("Failed to create msgpack PO: %v", err)
-					done <- true
+				// Nil status indicates there is no recently sufficient data
+				if status != nil {
+					po, err := bw2.CreateMsgPackPayloadObject(bw2.FromDotForm(TSTAT_PO_DF), status)
+					if err != nil {
+						fmt.Printf("Failed to create msgpack PO: %v", err)
+						done <- true
+					}
+					currentIface.PublishSignal("info", po)
 				}
-				currentIface.PublishSignal("info", po)
 				time.Sleep(pollInt)
 			}
 		}()

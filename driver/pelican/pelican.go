@@ -80,7 +80,7 @@ type apiRecords struct {
 }
 
 type apiHistory struct {
-	TimeStamp int `xml:"timestamp"`
+	TimeStamp string `xml:"timestamp"`
 }
 
 // Miscellaneous Structs
@@ -197,7 +197,7 @@ func (pel *Pelican) GetStatus() (*PelicanStatus, error) {
 	if timeErr != nil {
 		return nil, fmt.Errorf("Invalid Timezone specified in pelican struct: %v\n", timeErr)
 	}
-	diff := time.Now().Add(-4 * time.Hour)
+	diff := time.Now().Add(-1 * time.Hour)
 	endTime := time.Now().In(timezone).Format(time.RFC3339)
 	startTime := diff.In(timezone).Format(time.RFC3339)
 
@@ -223,10 +223,19 @@ func (pel *Pelican) GetStatus() (*PelicanStatus, error) {
 	if histResult.Success == 0 {
 		return nil, fmt.Errorf("Error retrieving thermostat status from %s: %s", respHist.Request.URL, histResult.Message)
 	}
+
 	if len(histResult.Records.History) == 0 {
-		return nil, fmt.Errorf("Error: No timestamp records found in past %v from %s", diff, pel.target)
+		//return nil, fmt.Errorf("Error: No timestamp records found in past %v from %s", diff, pel.target)
+		return nil, nil
 	}
+
+	// Converting string timeStamp to int64 format
 	match := histResult.Records.History[len(histResult.Records.History)-1]
+	timeString := match.TimeStamp + ":00Z"
+	timeInt, timeErr := time.Parse(time.RFC3339, timeString)
+	if timeErr != nil {
+		return nil, fmt.Errorf("Error parsing %v into Time struct", timeString)
+	}
 
 	return &PelicanStatus{
 		Temperature:     thermostat.Temperature,
@@ -237,7 +246,7 @@ func (pel *Pelican) GetStatus() (*PelicanStatus, error) {
 		Fan:             fanState,
 		Mode:            modeNameMappings[thermostat.System],
 		State:           thermState,
-		Time:            match.TimeStamp,
+		Time:            timeInt.UnixNano(),
 	}, nil
 }
 
