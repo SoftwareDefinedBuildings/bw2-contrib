@@ -228,10 +228,9 @@ func (pel *Pelican) GetStatus() (*PelicanStatus, error) {
 
 	// Converting string timeStamp to int64 format
 	match := histResult.Records.History[len(histResult.Records.History)-1]
-	timeString := match.TimeStamp + ":00Z"
-	timeStruct, timeErr := time.Parse(time.RFC3339, timeString)
+	timestamp, timeErr := time.ParseInLocation("2006-01-02T15:04", match.TimeStamp, timezone)
 	if timeErr != nil {
-		return nil, fmt.Errorf("Error parsing %v into Time struct", timeString)
+		return nil, fmt.Errorf("Error parsing %v into Time struct: %v\n", match.TimeStamp, timeErr)
 	}
 
 	return &PelicanStatus{
@@ -243,7 +242,7 @@ func (pel *Pelican) GetStatus() (*PelicanStatus, error) {
 		Fan:             fanState,
 		Mode:            modeNameMappings[thermostat.System],
 		State:           thermState,
-		Time:            timeStruct.UnixNano(),
+		Time:            timestamp.UnixNano(),
 	}, nil
 }
 
