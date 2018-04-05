@@ -228,7 +228,7 @@ func (pel *Pelican) GetStatus() (*PelicanStatus, error) {
 
 	// Converting string timeStamp to int64 format
 	match := histResult.Records.History[len(histResult.Records.History)-1]
-	timeString := match.TimeStamp + ":00"
+	timeString := match.TimeStamp + ":00Z"
 	timeStruct, timeErr := time.Parse(time.RFC3339, timeString)
 	if timeErr != nil {
 		return nil, fmt.Errorf("Error parsing %v into Time struct", timeString)
