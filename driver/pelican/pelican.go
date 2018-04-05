@@ -223,14 +223,13 @@ func (pel *Pelican) GetStatus() (*PelicanStatus, error) {
 	}
 
 	if len(histResult.Records.History) == 0 {
-		//return nil, fmt.Errorf("Error: No timestamp records found in past %v from %s", diff, pel.target)
 		return nil, nil
 	}
 
 	// Converting string timeStamp to int64 format
 	match := histResult.Records.History[len(histResult.Records.History)-1]
-	timeString := match.TimeStamp + ":00Z"
-	timeInt, timeErr := time.Parse(time.RFC3339, timeString)
+	timeString := match.TimeStamp + ":00"
+	timeStruct, timeErr := time.Parse(time.RFC3339, timeString)
 	if timeErr != nil {
 		return nil, fmt.Errorf("Error parsing %v into Time struct", timeString)
 	}
@@ -244,7 +243,7 @@ func (pel *Pelican) GetStatus() (*PelicanStatus, error) {
 		Fan:             fanState,
 		Mode:            modeNameMappings[thermostat.System],
 		State:           thermState,
-		Time:            timeInt.UnixNano(),
+		Time:            timeStruct.UnixNano(),
 	}, nil
 }
 

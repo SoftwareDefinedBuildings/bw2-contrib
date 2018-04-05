@@ -143,7 +143,7 @@ func main() {
 				}
 				fmt.Printf("%s %+v\n", currentPelican.name, status)
 
-				// Nil status indicates there is no recently sufficient data
+				// Nil status indicates there is no sufficiently recent data
 				if status != nil {
 					po, err := bw2.CreateMsgPackPayloadObject(bw2.FromDotForm(TSTAT_PO_DF), status)
 					if err != nil {
