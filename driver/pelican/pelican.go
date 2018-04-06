@@ -195,9 +195,9 @@ func (pel *Pelican) GetStatus() (*PelicanStatus, error) {
 	if timeErr != nil {
 		return nil, fmt.Errorf("Invalid Timezone specified in pelican struct: %v\n", timeErr)
 	}
-	diff := time.Now().Add(-1 * time.Hour)
+
 	endTime := time.Now().In(timezone).Format(time.RFC3339)
-	startTime := diff.In(timezone).Format(time.RFC3339)
+	startTime := time.Now().Add(-1 * time.Hour).In(timezone).Format(time.RFC3339)
 
 	respHist, _, errsHist := pel.req.Get(pel.target).
 		Param("username", pel.username).
