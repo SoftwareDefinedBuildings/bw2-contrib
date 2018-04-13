@@ -1,12 +1,14 @@
 package main
 
 import (
+	"encoding/xml"
 	"fmt"
 	"os"
 	"strings"
 	"time"
 
 	"github.com/immesys/spawnpoint/spawnable"
+	"github.com/parnurzeal/gorequest"
 	bw2 "gopkg.in/immesys/bw2bind.v5"
 )
 
@@ -25,6 +27,17 @@ type stateMsg struct {
 	Fan             *bool    `msgpack:"fan"`
 }
 
+// Object API Result Structs
+type apiObject struct {
+	XMLName   xml.Name    `xml:"result"`
+	Success   int         `xml:"success"`
+	Attribute apiTimezone `xml:"attribute"`
+}
+
+type apiTimezone struct {
+	Timezone string `xml:"timeZone"`
+}
+
 func main() {
 	bwClient := bw2.ConnectOrExit("")
 	bwClient.OverrideAutoChainTo(true)
@@ -38,7 +51,11 @@ func main() {
 	username := params.MustString("username")
 	password := params.MustString("password")
 	sitename := params.MustString("sitename")
-	timezone := params.MustString("timezone")
+
+	timezone, zoneErr := getTimeZone(sitename, username, password)
+	if zoneErr != nil {
+		fmt.Printf("Error retrieving time zone from sitename: %v\n", zoneErr)
+	}
 
 	pelicans, err := DiscoverPelicans(username, password, sitename, timezone)
 	if err != nil {
@@ -157,4 +174,26 @@ func main() {
 		}()
 	}
 	<-done
+}
+
+func getTimeZone(sitename, username, password string) (string, error) {
+	target := fmt.Sprintf("https://%s.officeclimatecontrol.net/api.cgi", sitename)
+	resp, _, errs := gorequest.New().Get(target).
+		Param("username", username).
+		Param("password", password).
+		Param("request", "get").
+		Param("object", "Site").
+		Param("value", "timeZone;").
+		End()
+	if errs != nil {
+		return "", fmt.Errorf("Error retrieving object result from %s: %s", target, errs)
+	}
+	defer resp.Body.Close()
+	var result apiObject
+	dec := xml.NewDecoder(resp.Body)
+	if err := dec.Decode(&result); err != nil {
+		return "", fmt.Errorf("Failed to decode response XML: %v", err)
+	}
+	timezone := result.Attribute.Timezone
+	return timezone, nil
 }
