@@ -83,6 +83,17 @@ type apiHistory struct {
 	TimeStamp string `xml:"timestamp"`
 }
 
+// Object API Result Structs
+type apiObject struct {
+	XMLName   xml.Name    `xml:"result"`
+	Success   int         `xml:"success"`
+	Attribute apiTimezone `xml:"attribute"`
+}
+
+type apiTimezone struct {
+	Timezone string `xml:"timeZone"`
+}
+
 // Miscellaneous Structs
 type pelicanStateParams struct {
 	HeatingSetpoint *float64
@@ -114,7 +125,7 @@ func NewPelican(username, password, sitename, name, timezone string) *Pelican {
 	}
 }
 
-func DiscoverPelicans(username, password, sitename, timezone string) ([]*Pelican, error) {
+func DiscoverPelicans(username, password, sitename string) ([]*Pelican, error) {
 	target := fmt.Sprintf("https://%s.officeclimatecontrol.net/api.cgi", sitename)
 	resp, _, errs := gorequest.New().Get(target).
 		Param("username", username).
@@ -136,6 +147,26 @@ func DiscoverPelicans(username, password, sitename, timezone string) ([]*Pelican
 	if result.Success == 0 {
 		return nil, fmt.Errorf("Error retrieving thermostat status from %s: %s", resp.Request.URL, result.Message)
 	}
+
+	// Time zone retrieval logic
+	targetTimezone := fmt.Sprintf("https://%s.officeclimatecontrol.net/api.cgi", sitename)
+	respTimezone, _, errsTimezone := gorequest.New().Get(targetTimezone).
+		Param("username", username).
+		Param("password", password).
+		Param("request", "get").
+		Param("object", "Site").
+		Param("value", "timeZone;").
+		End()
+	if errsTimezone != nil {
+		return nil, fmt.Errorf("Error retrieving object result from %s: %s", targetTimezone, errsTimezone)
+	}
+	defer respTimezone.Body.Close()
+	var resultTimezone apiObject
+	decTimezone := xml.NewDecoder(respTimezone.Body)
+	if err := decTimezone.Decode(&resultTimezone); err != nil {
+		return nil, fmt.Errorf("Failed to decode response XML: %v", err)
+	}
+	timezone := resultTimezone.Attribute.Timezone
 
 	var pelicans []*Pelican
 	for _, thermInfo := range result.Thermostats {
@@ -348,26 +379,4 @@ func (pel *Pelican) ModifyState(params *pelicanStateParams) error {
 	}
 
 	return nil
-}
-
-func GetTimeZone(sitename, username, password string) (string, error) {
-	target := fmt.Sprintf("https://%s.officeclimatecontrol.net/api.cgi", sitename)
-	resp, _, errs := gorequest.New().Get(target).
-		Param("username", username).
-		Param("password", password).
-		Param("request", "get").
-		Param("object", "Site").
-		Param("value", "timeZone;").
-		End()
-	if errs != nil {
-		return "", fmt.Errorf("Error retrieving object result from %s: %s", target, errs)
-	}
-	defer resp.Body.Close()
-	var result apiObject
-	dec := xml.NewDecoder(resp.Body)
-	if err := dec.Decode(&result); err != nil {
-		return "", fmt.Errorf("Failed to decode response XML: %v", err)
-	}
-	timezone := result.Attribute.Timezone
-	return timezone, nil
 }

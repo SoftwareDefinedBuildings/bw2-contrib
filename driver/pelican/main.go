@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/xml"
 	"fmt"
 	"os"
 	"strings"
@@ -26,17 +25,6 @@ type stateMsg struct {
 	Fan             *bool    `msgpack:"fan"`
 }
 
-// Object API Result Structs
-type apiObject struct {
-	XMLName   xml.Name    `xml:"result"`
-	Success   int         `xml:"success"`
-	Attribute apiTimezone `xml:"attribute"`
-}
-
-type apiTimezone struct {
-	Timezone string `xml:"timeZone"`
-}
-
 func main() {
 	bwClient := bw2.ConnectOrExit("")
 	bwClient.OverrideAutoChainTo(true)
@@ -51,12 +39,7 @@ func main() {
 	password := params.MustString("password")
 	sitename := params.MustString("sitename")
 
-	timezone, zoneErr := GetTimeZone(sitename, username, password)
-	if zoneErr != nil {
-		fmt.Printf("Error retrieving time zone from sitename: %v\n", zoneErr)
-	}
-
-	pelicans, err := DiscoverPelicans(username, password, sitename, timezone)
+	pelicans, err := DiscoverPelicans(username, password, sitename)
 	if err != nil {
 		fmt.Printf("Failed to discover thermostats: %v\n", err)
 		os.Exit(1)
