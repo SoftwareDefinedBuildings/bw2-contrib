@@ -32,7 +32,7 @@ type Pelican struct {
 	password string
 	name     string
 	target   string
-	timezone string
+	timezone *time.Location
 	req      *gorequest.SuperAgent
 }
 
@@ -83,8 +83,8 @@ type apiHistory struct {
 	TimeStamp string `xml:"timestamp"`
 }
 
-// Object API Result Structs
-type apiObject struct {
+// Thermostat Site Object API Result Structs
+type apiResultSite struct {
 	XMLName   xml.Name    `xml:"result"`
 	Success   int         `xml:"success"`
 	Attribute apiTimezone `xml:"attribute"`
@@ -114,7 +114,7 @@ type discoverApiResult struct {
 	Message     string           `xml:"message"`
 }
 
-func NewPelican(username, password, sitename, name, timezone string) *Pelican {
+func NewPelican(username, password, sitename, name string, timezone *time.Location) *Pelican {
 	return &Pelican{
 		username: username,
 		password: password,
@@ -161,12 +161,16 @@ func DiscoverPelicans(username, password, sitename string) ([]*Pelican, error) {
 		return nil, fmt.Errorf("Error retrieving object result from %s: %s", targetTimezone, errsTimezone)
 	}
 	defer respTimezone.Body.Close()
-	var resultTimezone apiObject
+	var resultTimezone apiResultSite
 	decTimezone := xml.NewDecoder(respTimezone.Body)
 	if err := decTimezone.Decode(&resultTimezone); err != nil {
 		return nil, fmt.Errorf("Failed to decode response XML: %v", err)
 	}
-	timezone := resultTimezone.Attribute.Timezone
+
+	timezone, timeErr := time.LoadLocation(resultTimezone.Attribute.Timezone)
+	if timeErr != nil {
+		return nil, fmt.Errorf("Invalid Timezone specified in pelican struct: %v\n", timeErr)
+	}
 
 	var pelicans []*Pelican
 	for _, thermInfo := range result.Thermostats {
@@ -222,13 +226,8 @@ func (pel *Pelican) GetStatus() (*PelicanStatus, error) {
 	}
 
 	// Thermostat History Object Request to retrieve time stamps from past hour
-	timezone, timeErr := time.LoadLocation(pel.timezone)
-	if timeErr != nil {
-		return nil, fmt.Errorf("Invalid Timezone specified in pelican struct: %v\n", timeErr)
-	}
-
-	endTime := time.Now().In(timezone).Format(time.RFC3339)
-	startTime := time.Now().Add(-1 * time.Hour).In(timezone).Format(time.RFC3339)
+	endTime := time.Now().In(pel.timezone).Format(time.RFC3339)
+	startTime := time.Now().Add(-1 * time.Hour).In(pel.timezone).Format(time.RFC3339)
 
 	respHist, _, errsHist := pel.req.Get(pel.target).
 		Param("username", pel.username).
@@ -259,7 +258,7 @@ func (pel *Pelican) GetStatus() (*PelicanStatus, error) {
 
 	// Converting string timeStamp to int64 format
 	match := histResult.Records.History[len(histResult.Records.History)-1]
-	timestamp, timeErr := time.ParseInLocation("2006-01-02T15:04", match.TimeStamp, timezone)
+	timestamp, timeErr := time.ParseInLocation("2006-01-02T15:04", match.TimeStamp, pel.timezone)
 	if timeErr != nil {
 		return nil, fmt.Errorf("Error parsing %v into Time struct: %v\n", match.TimeStamp, timeErr)
 	}
