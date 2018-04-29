@@ -11,6 +11,7 @@ import (
 )
 
 const TSTAT_PO_DF = "2.1.1.0"
+const DR_PO_DF = "2.1.1.9"
 
 type setpointsMsg struct {
 	HeatingSetpoint *float64 `msgpack:"heating_setpoint"`
@@ -151,6 +152,22 @@ func main() {
 					}
 					currentIface.PublishSignal("info", po)
 				}
+
+				drStatus, drErr := currentPelican.TrackDREvent()
+				if drErr != nil {
+					fmt.Printf("Failed to retrieve Pelican's DR status: %v\n", err)
+					done <- true
+				}
+				fmt.Printf("%s DR Status: %+v\n", currentPelican.name, drStatus)
+
+				if drStatus != nil {
+					po, err := bw2.CreateMsgPackPayloadObject(bw2.FromDotForm(DR_PO_DF), drStatus)
+					if err != nil {
+						fmt.Printf("Failed to create DR msgpack PO: %v", err)
+					}
+					currentIface.PublishSignal("dr", po)
+				}
+
 				time.Sleep(pollInt)
 			}
 		}()
