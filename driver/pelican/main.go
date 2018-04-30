@@ -55,12 +55,14 @@ func main() {
 
 	service := bwClient.RegisterService(baseURI, "s.pelican")
 	tstatIfaces := make([]*bw2.Interface, len(pelicans))
+	drstatIfaces := make([]*bw2.Interface, len(pelicans))
 	for i, pelican := range pelicans {
 		name := strings.Replace(pelican.name, " ", "_", -1)
 		name = strings.Replace(name, "&", "_and_", -1)
 		name = strings.Replace(name, "'", "", -1)
 		fmt.Println("Transforming", pelican.name, "=>", name)
 		tstatIfaces[i] = service.RegisterInterface(name, "i.xbos.thermostat")
+		drstatIfaces[i] = service.RegisterInterface(name, "i.xbos.demand_response")
 
 		tstatIfaces[i].SubscribeSlot("setpoints", func(msg *bw2.SimpleMessage) {
 			po := msg.GetOnePODF(TSTAT_PO_DF)
@@ -134,6 +136,7 @@ func main() {
 	for i, pelican := range pelicans {
 		currentPelican := pelican
 		currentIface := tstatIfaces[i]
+		currentDRIface := drstatIfaces[i]
 		go func() {
 			for {
 				status, err := currentPelican.GetStatus()
@@ -155,7 +158,7 @@ func main() {
 
 				drStatus, drErr := currentPelican.TrackDREvent()
 				if drErr != nil {
-					fmt.Printf("Failed to retrieve Pelican's DR status: %v\n", err)
+					fmt.Printf("Failed to retrieve Pelican's DR status: %v\n", drErr)
 					done <- true
 				}
 				fmt.Printf("%s DR Status: %+v\n", currentPelican.name, drStatus)
@@ -165,7 +168,7 @@ func main() {
 					if err != nil {
 						fmt.Printf("Failed to create DR msgpack PO: %v", err)
 					}
-					currentIface.PublishSignal("dr", po)
+					currentDRIface.PublishSignal("info", po)
 				}
 
 				time.Sleep(pollInt)
