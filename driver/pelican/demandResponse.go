@@ -40,11 +40,11 @@ type ADREventAPI struct {
 }
 
 type ADREvent struct {
-	EventEnd   int64
-	EventStart int64
-	EventType  DR_EVENT_TYPE
-	DRStatus   DR_EVENT_STATUS
-	Time       int64
+	EventEnd   int64           `msgpack:"event_end"`
+	EventStart int64           `msgpack:"event_start"`
+	EventType  DR_EVENT_TYPE   `msgpack:"event_type"`
+	DRStatus   DR_EVENT_STATUS `msgpack:"dr_status"`
+	Time       int64           `msgpack:"time"`
 }
 
 func (pel *Pelican) TrackDREvent() (*ADREvent, error) {
@@ -57,17 +57,17 @@ func (pel *Pelican) TrackDREvent() (*ADREvent, error) {
 		End()
 
 	if errs != nil {
-		return nil, fmt.Errorf("Error retrieving thermostat direct-response status from %s: %v", pel.target, errs)
+		return nil, fmt.Errorf("Error retrieving thermostat demand-response status from %s: %v", pel.target, errs)
 	}
 
 	defer resp.Body.Close()
 	var result ADREventWrapperAPI
 	dec := xml.NewDecoder(resp.Body)
 	if err := dec.Decode(&result); err != nil {
-		return nil, fmt.Errorf("Failed to decode direct-response XML: %v", err)
+		return nil, fmt.Errorf("Failed to decode demand-response XML: %v", err)
 	}
 	if result.Success == 0 {
-		return nil, fmt.Errorf("Error retrieving thermostat direct-response status from %s: %s", resp.Request.URL, result.Message)
+		return nil, fmt.Errorf("Error retrieving thermostat demand-response status from %s: %s", resp.Request.URL, result.Message)
 	}
 
 	event := result.Event
