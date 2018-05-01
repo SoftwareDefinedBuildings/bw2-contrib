@@ -56,7 +56,7 @@ func main() {
 	pollDrStr := params.MustString("poll_interval_dr")
 	pollDr, drErr := time.ParseDuration(pollDrStr)
 	if drErr != nil {
-		fmt.Printf("Invalid demand response poll interval specified: %v\n", err)
+		fmt.Printf("Invalid demand response poll interval specified: %v\n", drErr)
 		os.Exit(1)
 	}
 

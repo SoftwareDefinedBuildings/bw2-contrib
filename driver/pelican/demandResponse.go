@@ -9,7 +9,6 @@ import (
 type DR_EVENT_STATUS int
 
 const (
-	DR_EVENT_UNKNOWN        DR_EVENT_STATUS = -1
 	DR_EVENT_NOT_CONFIGURED DR_EVENT_STATUS = iota
 	DR_EVENT_UNUSABLE
 	DR_EVENT_INACTIVE
@@ -19,8 +18,7 @@ const (
 type DR_EVENT_TYPE int
 
 const (
-	DR_EVENT_UNRECOGNIZED DR_EVENT_TYPE = -1
-	DR_EVENT_NORMAL       DR_EVENT_TYPE = iota
+	DR_EVENT_NORMAL DR_EVENT_TYPE = iota
 	DR_EVENT_MODERATE
 	DR_EVENT_HIGH
 	DR_EVENT_SPECIAL
@@ -87,8 +85,18 @@ func (pel *Pelican) TrackDREvent() (*ADREvent, error) {
 		output.EventEnd = endTime
 	}
 
-	output.DRStatus = GetEventStatus(event.Status)
-	output.EventType = GetEventType(event.Type)
+	eventStatus, statusErr := GetEventStatus(event.Status)
+	if statusErr != nil {
+		return nil, fmt.Errorf("Event Status Error: %v", statusErr)
+	}
+	output.DRStatus = eventStatus
+
+	eventType, typeErr := GetEventType(event.Type)
+	if typeErr != nil {
+		return nil, fmt.Errorf("Event Type Error: %v", typeErr)
+	}
+	output.EventType = eventType
+
 	output.Time = time.Now().UnixNano()
 
 	return &output, nil
@@ -110,33 +118,33 @@ func DRTimeToUnix(DRTime string, timezone *time.Location) (int64, error) {
 }
 
 // Map Status to Corresponding Integer Value
-func GetEventStatus(eventStatus string) DR_EVENT_STATUS {
+func GetEventStatus(eventStatus string) (DR_EVENT_STATUS, error) {
 	switch eventStatus {
 	case "Not Configured":
-		return DR_EVENT_NOT_CONFIGURED
+		return DR_EVENT_NOT_CONFIGURED, nil
 	case "Unusable":
-		return DR_EVENT_UNUSABLE
+		return DR_EVENT_UNUSABLE, nil
 	case "Inactive":
-		return DR_EVENT_INACTIVE
+		return DR_EVENT_INACTIVE, nil
 	case "Active":
-		return DR_EVENT_ACTIVE
+		return DR_EVENT_ACTIVE, nil
 	default:
-		return DR_EVENT_UNKNOWN
+		return 0, fmt.Errorf("Event status not recognized")
 	}
 }
 
 // Map Event Type to Corresponding Integer Value
-func GetEventType(eventType string) DR_EVENT_TYPE {
+func GetEventType(eventType string) (DR_EVENT_TYPE, error) {
 	switch eventType {
 	case "Normal":
-		return DR_EVENT_NORMAL
+		return DR_EVENT_NORMAL, nil
 	case "Moderate":
-		return DR_EVENT_MODERATE
+		return DR_EVENT_MODERATE, nil
 	case "High":
-		return DR_EVENT_HIGH
+		return DR_EVENT_HIGH, nil
 	case "Special":
-		return DR_EVENT_SPECIAL
+		return DR_EVENT_SPECIAL, nil
 	default:
-		return DR_EVENT_UNRECOGNIZED
+		return 0, fmt.Errorf("Event type not recognized")
 	}
 }
