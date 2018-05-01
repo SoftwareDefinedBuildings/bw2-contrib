@@ -11,6 +11,7 @@ import (
 )
 
 const TSTAT_PO_DF = "2.1.1.0"
+const DR_PO_DF = "2.1.1.9"
 
 type setpointsMsg struct {
 	HeatingSetpoint *float64 `msgpack:"heating_setpoint"`
@@ -52,14 +53,23 @@ func main() {
 		os.Exit(1)
 	}
 
+	pollDrStr := params.MustString("poll_interval_dr")
+	pollDr, drErr := time.ParseDuration(pollDrStr)
+	if drErr != nil {
+		fmt.Printf("Invalid demand response poll interval specified: %v\n", drErr)
+		os.Exit(1)
+	}
+
 	service := bwClient.RegisterService(baseURI, "s.pelican")
 	tstatIfaces := make([]*bw2.Interface, len(pelicans))
+	drstatIfaces := make([]*bw2.Interface, len(pelicans))
 	for i, pelican := range pelicans {
 		name := strings.Replace(pelican.name, " ", "_", -1)
 		name = strings.Replace(name, "&", "_and_", -1)
 		name = strings.Replace(name, "'", "", -1)
 		fmt.Println("Transforming", pelican.name, "=>", name)
 		tstatIfaces[i] = service.RegisterInterface(name, "i.xbos.thermostat")
+		drstatIfaces[i] = service.RegisterInterface(name, "i.xbos.demand_response")
 
 		tstatIfaces[i].SubscribeSlot("setpoints", func(msg *bw2.SimpleMessage) {
 			po := msg.GetOnePODF(TSTAT_PO_DF)
@@ -133,6 +143,7 @@ func main() {
 	for i, pelican := range pelicans {
 		currentPelican := pelican
 		currentIface := tstatIfaces[i]
+		currentDRIface := drstatIfaces[i]
 		go func() {
 			for {
 				status, err := currentPelican.GetStatus()
@@ -151,7 +162,29 @@ func main() {
 					}
 					currentIface.PublishSignal("info", po)
 				}
+
 				time.Sleep(pollInt)
+			}
+		}()
+
+		go func() {
+			for {
+				drStatus, drErr := currentPelican.TrackDREvent()
+				if drErr != nil {
+					fmt.Printf("Failed to retrieve Pelican's DR status: %v\n", drErr)
+					done <- true
+				}
+				fmt.Printf("%s DR Status: %+v\n", currentPelican.name, drStatus)
+
+				if drStatus != nil {
+					po, err := bw2.CreateMsgPackPayloadObject(bw2.FromDotForm(DR_PO_DF), drStatus)
+					if err != nil {
+						fmt.Printf("Failed to create DR msgpack PO: %v", err)
+					}
+					currentDRIface.PublishSignal("info", po)
+				}
+
+				time.Sleep(pollDr)
 			}
 		}()
 	}

@@ -4,3 +4,4 @@ password: <pelican password>
 sitename: <pelican site name>
 name: <thermostat name>
 poll_interval: <status poll interval>
+poll_interval_dr: <dr status poll interval>
