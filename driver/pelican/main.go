@@ -53,6 +53,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	pollDrStr := params.MustString("poll_interval_dr")
+	pollDr, drErr := time.ParseDuration(pollDrStr)
+	if drErr != nil {
+		fmt.Printf("Invalid demand response poll interval specified: %v\n", err)
+		os.Exit(1)
+	}
+
 	service := bwClient.RegisterService(baseURI, "s.pelican")
 	tstatIfaces := make([]*bw2.Interface, len(pelicans))
 	drstatIfaces := make([]*bw2.Interface, len(pelicans))
@@ -156,6 +163,12 @@ func main() {
 					currentIface.PublishSignal("info", po)
 				}
 
+				time.Sleep(pollInt)
+			}
+		}()
+
+		go func() {
+			for {
 				drStatus, drErr := currentPelican.TrackDREvent()
 				if drErr != nil {
 					fmt.Printf("Failed to retrieve Pelican's DR status: %v\n", drErr)
@@ -171,7 +184,7 @@ func main() {
 					currentDRIface.PublishSignal("info", po)
 				}
 
-				time.Sleep(pollInt)
+				time.Sleep(pollDr)
 			}
 		}()
 	}
