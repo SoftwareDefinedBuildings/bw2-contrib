@@ -32,6 +32,7 @@ type Pelican struct {
 	password string
 	name     string
 	target   string
+	timezone *time.Location
 	req      *gorequest.SuperAgent
 }
 
@@ -47,6 +48,7 @@ type PelicanStatus struct {
 	Time            int64   `msgpack:"time"`
 }
 
+// Thermostat Object API Result Structs
 type apiResult struct {
 	Thermostat apiThermostat `xml:"Thermostat"`
 	Success    int32         `xml:"success"`
@@ -64,6 +66,35 @@ type apiThermostat struct {
 	RunStatus       string  `xml:"runStatus"`
 }
 
+// Thermostat History Object API Result Structs
+type apiResultHistory struct {
+	XMLName xml.Name   `xml:"result"`
+	Success int        `xml:"success"`
+	Message string     `xml:"message"`
+	Records apiRecords `xml:"ThermostatHistory"`
+}
+
+type apiRecords struct {
+	Name    string       `xml:"name"`
+	History []apiHistory `xml:"History"`
+}
+
+type apiHistory struct {
+	TimeStamp string `xml:"timestamp"`
+}
+
+// Thermostat Site Object API Result Structs
+type apiResultSite struct {
+	XMLName   xml.Name    `xml:"result"`
+	Success   int         `xml:"success"`
+	Attribute apiTimezone `xml:"attribute"`
+}
+
+type apiTimezone struct {
+	Timezone string `xml:"timeZone"`
+}
+
+// Miscellaneous Structs
 type pelicanStateParams struct {
 	HeatingSetpoint *float64
 	CoolingSetpoint *float64
@@ -83,13 +114,14 @@ type discoverApiResult struct {
 	Message     string           `xml:"message"`
 }
 
-func NewPelican(username, password, sitename, name string) *Pelican {
+func NewPelican(username, password, sitename, name string, timezone *time.Location) *Pelican {
 	return &Pelican{
 		username: username,
 		password: password,
 		target:   fmt.Sprintf("https://%s.officeclimatecontrol.net/api.cgi", sitename),
 		name:     name,
 		req:      gorequest.New(),
+		timezone: timezone,
 	}
 }
 
@@ -116,10 +148,34 @@ func DiscoverPelicans(username, password, sitename string) ([]*Pelican, error) {
 		return nil, fmt.Errorf("Error retrieving thermostat status from %s: %s", resp.Request.URL, result.Message)
 	}
 
+	// Time zone retrieval logic
+	targetTimezone := fmt.Sprintf("https://%s.officeclimatecontrol.net/api.cgi", sitename)
+	respTimezone, _, errsTimezone := gorequest.New().Get(targetTimezone).
+		Param("username", username).
+		Param("password", password).
+		Param("request", "get").
+		Param("object", "Site").
+		Param("value", "timeZone;").
+		End()
+	if errsTimezone != nil {
+		return nil, fmt.Errorf("Error retrieving object result from %s: %s", targetTimezone, errsTimezone)
+	}
+	defer respTimezone.Body.Close()
+	var resultTimezone apiResultSite
+	decTimezone := xml.NewDecoder(respTimezone.Body)
+	if err := decTimezone.Decode(&resultTimezone); err != nil {
+		return nil, fmt.Errorf("Failed to decode response XML: %v", err)
+	}
+
+	timezone, timeErr := time.LoadLocation(resultTimezone.Attribute.Timezone)
+	if timeErr != nil {
+		return nil, fmt.Errorf("Invalid Timezone specified in pelican struct: %v\n", timeErr)
+	}
+
 	var pelicans []*Pelican
 	for _, thermInfo := range result.Thermostats {
 		if thermInfo.Name != "" {
-			pelicans = append(pelicans, NewPelican(username, password, sitename, thermInfo.Name))
+			pelicans = append(pelicans, NewPelican(username, password, sitename, thermInfo.Name, timezone))
 		}
 	}
 	return pelicans, nil
@@ -169,6 +225,49 @@ func (pel *Pelican) GetStatus() (*PelicanStatus, error) {
 		}
 	}
 
+	// Thermostat History Object Request to retrieve time stamps from past hour
+	endTime := time.Now().In(pel.timezone).Format(time.RFC3339)
+	startTime := time.Now().Add(-1 * time.Hour).In(pel.timezone).Format(time.RFC3339)
+
+	respHist, _, errsHist := pel.req.Get(pel.target).
+		Param("username", pel.username).
+		Param("password", pel.password).
+		Param("request", "get").
+		Param("object", "ThermostatHistory").
+		Param("selection", fmt.Sprintf("startDateTime:%s;endDateTime:%s;", startTime, endTime)).
+		Param("value", "timestamp").
+		End()
+	defer respHist.Body.Close()
+
+	if errsHist != nil {
+		return nil, fmt.Errorf("Error retrieving thermostat status from %s: %v", pel.target, errsHist)
+	}
+
+	var histResult apiResultHistory
+	histDec := xml.NewDecoder(respHist.Body)
+	if histErr := histDec.Decode(&histResult); histErr != nil {
+		return nil, fmt.Errorf("Failed to decode response XML: %v", histErr)
+	}
+	if histResult.Success == 0 {
+		return nil, fmt.Errorf("Error retrieving thermostat status from %s: %s", respHist.Request.URL, histResult.Message)
+	}
+
+	if len(histResult.Records.History) == 0 {
+		return nil, nil
+	}
+
+	// Converting string timeStamp to int64 format
+	match := histResult.Records.History[len(histResult.Records.History)-1]
+	timestamp, timeErr := time.ParseInLocation("2006-01-02T15:04", match.TimeStamp, pel.timezone)
+	if timeErr != nil {
+		return nil, fmt.Errorf("Error parsing %v into Time struct: %v\n", match.TimeStamp, timeErr)
+	}
+
+	now := time.Now()
+	if timestamp.Before(now.Add(-2 * time.Hour)) {
+		fmt.Println("WARNING temperature data has not changed for 2 hours")
+	}
+
 	return &PelicanStatus{
 		Temperature:     thermostat.Temperature,
 		RelHumidity:     float64(thermostat.RelHumidity),
@@ -178,7 +277,7 @@ func (pel *Pelican) GetStatus() (*PelicanStatus, error) {
 		Fan:             fanState,
 		Mode:            modeNameMappings[thermostat.System],
 		State:           thermState,
-		Time:            time.Now().UnixNano(),
+		Time:            now.UnixNano(),
 	}, nil
 }
 
