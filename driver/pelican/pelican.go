@@ -64,6 +64,7 @@ type apiThermostat struct {
 	HeatNeedsFan    string  `xml:"HeatNeedsFan"`
 	System          string  `xml:"system"`
 	RunStatus       string  `xml:"runStatus"`
+	StatusDisplay   string  `xml:"statusDisplay"`
 }
 
 // Thermostat History Object API Result Structs
@@ -188,7 +189,7 @@ func (pel *Pelican) GetStatus() (*PelicanStatus, error) {
 		Param("request", "get").
 		Param("object", "Thermostat").
 		Param("selection", fmt.Sprintf("name:%s;", pel.name)).
-		Param("value", "temperature;humidity;heatSetting;coolSetting;setBy;HeatNeedsFan;system;runStatus").
+		Param("value", "temperature;humidity;heatSetting;coolSetting;setBy;HeatNeedsFan;system;runStatus;statusDisplay").
 		End()
 	if errs != nil {
 		return nil, fmt.Errorf("Error retrieving thermostat status from %s: %v", pel.target, errs)
@@ -205,6 +206,12 @@ func (pel *Pelican) GetStatus() (*PelicanStatus, error) {
 	}
 
 	thermostat := result.Thermostat
+
+	if thermostat.StatusDisplay == "Unreachable" {
+		fmt.Printf("Thermostat %s is unreachable\n", pel.name)
+		return nil, nil
+	}
+
 	var fanState bool
 	if strings.HasPrefix(thermostat.RunStatus, "Heat") {
 		fanState = thermostat.HeatNeedsFan == "Yes"
@@ -265,7 +272,7 @@ func (pel *Pelican) GetStatus() (*PelicanStatus, error) {
 
 	now := time.Now()
 	if timestamp.Before(now.Add(-2 * time.Hour)) {
-		fmt.Println("WARNING temperature data has not changed for 2 hours")
+		fmt.Println("WARNING temperature data has not changed for 2 hours. This is not necessarily an error")
 	}
 
 	return &PelicanStatus{
