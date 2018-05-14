@@ -146,19 +146,19 @@ func main() {
 		currentDRIface := drstatIfaces[i]
 		go func() {
 			for {
-				status, err := currentPelican.GetStatus()
-				if err != nil {
+				if status, err := currentPelican.GetStatus(); err != nil {
 					fmt.Printf("Failed to retrieve Pelican status: %v\n", err)
 					done <- true
-				}
-				fmt.Printf("%s %+v\n", currentPelican.name, status)
+				} else if status != nil {
+					fmt.Printf("%s %+v\n", currentPelican.name, status)
 
-				po, err := bw2.CreateMsgPackPayloadObject(bw2.FromDotForm(TSTAT_PO_DF), status)
-				if err != nil {
-					fmt.Printf("Failed to create msgpack PO: %v", err)
-					done <- true
+					po, err := bw2.CreateMsgPackPayloadObject(bw2.FromDotForm(TSTAT_PO_DF), status)
+					if err != nil {
+						fmt.Printf("Failed to create msgpack PO: %v", err)
+						done <- true
+					}
+					currentIface.PublishSignal("info", po)
 				}
-				currentIface.PublishSignal("info", po)
 				time.Sleep(pollInt)
 			}
 		}()
