@@ -20,9 +20,9 @@ var modeValMappings = []string{"Off", "Heat", "Cool", "Auto"}
 var stateMappings = map[string]int32{
 	"Off":         0,
 	"Heat-Stage1": 1,
-	"Heat-Stage2": 1,
+	"Heat-Stage2": 4,
 	"Cool-Stage1": 2,
-	"Cool-Stage2": 2,
+	"Cool-Stage2": 5,
 }
 
 // TODO Support case where the thermostat is configured to use Celsius
