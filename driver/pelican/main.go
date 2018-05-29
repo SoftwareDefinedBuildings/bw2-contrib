@@ -64,6 +64,7 @@ func main() {
 	tstatIfaces := make([]*bw2.Interface, len(pelicans))
 	drstatIfaces := make([]*bw2.Interface, len(pelicans))
 	for i, pelican := range pelicans {
+		pelican := pelican
 		name := strings.Replace(pelican.name, " ", "_", -1)
 		name = strings.Replace(name, "&", "_and_", -1)
 		name = strings.Replace(name, "'", "", -1)
@@ -72,7 +73,6 @@ func main() {
 		drstatIfaces[i] = service.RegisterInterface(name, "i.xbos.demand_response")
 
 		tstatIfaces[i].SubscribeSlot("setpoints", func(msg *bw2.SimpleMessage) {
-			pelican := pelican
 			po := msg.GetOnePODF(TSTAT_PO_DF)
 			if po == nil {
 				fmt.Println("Received message on setpoints slot without required PO. Droping.")
@@ -94,7 +94,6 @@ func main() {
 		})
 
 		tstatIfaces[i].SubscribeSlot("state", func(msg *bw2.SimpleMessage) {
-			pelican := pelican
 			po := msg.GetOnePODF(TSTAT_PO_DF)
 			if po == nil {
 				fmt.Println("Received message on state slot without required PO. Dropping.")
