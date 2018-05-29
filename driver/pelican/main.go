@@ -72,6 +72,7 @@ func main() {
 		drstatIfaces[i] = service.RegisterInterface(name, "i.xbos.demand_response")
 
 		tstatIfaces[i].SubscribeSlot("setpoints", func(msg *bw2.SimpleMessage) {
+			pelican := pelican
 			po := msg.GetOnePODF(TSTAT_PO_DF)
 			if po == nil {
 				fmt.Println("Received message on setpoints slot without required PO. Droping.")
@@ -93,6 +94,7 @@ func main() {
 		})
 
 		tstatIfaces[i].SubscribeSlot("state", func(msg *bw2.SimpleMessage) {
+			pelican := pelican
 			po := msg.GetOnePODF(TSTAT_PO_DF)
 			if po == nil {
 				fmt.Println("Received message on state slot without required PO. Dropping.")
