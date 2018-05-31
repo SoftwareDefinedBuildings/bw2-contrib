@@ -1,0 +1,7 @@
+{
+    "IP": "10.4.2.111",
+    "username": "admin",
+    "password": "admin",
+    "uri": "scratch.ns/demo/s.imt550c/410soda/i.xbos.thermostat",
+    "sample_rate": 10
+}
