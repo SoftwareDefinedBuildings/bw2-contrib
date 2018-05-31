@@ -61,6 +61,7 @@ type apiThermostat struct {
 	HeatingSetpoint int32   `xml:"heatSetting"`
 	CoolingSetpoint int32   `xml:"coolSetting"`
 	SetBy           string  `xml:"setBy"`
+	Schedule        string  `xml:"schedule"`
 	HeatNeedsFan    string  `xml:"HeatNeedsFan"`
 	System          string  `xml:"system"`
 	RunStatus       string  `xml:"runStatus"`
@@ -189,7 +190,7 @@ func (pel *Pelican) GetStatus() (*PelicanStatus, error) {
 		Param("request", "get").
 		Param("object", "Thermostat").
 		Param("selection", fmt.Sprintf("name:%s;", pel.name)).
-		Param("value", "temperature;humidity;heatSetting;coolSetting;setBy;HeatNeedsFan;system;runStatus;statusDisplay").
+		Param("value", "temperature;humidity;heatSetting;coolSetting;setBy;HeatNeedsFan;system;runStatus;statusDisplay;schedule").
 		End()
 	if errs != nil {
 		return nil, fmt.Errorf("Error retrieving thermostat status from %s: %v", pel.target, errs)
@@ -280,7 +281,7 @@ func (pel *Pelican) GetStatus() (*PelicanStatus, error) {
 		RelHumidity:     float64(thermostat.RelHumidity),
 		HeatingSetpoint: float64(thermostat.HeatingSetpoint),
 		CoolingSetpoint: float64(thermostat.CoolingSetpoint),
-		Override:        thermostat.SetBy != "Schedule",
+		Override:        thermostat.Schedule != "On",
 		Fan:             fanState,
 		Mode:            modeNameMappings[thermostat.System],
 		State:           thermState,
