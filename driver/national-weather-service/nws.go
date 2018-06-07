@@ -104,7 +104,6 @@ func (nws *NWS) Read(station string) (Datum, error) {
 	log.Println(fmt.Sprintf(nws.URL, station))
 	resp, _, errs := nws.req.Get(fmt.Sprintf(nws.URL, station)).
 		Set("User-Agent", nws.contact).
-		Set("Accept-Encoding", "gzip, deflate").
 		Set("Accept", "*/*").
 		End()
 	if errs != nil {
