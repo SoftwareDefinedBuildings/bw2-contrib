@@ -38,25 +38,25 @@ func NewNationalWeatherUndergroundSource(stations []string, contact, read_rate s
 type Response struct {
 	Properties struct {
 		Temperature struct {
-			UnitCode string  `json:"unitCode"`
-			Value    float64 `json:"value"`
+			UnitCode string   `json:"unitCode"`
+			Value    *float64 `json:"value"`
 		} `json:"temperature"`
 		RelativeHumidity struct {
-			UnitCode string  `json:"unitCode"`
-			Value    float64 `json:"value"`
+			UnitCode string   `json:"unitCode"`
+			Value    *float64 `json:"value"`
 		} `json:"relativeHumidity"`
 		WindSpeed struct {
-			UnitCode string  `json:"unitCode"`
-			Value    float64 `json:"value"`
+			UnitCode string   `json:"unitCode"`
+			Value    *float64 `json:"value"`
 		} `json:"windSpeed"`
 		WindDirection struct {
-			UnitCode string  `json:"unitCode"`
-			Value    float64 `json:"value"`
+			UnitCode string   `json:"unitCode"`
+			Value    *float64 `json:"value"`
 		} `json:"windDirection"`
 		CloudLayers []struct {
 			Base struct {
-				Value    float64 `json:"value"`
-				UnitCode string  `json:"unitCode"`
+				UnitCode string   `json:"unitCode"`
+				Value    *float64 `json:"value"`
 			} `json:"base"`
 			Amount string `json:"amount"`
 		} `json:"cloudLayers"`
