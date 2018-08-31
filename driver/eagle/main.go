@@ -130,7 +130,7 @@ func StartEagleServer() {
 	server.secretkey = []byte(params.MustString("secretkey"))
 
 	// setup bosswave service
-	//server.svc = server.bwclient.RegisterService(baseuri, "s.Eagle")
+	//server.svc = server.bwclient.RegisterService(baseuri, "s.eagle")
 	//fmt.Println(server.svc.FullURI())
 
 	port := params.MustString("port")
@@ -236,10 +236,10 @@ func (srv *EagleServer) handleConfig(rw http.ResponseWriter, req *http.Request) 
 		// now can use req.Form
 		// when we get a config form, do the following
 		// 1. check that the URI is valid
-		// 2. see if we can build a chain onto uri/s.Eagle/*
+		// 2. see if we can build a chain onto uri/s.eagle/*
 		// 3. generate some SHA1 hash and save that mapping somewhere (sha1 -> uri)
 		baseuri := req.Form.Get("baseuri")
-		useuri := baseuri + "/s.Eagle/*"
+		useuri := baseuri + "/s.eagle/*"
 		log.Debug(useuri, srv.vk)
 		if chain, err := srv.bwclient.BuildAnyChain(useuri, "P", srv.vk); err != nil {
 			if err.Error() == "No result" {
@@ -365,7 +365,6 @@ func (srv *EagleServer) HandleMessage(resp Response, baseuri string) {
 	// handle meter data
 	if resp.InstantaneousDemand != nil {
 		info := resp.InstantaneousDemand
-		log.Info("INST DEMAND")
 		// update the object with the Meter MAC address
 		// but only if we've seen the Eagle before; else, drop this
 		srv.eagleLock.Lock()
@@ -376,9 +375,19 @@ func (srv *EagleServer) HandleMessage(resp Response, baseuri string) {
 			return
 		}
 
+		log.Infof("INST DEMAND %s", resp)
+		info.Dump()
+
+		if info.Demand.Int64() > 0xf0000000 {
+			negative_demand := HexInt64(info.Demand.Int64() - 0xffffffff)
+			info.Demand = &negative_demand
+			log.Warningf("NEGATIVE")
+		}
+
 		// adjust the timestamp with the EAGLE Epoch and get the actual kW demand as a float
 		eagle.current_time = int64(*info.TimeStamp+HexInt64(EAGLE_EPOCH)) * 1e9
 		eagle.current_demand = float64(*info.Demand) * float64(*info.Multiplier) / float64(*info.Divisor)
+		log.Warningf("Got Demand %f (%f)", eagle.current_demand, eagle.current_demand*srv.multiplier)
 		eagle.current_demand *= srv.multiplier // extra multiplier
 		eagle.current_demand *= 1000           // convert to Watts
 

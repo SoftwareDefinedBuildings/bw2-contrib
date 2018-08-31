@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/SoftwareDefinedBuildings/bw2-contrib/driver/pelican/storage"
@@ -14,6 +13,7 @@ import (
 )
 
 const TSTAT_PO_DF = "2.1.1.0"
+const DR_PO_DF = "2.1.1.9"
 
 type setpointsMsg struct {
 	HeatingSetpoint *float64 `msgpack:"heating_setpoint"`
@@ -60,9 +60,25 @@ func main() {
 		os.Exit(1)
 	}
 
+	pollDrStr := params.MustString("poll_interval_dr")
+	pollDr, drErr := time.ParseDuration(pollDrStr)
+	if drErr != nil {
+		fmt.Printf("Invalid demand response poll interval specified: %v\n", drErr)
+		os.Exit(1)
+	}
+
 	service := bwClient.RegisterService(baseURI, "s.pelican")
 	tstatIfaces := make([]*bw2.Interface, len(pelicans))
+	drstatIfaces := make([]*bw2.Interface, len(pelicans))
 	for i, pelican := range pelicans {
+		pelican := pelican
+		name := strings.Replace(pelican.Name, " ", "_", -1)
+		name = strings.Replace(name, "&", "_and_", -1)
+		name = strings.Replace(name, "'", "", -1)
+		fmt.Println("Transforming", pelican.Name, "=>", name)
+		tstatIfaces[i] = service.RegisterInterface(name, "i.xbos.thermostat")
+		drstatIfaces[i] = service.RegisterInterface(name, "i.xbos.demand_response")
+
 		// Ensure thermostat is running with correct number of stages
 		if err := pelican.ModifyStages(&types.PelicanStageParams{
 			HeatingStages: &pelican.HeatingStages,
@@ -72,8 +88,6 @@ func main() {
 				pelican.Name, err)
 			os.Exit(1)
 		}
-
-		tstatIfaces[i] = service.RegisterInterface(pelican.Name, "i.xbos.thermostat")
 
 		tstatIfaces[i].SubscribeSlot("setpoints", func(msg *bw2.SimpleMessage) {
 			po := msg.GetOnePODF(TSTAT_PO_DF)
@@ -176,30 +190,45 @@ func main() {
 		})
 	}
 
-	wg := sync.WaitGroup{}
+	done := make(chan bool)
 	for i, pelican := range pelicans {
-		wg.Add(1)
 		currentPelican := pelican
 		currentIface := tstatIfaces[i]
+		currentDRIface := drstatIfaces[i]
 		go func() {
-			defer wg.Done()
 			for {
-				status, err := currentPelican.GetStatus()
-				if err != nil {
+				if status, err := currentPelican.GetStatus(); err != nil {
 					fmt.Printf("Failed to retrieve Pelican status: %v\n", err)
-					return
-				}
+					done <- true
+				} else if status != nil {
+					fmt.Printf("%s %+v\n", currentPelican.Name, status)
 
-				po, err := bw2.CreateMsgPackPayloadObject(bw2.FromDotForm(TSTAT_PO_DF), status)
-				if err != nil {
-					fmt.Printf("Failed to create msgpack PO: %v", err)
-					return
+					po, err := bw2.CreateMsgPackPayloadObject(bw2.FromDotForm(TSTAT_PO_DF), status)
+					if err != nil {
+						fmt.Printf("Failed to create msgpack PO: %v", err)
+						done <- true
+					}
+					currentIface.PublishSignal("info", po)
 				}
-				currentIface.PublishSignal("info", po)
 				time.Sleep(pollInt)
 			}
 		}()
-	}
 
-	wg.Wait()
+		go func() {
+			for {
+				if drStatus, drErr := currentPelican.TrackDREvent(); drErr != nil {
+					fmt.Printf("Failed to retrieve Pelican's DR status: %v\n", drErr)
+				} else if drStatus != nil {
+					fmt.Printf("%s DR Status: %+v\n", currentPelican.Name, drStatus)
+					po, err := bw2.CreateMsgPackPayloadObject(bw2.FromDotForm(DR_PO_DF), drStatus)
+					if err != nil {
+						fmt.Printf("Failed to create DR msgpack PO: %v", err)
+					}
+					currentDRIface.PublishSignal("info", po)
+				}
+				time.Sleep(pollDr)
+			}
+		}()
+	}
+	<-done
 }

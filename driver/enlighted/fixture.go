@@ -26,6 +26,7 @@ type Fixture struct {
 type signal struct {
 	State      bool  `msgpack:"state"`
 	Brightness int64 `msgpack:"brightness"`
+	Ambient    int64 `msgpack:"ambient"`
 	Time       int64 `msgpack:"time"`
 }
 
@@ -33,6 +34,7 @@ type enlightedState struct {
 	Wattage             int64 `json:"wattage,string"`
 	Last_occupancy_seen int64 `json:"lastoccupancyseen,string"`
 	Light_level         int64 `json:"lightlevel,string"`
+	Ambient_light_level int64 `json:"ambientLight,string"`
 	Lumens              int64
 	Temperature         float64 `json:"temperature,string"`
 	Power               float64 `json:"power,string"`
@@ -117,12 +119,15 @@ func (f *Fixture) ListenActuation() {
 		if err := pom.ValueInto(&act); err != nil {
 			log.Println(errors.Wrap(err, "Could not unmarshal actuation request"))
 		}
+		log.Printf("ACTUATION %+v", act)
 
 		if act.Brightness > 100 {
 			act.Brightness = 100
 		}
 		if act.Brightness > 0 {
 			f.SetState(act.Brightness, 60) // set for 1 hour
+		} else if !act.State {
+			f.SetState(0, 60)
 		} else if act.State {
 			f.SetState(80, 60) // set to 80% for 1 hour
 		}
@@ -142,6 +147,7 @@ func (f *Fixture) PollAndReport(dur time.Duration) {
 		msg := &signal{
 			State:      state.Power > 0,
 			Brightness: state.Light_level,
+			Ambient:    state.Ambient_light_level,
 			Time:       ts,
 		}
 		fmt.Printf("%s %+v\n", f.id, state)

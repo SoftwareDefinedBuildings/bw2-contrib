@@ -1,0 +1,62 @@
+Prefix: nws/
+
+Archive:
+    - AttachURI:
+      ArchiveURI: /s.national-weather-service/+/i.xbos.weather_station/signal/info
+      Value: temperature
+      Name: temperature
+      Unit: fahrenheit
+      Time: time
+      PO: 2.1.1.8/32
+      URIMatch: .*/s.national-weather-service/(.*)/i.xbos.weather_station/.*
+      URIReplace: nws/weather/$1/temperature
+
+    - AttachURI:
+      ArchiveURI: /s.national-weather-service/+/i.xbos.weather_station/signal/info
+      Value: relative_humidity
+      Name: relative_humidity
+      Unit: percentage
+      Time: time
+      PO: 2.1.1.8/32
+      URIMatch: .*/s.national-weather-service/(.*)/i.xbos.weather_station/.*
+      URIReplace: nws/weather/$1/relative_humidity
+
+    - AttachURI:
+      ArchiveURI: /s.national-weather-service/+/i.xbos.weather_station/signal/info
+      Value: wind_speed
+      Name: wind_speed
+      Unit: meter/sec
+      Time: time
+      PO: 2.1.1.8/32
+      URIMatch: .*/s.national-weather-service/(.*)/i.xbos.weather_station/.*
+      URIReplace: nws/weather/$1/wind_speed
+
+    - AttachURI:
+      ArchiveURI: /s.national-weather-service/+/i.xbos.weather_station/signal/info
+      Value: wind_direction
+      Name: wind_direction
+      Unit: degrees
+      Time: time
+      PO: 2.1.1.8/32
+      URIMatch: .*/s.national-weather-service/(.*)/i.xbos.weather_station/.*
+      URIReplace: nws/weather/$1/wind_direction
+
+    - AttachURI:
+      ArchiveURI: /s.national-weather-service/+/i.xbos.weather_station/signal/info
+      Value: cloud_coverage
+      Name: cloud_coverage
+      Unit: okta
+      Time: time
+      PO: 2.1.1.8/32
+      URIMatch: .*/s.national-weather-service/(.*)/i.xbos.weather_station/.*
+      URIReplace: nws/weather/$1/cloud_coverage
+
+    - AttachURI:
+      ArchiveURI: /s.national-weather-service/+/i.xbos.weather_station/signal/info
+      Value: cloud_height
+      Name: cloud_height
+      Unit: m
+      Time: time
+      PO: 2.1.1.8/32
+      URIMatch: .*/s.national-weather-service/(.*)/i.xbos.weather_station/.*
+      URIReplace: nws/weather/$1/cloud_height

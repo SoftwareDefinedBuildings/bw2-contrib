@@ -57,14 +57,19 @@ func ReadPelicans(username, password, sitename string) ([]*types.Pelican, error)
 
 	// To properly regenerate internal fields
 	for i := 0; i < len(pelicans); i++ {
-		pelicans[i] = types.NewPelican(&types.NewPelicanParams{
+		newPelican, err := types.NewPelican(&types.NewPelicanParams{
 			Username:      username,
 			Password:      password,
 			Sitename:      sitename,
 			Name:          pelicans[i].Name,
 			HeatingStages: pelicans[i].HeatingStages,
 			CoolingStages: pelicans[i].CoolingStages,
+			Timezone:      pelicans[i].TimezoneName,
 		})
+		if err != nil {
+			return nil, errors.Wrap(err, "Failed to instantiate Pelican")
+		}
+		pelicans[i] = newPelican
 	}
 	return pelicans, nil
 }

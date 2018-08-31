@@ -1,0 +1,4 @@
+svc_base_uri: scratch.ns
+entityfile: <relative path to entity file>
+URL: http://<ip>/stats.xml
+poll_interval: 1s
