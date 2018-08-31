@@ -7,6 +7,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/SoftwareDefinedBuildings/bw2-contrib/driver/pelican/storage"
+	"github.com/SoftwareDefinedBuildings/bw2-contrib/driver/pelican/types"
 	"github.com/immesys/spawnpoint/spawnable"
 	bw2 "gopkg.in/immesys/bw2bind.v5"
 )
@@ -26,6 +28,11 @@ type stateMsg struct {
 	Fan             *bool    `msgpack:"fan"`
 }
 
+type stageMsg struct {
+	HeatingStages *int32 `msgpack:"enabled_heating_stages"`
+	CoolingStages *int32 `msgpack:"enabled_cooling_stages"`
+}
+
 func main() {
 	bwClient := bw2.ConnectOrExit("")
 	bwClient.OverrideAutoChainTo(true)
@@ -40,9 +47,9 @@ func main() {
 	password := params.MustString("password")
 	sitename := params.MustString("sitename")
 
-	pelicans, err := DiscoverPelicans(username, password, sitename)
+	pelicans, err := storage.ReadPelicans(username, password, sitename)
 	if err != nil {
-		fmt.Printf("Failed to discover thermostats: %v\n", err)
+		fmt.Printf("Failed to read thermostat info: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -56,7 +63,17 @@ func main() {
 	service := bwClient.RegisterService(baseURI, "s.pelican")
 	tstatIfaces := make([]*bw2.Interface, len(pelicans))
 	for i, pelican := range pelicans {
-		tstatIfaces[i] = service.RegisterInterface(pelican.name, "i.xbos.thermostat")
+		// Ensure thermostat is running with correct number of stages
+		if err := pelican.ModifyStages(&types.PelicanStageParams{
+			HeatingStages: &pelican.HeatingStages,
+			CoolingStages: &pelican.CoolingStages,
+		}); err != nil {
+			fmt.Printf("Failed to configure heating/cooling stages for pelican %s: %s\n",
+				pelican.Name, err)
+			os.Exit(1)
+		}
+
+		tstatIfaces[i] = service.RegisterInterface(pelican.Name, "i.xbos.thermostat")
 
 		tstatIfaces[i].SubscribeSlot("setpoints", func(msg *bw2.SimpleMessage) {
 			po := msg.GetOnePODF(TSTAT_PO_DF)
@@ -71,7 +88,11 @@ func main() {
 				return
 			}
 
-			if err := pelican.ModifySetpoints(&setpoints); err != nil {
+			params := types.PelicanSetpointParams{
+				HeatingSetpoint: setpoints.HeatingSetpoint,
+				CoolingSetpoint: setpoints.CoolingSetpoint,
+			}
+			if err := pelican.ModifySetpoints(&params); err != nil {
 				fmt.Println(err)
 			} else {
 				fmt.Printf("Set heating setpoint to %v and cooling setpoint to %v\n",
@@ -92,7 +113,7 @@ func main() {
 				return
 			}
 
-			params := pelicanStateParams{
+			params := types.PelicanStateParams{
 				HeatingSetpoint: state.HeatingSetpoint,
 				CoolingSetpoint: state.CoolingSetpoint,
 			}
@@ -122,6 +143,35 @@ func main() {
 				fmt.Println(err)
 			} else {
 				fmt.Printf("Set Pelican state to: %+v\n", params)
+			}
+		})
+
+		tstatIfaces[i].SubscribeSlot("stages", func(msg *bw2.SimpleMessage) {
+			po := msg.GetOnePODF(TSTAT_PO_DF)
+			if po == nil {
+				fmt.Println("Received message on state slot without required PO. Dropping.")
+				return
+			}
+
+			var stages stageMsg
+			if err := po.(bw2.MsgPackPayloadObject).ValueInto(&stages); err != nil {
+				fmt.Println("Received malformed PO on stage slot. Dropping.", err)
+				return
+			}
+
+			params := types.PelicanStageParams{
+				HeatingStages: stages.HeatingStages,
+				CoolingStages: stages.CoolingStages,
+			}
+			if err := pelican.ModifyStages(&params); err != nil {
+				fmt.Println(err)
+			} else {
+				if stages.HeatingStages != nil {
+					fmt.Printf("Set pelican heating stages to: %d\n", *stages.HeatingStages)
+				}
+				if stages.CoolingStages != nil {
+					fmt.Printf("Set pelican cooling stages to: %d\n", *stages.CoolingStages)
+				}
 			}
 		})
 	}
