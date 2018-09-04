@@ -1,5 +1,5 @@
-== Pelican Thermostat Driver ==
-=== Setting up a New Site ===
+## Pelican Thermostat Driver
+### Setting up a New Site
 Before running the Pelican driver at a new site, you must first configure the
 site's thermostats. This is done with a standalone tool available in the
 `discovery` directory.
@@ -17,7 +17,7 @@ presence of four files in the current working directory when it is executed:
   3. A certificate file for the remote database (e.g. `my_db.crt`)
   4. A private key file for authentication with the database (e.g. `my_db.key`)
 
-=== Running the Driver ===
+### Running the Driver
 Once information about the site's thermostats has been stored in the database,
 the Pelican driver is ready to run.
 
