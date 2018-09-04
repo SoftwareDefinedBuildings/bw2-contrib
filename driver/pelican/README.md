@@ -8,14 +8,14 @@ The discovery tool first uses the Pelican API to discover the thermostats that
 are installed at the relevant site and then stores information about these
 thermostats in a remote database for fault-tolerance purposes. It requires the
 presence of four files in the current working directory when it is executed:
-  1. `params.yml`: This is identical in structure to the parameter file for the
-     driver itself. The file must contain the following YAML key/value pairs:
-    1. `username`: The username to access the Pelican API
-    2. `password`: The password to access the Pelican API
-    3. `sitename`: The name of the site, as it is referred to by Pelican
-  2. A CA certificate file (e.g. `ca.crt`)
-  3. A certificate file for the remote database (e.g. `my_db.crt`)
-  4. A private key file for authentication with the database (e.g. `my_db.key`)
+1. `params.yml`: This is identical in structure to the parameter file for the
+driver itself. The file must contain the following YAML key/value pairs:
+    * `username`: The username to access the Pelican API
+    * `password`: The password to access the Pelican API
+    * `sitename`: The name of the site, as it is referred to by Pelican
+2. A CA certificate file (e.g. `ca.crt`)
+3. A certificate file for the remote database (e.g. `my_db.crt`)
+4. A private key file for authentication with the database (e.g. `my_db.key`)
 
 ### Running the Driver
 Once information about the site's thermostats has been stored in the database,
