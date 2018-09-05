@@ -1,4 +1,4 @@
-package main
+package types
 
 import (
 	"encoding/xml"
@@ -73,26 +73,26 @@ func (pel *Pelican) TrackDREvent() (*ADREvent, error) {
 	var output ADREvent
 
 	// Convert ADR Start Time from String to Int
-	if startTime, startErr := DRTimeToUnix(event.Start, pel.timezone); startErr != nil {
-		return nil, fmt.Errorf("String to Unix Time Conversion Error: %v", startErr)
-	} else {
-		output.EventStart = startTime
+	startTime, err := drTimeToUnix(event.Start, pel.timezone)
+	if err != nil {
+		return nil, fmt.Errorf("String to Unix Time Conversion Error: %v", err)
 	}
+	output.EventStart = startTime
 
 	// Convert ADR End Time from String to Int
-	if endTime, endErr := DRTimeToUnix(event.End, pel.timezone); endErr != nil {
-		return nil, fmt.Errorf("String to Unix Time Conversion Error: %v", endErr)
-	} else {
-		output.EventEnd = endTime
+	endTime, err := drTimeToUnix(event.End, pel.timezone)
+	if err != nil {
+		return nil, fmt.Errorf("String to Unix Time Conversion Error: %v", err)
 	}
+	output.EventEnd = endTime
 
-	eventStatus, statusErr := GetEventStatus(event.Status)
+	eventStatus, statusErr := getEventStatus(event.Status)
 	if statusErr != nil {
 		return nil, fmt.Errorf("Event Status Error: %v", statusErr)
 	}
 	output.DRStatus = eventStatus
 
-	eventType, typeErr := GetEventType(event.Type)
+	eventType, typeErr := getEventType(event.Type)
 	if typeErr != nil {
 		return nil, fmt.Errorf("Event Type Error: %v", typeErr)
 	}
@@ -103,7 +103,7 @@ func (pel *Pelican) TrackDREvent() (*ADREvent, error) {
 	return &output, nil
 }
 
-func DRTimeToUnix(DRTime string, timezone *time.Location) (int64, error) {
+func drTimeToUnix(DRTime string, timezone *time.Location) (int64, error) {
 	// Time field is empty or nil
 	if len(DRTime) == 0 {
 		return 0, nil
@@ -119,7 +119,7 @@ func DRTimeToUnix(DRTime string, timezone *time.Location) (int64, error) {
 }
 
 // Map Status to Corresponding Integer Value
-func GetEventStatus(eventStatus string) (DR_EVENT_STATUS, error) {
+func getEventStatus(eventStatus string) (DR_EVENT_STATUS, error) {
 	switch eventStatus {
 	case "Not Configured":
 		return DR_EVENT_STATUS_NOT_CONFIGURED, nil
@@ -135,7 +135,7 @@ func GetEventStatus(eventStatus string) (DR_EVENT_STATUS, error) {
 }
 
 // Map Event Type to Corresponding Integer Value
-func GetEventType(eventType string) (DR_EVENT_TYPE, error) {
+func getEventType(eventType string) (DR_EVENT_TYPE, error) {
 	switch eventType {
 	case "Normal":
 		return DR_EVENT_TYPE_NORMAL, nil
