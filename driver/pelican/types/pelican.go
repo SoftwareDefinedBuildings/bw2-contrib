@@ -206,6 +206,7 @@ func DiscoverPelicans(username, password, sitename string) ([]*Pelican, error) {
 
 	pelicans := make([]*Pelican, 0)
 	for _, thermInfo := range result.Thermostats {
+		// rewrite default heat/cool stage info
 		if thermInfo.HeatingStages == 0 {
 			thermInfo.HeatingStages = 1
 		}
@@ -438,6 +439,14 @@ func (pel *Pelican) ModifyState(params *PelicanStateParams) error {
 		return fmt.Errorf("Error modifying thermostat state: %s", result.Message)
 	}
 
+	// rewrite default heat/cool stage info
+	if result.Thermostat.HeatStages == 0 {
+		result.Thermostat.HeatStages = 1
+	}
+	if result.Thermostat.CoolStages == 0 {
+		result.Thermostat.CoolStages = 1
+	}
+
 	return nil
 }
 
@@ -489,6 +498,14 @@ func (pel *Pelican) ModifyStages(params *PelicanStageParams) error {
 	}
 	if result.Success == 0 {
 		return fmt.Errorf("Error modifying thermostat state: %s", result.Message)
+	}
+
+	// rewrite default heat/cool stage info
+	if result.Thermostat.HeatStages == 0 {
+		result.Thermostat.HeatStages = 1
+	}
+	if result.Thermostat.CoolStages == 0 {
+		result.Thermostat.CoolStages = 1
 	}
 	return nil
 }
