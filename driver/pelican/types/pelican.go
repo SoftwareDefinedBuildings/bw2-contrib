@@ -208,11 +208,13 @@ func DiscoverPelicans(username, password, sitename string) ([]*Pelican, error) {
 	for _, thermInfo := range result.Thermostats {
 		if thermInfo.Name != "" {
 			newPelican, err := NewPelican(&NewPelicanParams{
-				Username: username,
-				Password: password,
-				Sitename: sitename,
-				Name:     thermInfo.Name,
-				Timezone: timezoneName,
+				Username:      username,
+				Password:      password,
+				Sitename:      sitename,
+				Name:          thermInfo.Name,
+				Timezone:      timezoneName,
+				HeatingStages: thermInfo.HeatingStages,
+				CoolingStages: thermInfo.CoolingStages,
 			})
 			if err != nil {
 				return nil, fmt.Errorf("Error creating thermostat: %s", err)
