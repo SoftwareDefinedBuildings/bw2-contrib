@@ -29,8 +29,8 @@ type stateMsg struct {
 }
 
 type stageMsg struct {
-	HeatingStages *int32 `msgpack:"enabled_heating_stages"`
-	CoolingStages *int32 `msgpack:"enabled_cooling_stages"`
+	HeatingStages *int32 `msgpack:"enabled_heat_stages"`
+	CoolingStages *int32 `msgpack:"enabled_cool_stages"`
 }
 
 func main() {
@@ -163,13 +163,17 @@ func main() {
 		tstatIfaces[i].SubscribeSlot("stages", func(msg *bw2.SimpleMessage) {
 			po := msg.GetOnePODF(TSTAT_PO_DF)
 			if po == nil {
-				fmt.Println("Received message on state slot without required PO. Dropping.")
+				fmt.Println("Received message on stage slot without required PO. Dropping.")
 				return
 			}
 
 			var stages stageMsg
 			if err := po.(bw2.MsgPackPayloadObject).ValueInto(&stages); err != nil {
 				fmt.Println("Received malformed PO on stage slot. Dropping.", err)
+				return
+			}
+			if stages.HeatingStages == nil && stages.CoolingStages == nil {
+				fmt.Println("Received message on stage slot with no content. Dropping.")
 				return
 			}
 
