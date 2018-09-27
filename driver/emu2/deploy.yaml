@@ -1,7 +1,30 @@
-entity: <entity file>
+# A path to a Bosswave entity file on the deploying host that will be injected into the service's container as the file /srv/spawnpoint/entity.key
+bw2Entity: <entity file>
+# An alternative Docker image to use as the base for a service container
 image: gtfierro/xbospy
+# The number of CPU shares to reserve for this service
 cpuShares: 256
-memAlloc: 512M
+# The amount of memory, in MB, to reserve for this service. No units are required
+memory: 512
+# A sequence of shell commands to run after checking out the necessary source code
 build: [apt install -y libxml2-dev libxslt-dev python-dev ; pip install -r requirements.txt]
+# A list of paths to files on the deploying host that should be included in the container
 includedFiles: [driver.py, params.json, requirements.txt]
+# The command executed when the service container is started
 run: [python, driver.py]
+
+# other optional parameters (For more info: https://github.com/SoftwareDefinedBuildings/spawnpoint)
+# A GitHub URL (must be HTTPS) pointing to a repository to be cloned into the container's working directory
+# source: 
+# A list of volume names to be used by the container
+# volumes:
+# A list of device file paths to map from the host machine into the Spawnpoint container
+# devices: 
+# A list of directories on the deploying host to include in the Spawnpoint container
+# includedDirectories: 
+# Specify if the service container should use the Spawnpoint host's networking stack rather than Docker's bridge interface
+# useHostNet: false
+# Spawnpoint container
+# container: jhkolb/spawnpoint:amd64
+# Specify if the service's container should be automatically restarted upon termination
+# autoRestart: false

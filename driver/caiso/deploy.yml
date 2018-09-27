@@ -1,7 +1,30 @@
-entity: <entity file>
+# A path to a Bosswave entity file on the deploying host that will be injected into the service's container as the file /srv/spawnpoint/entity.key
+bw2Entity: <entity file>
+# Spawnpoint container
 container: jhkolb/spawnpoint:amd64
+# A sequence of shell commands to run after checking out the necessary source code
 build: [go get github.com/SoftwareDefinedBuildings/caiso]
+# The command executed when the service container is started
 run: [caiso]
-memAlloc: 256M
+# The amount of memory, in MB, to reserve for this service. No units are required
+memory: 256
+# The number of CPU shares to reserve for this service
 cpuShares: 14
+# A list of paths to files on the deploying host that should be included in the container
 includedFiles: [params.yml]
+
+# other optional parameters (For more info: https://github.com/SoftwareDefinedBuildings/spawnpoint)
+# Specify if the service's container should be automatically restarted upon termination
+# autoRestart: true
+# An alternative Docker image to use as the base for a service container
+# image: jhkolb/spawnable:amd64
+# A GitHub URL (must be HTTPS) pointing to a repository to be cloned into the container's working directory
+# source: 
+# A list of volume names to be used by the container
+# volumes:
+# A list of device file paths to map from the host machine into the Spawnpoint container
+# devices: 
+# A list of directories on the deploying host to include in the Spawnpoint container
+# includedDirectories: 
+# Specify if the service container should use the Spawnpoint host's networking stack rather than Docker's bridge interface
+# useHostNet: false
