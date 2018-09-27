@@ -27,3 +27,10 @@ interacts with the same database as the discovery tool, the driver requires the
 presence of the *same four files* in the current working directory when it is
 executed. Note, however, that the driver expects additional key/value pairs to
 be present in the `params.yml` file.
+
+## Driver URI Parameters
+TSTAT PONUM = 2.1.1.0 <br />
+DR PONUM = 2.1.1.9 <br />
+service name: s.pelican <br />
+TSTAT interface name: i.xbos.thermostat <br />
+DR interface name: i.xbos.demand_response <br />
