@@ -26,5 +26,3 @@ autoRestart: true
 # devices: 
 # A list of directories on the deploying host to include in the Spawnpoint container
 # includedDirectories: 
-# Spawnpoint container
-# container: jhkolb/spawnpoint:amd64

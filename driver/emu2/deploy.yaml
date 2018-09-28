@@ -1,6 +1,6 @@
 # A path to a Bosswave entity file on the deploying host that will be injected into the service's container as the file /srv/spawnpoint/entity.key
 bw2Entity: <entity file>
-# An alternative Docker image to use as the base for a service container
+# Docker image to use as the base for a service container
 image: gtfierro/xbospy
 # The number of CPU shares to reserve for this service
 cpuShares: 256
@@ -24,7 +24,5 @@ run: [python, driver.py]
 # includedDirectories: 
 # Specify if the service container should use the Spawnpoint host's networking stack rather than Docker's bridge interface
 # useHostNet: false
-# Spawnpoint container
-# container: jhkolb/spawnpoint:amd64
 # Specify if the service's container should be automatically restarted upon termination
 # autoRestart: false

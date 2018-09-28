@@ -1,6 +1,6 @@
 # A path to a Bosswave entity file on the deploying host that will be injected into the service's container as the file /srv/spawnpoint/entity.key
 bw2Entity: <entity file>
-# An alternative Docker image to use as the base for a service container
+# Docker image to use as the base for a service container
 image: jhkolb/spawnable:amd64
 # A sequence of shell commands to run after checking out the necessary source code
 build: [go get -u github.com/SoftwareDefinedBuildings/bw2-contrib/driver/weatherunderground]
@@ -26,5 +26,3 @@ includedFiles: [params.yml]
 # devices: 
 # A list of directories on the deploying host to include in the Spawnpoint container
 # includedDirectories: 
-# Spawnpoint container
-# container: jhkolb/spawnpoint:amd64

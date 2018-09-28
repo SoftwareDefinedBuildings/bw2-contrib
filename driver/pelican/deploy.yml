@@ -24,7 +24,5 @@ autoRestart: true
 # devices: 
 # A list of directories on the deploying host to include in the Spawnpoint container
 # includedDirectories: 
-# Spawnpoint container
-# container: jhkolb/spawnpoint:amd64
 # Specify if the service container should use the Spawnpoint host's networking stack rather than Docker's bridge interface
 # useHostNet: false
