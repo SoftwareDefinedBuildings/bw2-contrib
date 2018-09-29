@@ -1,8 +1,28 @@
-entity: <entity file>
-container: jhkolb/spawnpoint:amd64
+# A path to a Bosswave entity file on the deploying host that will be injected into the service's container as the file /srv/spawnpoint/entity.key
+bw2Entity: <entity file>
+# Docker image to use as the base for a service container
+image: jhkolb/spawnable:amd64
+# A sequence of shell commands to run after checking out the necessary source code
 build: [go get github.com/SoftwareDefinedBuildings/bw2-contrib/driver/enphase]
+# The command executed when the service container is started
 run: [enphase]
-memAlloc: 512M
+# The amount of memory, in MB, to reserve for this service. No units are required
+memory: 512
+# The number of CPU shares to reserve for this service
 cpuShares: 512
+# Specify if the service's container should be automatically restarted upon termination
 autoRestart: false
+# A list of paths to files on the deploying host that should be included in the container
 includedFiles: [params.yml]
+
+# other optional parameters (For more info: https://github.com/SoftwareDefinedBuildings/spawnpoint)
+# A GitHub URL (must be HTTPS) pointing to a repository to be cloned into the container's working directory
+# source: 
+# A list of volume names to be used by the container
+# volumes:
+# A list of device file paths to map from the host machine into the Spawnpoint container
+# devices: 
+# A list of directories on the deploying host to include in the Spawnpoint container
+# includedDirectories: 
+# Specify if the service container should use the Spawnpoint host's networking stack rather than Docker's bridge interface
+# useHostNet: false
