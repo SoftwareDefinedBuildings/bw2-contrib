@@ -1,0 +1,4 @@
+svc_base_uri: <namespace>
+location: ParkingLot
+port: /dev/ttyAMA0
+baud: 57600
