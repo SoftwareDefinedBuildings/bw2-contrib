@@ -1,0 +1,53 @@
+Prefix: namespace
+
+Archive:
+  - AttachURI:
+    ArchiveURI: s.aerovironment/+/i.xbos.evse/signal/info
+    Value: current_limit
+    Name: current_limit
+    Unit: A
+    Time: time
+    PO: 2.1.1.7/32
+    URIMatch: .*/s.aerovironment/(.*)/i.xbos.evse/.*
+    URIReplace: namespace/evse/current_limit/$1
+
+  - AttachURI:
+    ArchiveURI: s.aerovironment/+/i.xbos.evse/signal/info
+    Value: current
+    Name: current
+    Unit: A
+    Time: time
+    PO: 2.1.1.7/32
+    URIMatch: .*/s.aerovironment/(.*)/i.xbos.evse/.*
+    URIReplace: namespace/evse/current/$1
+
+  - AttachURI:
+    ArchiveURI: s.aerovironment/+/i.xbos.evse/signal/info
+    Value: state
+    Name: state
+    Unit: on/off
+    Time: time
+    PO: 2.1.1.7/32
+    URIMatch: .*/s.aerovironment/(.*)/i.xbos.evse/.*
+    URIReplace: namespace/evse/state/$1
+
+  - AttachURI:
+    ArchiveURI: s.aerovironment/+/i.xbos.evse/signal/info
+    Value: voltage
+    Name: voltage
+    Unit: V
+    Time: time
+    PO: 2.1.1.7/32
+    URIMatch: .*/s.aerovironment/(.*)/i.xbos.evse/.*
+    URIReplace: namespace/evse/voltage/$1
+
+  - AttachURI:
+    ArchiveURI: s.aerovironment/+/i.xbos.evse/signal/info
+    Value: charging_time_left
+    Name: charging_time_left
+    Unit: s
+    Time: time
+    PO: 2.1.1.7/32
+    URIMatch: .*/s.aerovironment/(.*)/i.xbos.evse/.*
+    URIReplace: namespace/evse/charging_time_left/$1
+
