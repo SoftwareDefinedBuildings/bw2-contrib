@@ -256,18 +256,17 @@ func main() {
 					occupancy, err := currentPelican.GetOccupancy()
 					if err != nil {
 						fmt.Printf("Failed to read thermostat occupancy: %s\n", err)
-						done <- true
-					}
-
-					occupancyStatus := occupancyMsg{
-						Occupancy: (occupancy == types.OCCUPANCY_OCCUPIED),
-						Time:      time.Now().UnixNano(),
-					}
-					po, err := bw2.CreateMsgPackPayloadObject(bw2.FromDotForm(OCCUPANCY_PO_DF), occupancyStatus)
-					if err != nil {
-						fmt.Printf("Failed to create occupancy msgpack PO: %s\n", err)
 					} else {
-						currentOccupancyIface.PublishSignal("info", po)
+						occupancyStatus := occupancyMsg{
+							Occupancy: (occupancy == types.OCCUPANCY_OCCUPIED),
+							Time:      time.Now().UnixNano(),
+						}
+						po, err := bw2.CreateMsgPackPayloadObject(bw2.FromDotForm(OCCUPANCY_PO_DF), occupancyStatus)
+						if err != nil {
+							fmt.Printf("Failed to create occupancy msgpack PO: %s\n", err)
+						} else {
+							currentOccupancyIface.PublishSignal("info", po)
+						}
 					}
 					time.Sleep(pollInt)
 				}
