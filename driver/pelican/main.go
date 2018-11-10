@@ -266,10 +266,9 @@ func main() {
 					po, err := bw2.CreateMsgPackPayloadObject(bw2.FromDotForm(OCCUPANCY_PO_DF), occupancyStatus)
 					if err != nil {
 						fmt.Printf("Failed to create occupancy msgpack PO: %s\n", err)
-						done <- true
+					} else {
+						currentOccupancyIface.PublishSignal("info", po)
 					}
-
-					currentOccupancyIface.PublishSignal("info", po)
 					time.Sleep(pollInt)
 				}
 			}()
