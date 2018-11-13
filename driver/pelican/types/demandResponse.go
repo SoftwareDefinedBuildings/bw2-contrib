@@ -47,7 +47,7 @@ type ADREvent struct {
 }
 
 func (pel *Pelican) TrackDREvent() (*ADREvent, error) {
-	resp, _, errs := pel.req.Get(pel.target).
+	resp, _, errs := pel.drReq.Get(pel.target).
 		Param("username", pel.username).
 		Param("password", pel.password).
 		Param("request", "get").

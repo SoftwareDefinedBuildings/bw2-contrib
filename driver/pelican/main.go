@@ -14,6 +14,7 @@ import (
 
 const TSTAT_PO_DF = "2.1.1.0"
 const DR_PO_DF = "2.1.1.9"
+const OCCUPANCY_PO_DF = "2.1.2.1"
 
 type setpointsMsg struct {
 	HeatingSetpoint *float64 `msgpack:"heating_setpoint"`
@@ -31,6 +32,11 @@ type stateMsg struct {
 type stageMsg struct {
 	HeatingStages *int32 `msgpack:"enabled_heat_stages"`
 	CoolingStages *int32 `msgpack:"enabled_cool_stages"`
+}
+
+type occupancyMsg struct {
+	Occupancy bool  `msgpack:"occupancy"`
+	Time      int64 `msgpack:"time"`
 }
 
 func main() {
@@ -70,6 +76,7 @@ func main() {
 	service := bwClient.RegisterService(baseURI, "s.pelican")
 	tstatIfaces := make([]*bw2.Interface, len(pelicans))
 	drstatIfaces := make([]*bw2.Interface, len(pelicans))
+	occupancyIfaces := make([]*bw2.Interface, len(pelicans))
 	for i, pelican := range pelicans {
 		pelican := pelican
 		name := strings.Replace(pelican.Name, " ", "_", -1)
@@ -78,6 +85,7 @@ func main() {
 		fmt.Println("Transforming", pelican.Name, "=>", name)
 		tstatIfaces[i] = service.RegisterInterface(name, "i.xbos.thermostat")
 		drstatIfaces[i] = service.RegisterInterface(name, "i.xbos.demand_response")
+		occupancyIfaces[i] = service.RegisterInterface(name, "i.xbos.occupancy")
 
 		// Ensure thermostat is running with correct number of stages
 		if err := pelican.ModifyStages(&types.PelicanStageParams{
@@ -199,6 +207,8 @@ func main() {
 		currentPelican := pelican
 		currentIface := tstatIfaces[i]
 		currentDRIface := drstatIfaces[i]
+		currentOccupancyIface := occupancyIfaces[i]
+
 		go func() {
 			for {
 				if status, err := currentPelican.GetStatus(); err != nil {
@@ -233,6 +243,35 @@ func main() {
 				time.Sleep(pollDr)
 			}
 		}()
+
+		occupancy, err := currentPelican.GetOccupancy()
+		if err != nil {
+			fmt.Printf("Failed to retrieve initial occupancy reading: %s\n", err)
+			return
+		}
+		// Start occupancy tracking loop only if thermostat has the necessary sensor
+		if occupancy != types.OCCUPANCY_UNKNOWN {
+			go func() {
+				for {
+					occupancy, err := currentPelican.GetOccupancy()
+					if err != nil {
+						fmt.Printf("Failed to read thermostat occupancy: %s\n", err)
+					} else {
+						occupancyStatus := occupancyMsg{
+							Occupancy: (occupancy == types.OCCUPANCY_OCCUPIED),
+							Time:      time.Now().UnixNano(),
+						}
+						po, err := bw2.CreateMsgPackPayloadObject(bw2.FromDotForm(OCCUPANCY_PO_DF), occupancyStatus)
+						if err != nil {
+							fmt.Printf("Failed to create occupancy msgpack PO: %s\n", err)
+						} else {
+							currentOccupancyIface.PublishSignal("info", po)
+						}
+					}
+					time.Sleep(pollInt)
+				}
+			}()
+		}
 	}
 	<-done
 }
