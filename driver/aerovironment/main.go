@@ -206,13 +206,13 @@ func (aero *Aerovironment) parseStatusLine(line string) error {
 
 func (aero *Aerovironment) Enable() error {
 	log.Println("Enable Aerovironment")
-	_, err := aero.port.Write([]byte("*enable"))
+	_, err := aero.port.Write([]byte("*enable\n"))
 	return err
 }
 
 func (aero *Aerovironment) Disable() error {
 	log.Println("Disable Aerovironment")
-	_, err := aero.port.Write([]byte("*disable"))
+	_, err := aero.port.Write([]byte("*disable\n"))
 	return err
 }
 
@@ -221,7 +221,7 @@ func (aero *Aerovironment) SetCurrentLimit(c int) error {
 	if c < 0 || c < 6 || c > 32 {
 		return fmt.Errorf("current limit %d is out of range 0, 6-32", c)
 	}
-	_, err := aero.port.Write([]byte("*curr_lim," + strconv.Itoa(c)))
+	_, err := aero.port.Write([]byte("*curr_lim," + strconv.Itoa(c)+"\n"))
 	return err
 }
 
@@ -230,7 +230,7 @@ func (aero *Aerovironment) SetDefaultCurrentLimit(c int) error {
 	if c < 0 || c < 6 || c > 32 {
 		return fmt.Errorf("DEFAULT current limit %d is out of range 0, 6-32", c)
 	}
-	_, err := aero.port.Write([]byte("*curr_lim_def," + strconv.Itoa(c)))
+	_, err := aero.port.Write([]byte("*curr_lim_def," + strconv.Itoa(c)+"\n"))
 	return err
 }
 
@@ -239,7 +239,7 @@ func (aero *Aerovironment) SetTimeout(c int) error {
 	if c < 5 || c > 300 {
 		return fmt.Errorf("Timeout %d is out of range 5-300 (seconds)", c)
 	}
-	_, err := aero.port.Write([]byte("*timeout," + strconv.Itoa(c)))
+	_, err := aero.port.Write([]byte("*timeout," + strconv.Itoa(c)+"\n"))
 	return err
 }
 
