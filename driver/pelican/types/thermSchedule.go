@@ -14,70 +14,50 @@ import (
 )
 
 // Login, Authentication, Thermostat ID Retrieval Structs
-type ThermostatRequest struct {
-	Request      string
-	Resources    []ThermostatResources
-	ResourceType string
+type thermIDRequest struct {
+	Resources []thermIDResources `json:"resources"`
 }
 
-type ThermostatResources struct {
-	Children     []ThermostatChild
-	GroupId      string
-	Id           string
-	Permissions  string
-	Schedule     string
-	ScheduleType string
-	Title        string
+type thermIDResources struct {
+	Children    []thermIDChild `json:"children"`
+	GroupId     string         `json:"groupId"`
+	Permissions string         `json:"permissions"`
 }
 
-type ThermostatChild struct {
-	Id           string
-	Permissions  string
-	Schedule     string
-	ScheduleType string
-	Title        string
+type thermIDChild struct {
+	Id          string `json:"id"`
+	Permissions string `json:"permissions"`
 }
 
 // Thermostat Settings Structs
-type ThermostatScheduleByIDRequest struct {
-	Epnum    float64
-	Id       string
-	Nodename string
-	Request  string
-	Status   int64
-	Userdata ThermostatScheduleByID
+type repeatTypeRequest struct {
+	Epnum    float64           `json:"epnum"`
+	Id       string            `json:"id"`
+	Nodename string            `json:"nodename"` // TODO(john-b-yang) Use nodename instead of id
+	Userdata repeatTypeWrapper `json:"userdata"`
 }
 
-type ThermostatScheduleByID struct {
-	AllowDisableKeypad bool
-	Epnum              int64
-	Fan                string
-	Keypad             string
-	MultipleFan        bool
-	MultipleSystem     bool
-	Nodename           string
-	Repeat             string
-	RepeatDisplay      string
-	Reply              string
-	State              string
-	System             string
-	Status             int64
+type repeatTypeWrapper struct {
+	Epnum    int64  `json:"epnum"`
+	Fan      string `json:"fan"`
+	Nodename string `json:"nodename"`
+	Repeat   string `json:"repeat"`
 }
 
 // Thermostat Schedule By Day Decoding Structs
-type ThermostatScheduleRequest struct {
-	ClientData ThermostatScheduleSetTimes `msgpack:"clientdata"`
+type scheduleRequest struct {
+	ClientData scheduleSetTimes `json:"clientdata"`
 }
 
-type ThermostatScheduleSetTimes struct {
-	SetTimes []ThermostatScheduleSetTimesBlock `msgpack:"setTimes"`
+type scheduleSetTimes struct {
+	SetTimes []scheduleTimeBlock `json:"setTimes"`
 }
 
-type ThermostatScheduleSetTimesBlock struct {
-	StartValue    string `msgpack:"startValue"`
-	SystemDisplay string `msgpack:"systemDisplay"`
-	HeatSetting   int64  `msgpack:"heatSetting"`
-	CoolSetting   int64  `msgpack:"coolSetting"`
+type scheduleTimeBlock struct {
+	StartValue    string `json:"startValue"`
+	SystemDisplay string `json:"systemDisplay"`
+	HeatSetting   int64  `json:"heatSetting"`
+	CoolSetting   int64  `json:"coolSetting"`
 }
 
 // Thermostat Schedule By Day Result Structs
@@ -115,15 +95,15 @@ func (pel *Pelican) GetSchedule(sitename string) (map[string]ThermostatSchedule,
 	if (errsTherms != nil) || (respTherms.StatusCode != 200) {
 		return nil, fmt.Errorf("Error retrieving Thermostat IDs: %v", errsTherms)
 	}
-	var result ThermostatRequest
+	var result thermIDRequest
 	decoder := json.NewDecoder(respTherms.Body)
-	fmt.Printf("Thermostat Request URL: %v\n", respTherms.Request.URL)
-	fmt.Printf("Thermostat Request: %v\n\n", respTherms.Body)
+	// fmt.Printf("Thermostat Request URL: %v\n", respTherms.Request.URL)
+	// fmt.Printf("Thermostat Request: %v\n\n", respTherms.Body)
 	if decodeError := decoder.Decode(&result); decodeError != nil {
 		return nil, fmt.Errorf("Failed to decode thermostat ID response JSON: %v\n", decodeError)
 	}
 	thermostatIDs := result.Resources[0].Children
-	fmt.Printf("Thermostat IDs: %v\n\n", thermostatIDs)
+	// fmt.Printf("Thermostat IDs: %v\n\n", thermostatIDs)
 
 	returnValue := make(map[string]ThermostatSchedule, len(thermostatIDs))
 	for _, child := range thermostatIDs {
@@ -139,7 +119,7 @@ func (pel *Pelican) GetSchedule(sitename string) (map[string]ThermostatSchedule,
 
 		// Build Schedule Based on Repeat Cycle Type
 		if repeatType == "Daily" {
-			schedule, scheduleError := getThermostatScheduleByDay("0", sitename, child.Id, cookie, pel.timezone)
+			schedule, scheduleError := getThermostatScheduleByDay("0", sitename, child.Id, cookie, timezone)
 			if scheduleError != nil {
 				return nil, fmt.Errorf("Error retrieving schedule for thermostat %v: %v", child.Id, scheduleError)
 			}
@@ -148,21 +128,21 @@ func (pel *Pelican) GetSchedule(sitename string) (map[string]ThermostatSchedule,
 			}
 		} else if repeatType == "Weekly" {
 			for index, day := range []string{"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"} {
-				schedule, scheduleError := getThermostatScheduleByDay(strconv.Itoa(index), sitename, child.Id, cookie, pel.timezone)
+				schedule, scheduleError := getThermostatScheduleByDay(strconv.Itoa(index), sitename, child.Id, cookie, timezone)
 				if scheduleError != nil {
 					return nil, fmt.Errorf("Error retrieving schedule for thermostat %v on %v (day %v): %v", child.Id, day, index, scheduleError)
 				}
 				thermostatSchedule.DaySchedules[day] = schedule
 			}
 		} else if repeatType == "Weekday/Weekend" {
-			weekend, weekendError := getThermostatScheduleByDay("0", sitename, child.Id, cookie, pel.timezone)
+			weekend, weekendError := getThermostatScheduleByDay("0", sitename, child.Id, cookie, timezone)
 			if weekendError != nil {
 				return nil, fmt.Errorf("Error retrieving schedule for thermostat %v on weekend (day 0): %v", child.Id, weekendError)
 			}
 			for _, day := range []string{"Sunday", "Saturday"} {
 				thermostatSchedule.DaySchedules[day] = weekend
 			}
-			weekday, weekdayError := getThermostatScheduleByDay("1", sitename, child.Id, cookie, pel.timezone)
+			weekday, weekdayError := getThermostatScheduleByDay("1", sitename, child.Id, cookie, timezone)
 			if weekdayError != nil {
 				return nil, fmt.Errorf("Error retrieving schedule for thermostat %v on weekday (day 1): %v", child.Id, weekdayError)
 			}
@@ -188,12 +168,12 @@ func getThermostatRepeatType(sitename, thermostatID string, cookie *http.Cookie)
 	if errs != nil {
 		return "", fmt.Errorf("Failed to retrieve schedule settings (AJAX Request) for thermostat %v: %v", thermostatID, errs)
 	}
-	var result ThermostatScheduleByIDRequest
+	var result repeatTypeRequest
 	decoder := json.NewDecoder(resp.Body)
 	if decodeError := decoder.Decode(&result); decodeError != nil {
 		return "", fmt.Errorf("Failed to decode schedule settings (AJAX Request) for thermostat %v: %v", thermostatID, decodeError)
 	}
-	return result.Userdata.RepeatDisplay, nil
+	return result.Userdata.Repeat, nil
 }
 
 func getThermostatScheduleByDay(dayOfWeek, sitename, thermostatID string, cookie *http.Cookie, timezone *time.Location) (ThermostatDaySchedule, error) {
@@ -203,7 +183,6 @@ func getThermostatScheduleByDay(dayOfWeek, sitename, thermostatID string, cookie
 	requestURL.WriteString(thermostatID)
 	requestURL.WriteString("&epnum=1&dayofweek=")
 	requestURL.WriteString(dayOfWeek)
-	fmt.Println(requestURL.String())
 
 	// Make Request, Decode into Response Struct
 	var daySchedule ThermostatDaySchedule
@@ -211,8 +190,9 @@ func getThermostatScheduleByDay(dayOfWeek, sitename, thermostatID string, cookie
 	if errs != nil {
 		return daySchedule, fmt.Errorf("Failed to retrieve schedule for thermostat %v on day of week %v: %v", thermostatID, dayOfWeek, errs)
 	}
-	var result ThermostatScheduleRequest
-	fmt.Printf("Get Schedule By Day Response: %v\n", resp.Body)
+	var result scheduleRequest
+	// fmt.Println(requestURL.String())
+	// fmt.Printf("Get Schedule By Day Response: %v\n", resp.Body)
 	decoder := json.NewDecoder(resp.Body)
 	if decodeError := decoder.Decode(&result); decodeError != nil {
 		return daySchedule, fmt.Errorf("Failed to decode schedule for thermostat %v on day of week %v: %v", thermostatID, dayOfWeek, decodeError)
@@ -233,7 +213,7 @@ func getThermostatScheduleByDay(dayOfWeek, sitename, thermostatID string, cookie
 
 		daySchedule.Blocks = append(daySchedule.Blocks, returnBlock)
 	}
-	fmt.Printf("Schedule for %v - %v\n\n", dayOfWeek, daySchedule)
+	// fmt.Printf("Schedule for %v - %v\n\n", dayOfWeek, daySchedule)
 	return daySchedule, nil
 }
 
