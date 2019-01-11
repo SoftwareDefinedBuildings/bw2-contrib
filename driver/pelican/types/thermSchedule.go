@@ -119,7 +119,7 @@ func (pel *Pelican) GetSchedule(sitename string) (map[string]ThermostatSchedule,
 
 		// Build Schedule Based on Repeat Cycle Type
 		if repeatType == "Daily" {
-			schedule, scheduleError := getThermostatScheduleByDay("0", sitename, child.Id, cookie, timezone)
+			schedule, scheduleError := getThermostatScheduleByDay("0", sitename, child.Id, cookie, pel.timezone)
 			if scheduleError != nil {
 				return nil, fmt.Errorf("Error retrieving schedule for thermostat %v: %v", child.Id, scheduleError)
 			}
@@ -128,21 +128,21 @@ func (pel *Pelican) GetSchedule(sitename string) (map[string]ThermostatSchedule,
 			}
 		} else if repeatType == "Weekly" {
 			for index, day := range []string{"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"} {
-				schedule, scheduleError := getThermostatScheduleByDay(strconv.Itoa(index), sitename, child.Id, cookie, timezone)
+				schedule, scheduleError := getThermostatScheduleByDay(strconv.Itoa(index), sitename, child.Id, cookie, pel.timezone)
 				if scheduleError != nil {
 					return nil, fmt.Errorf("Error retrieving schedule for thermostat %v on %v (day %v): %v", child.Id, day, index, scheduleError)
 				}
 				thermostatSchedule.DaySchedules[day] = schedule
 			}
 		} else if repeatType == "Weekday/Weekend" {
-			weekend, weekendError := getThermostatScheduleByDay("0", sitename, child.Id, cookie, timezone)
+			weekend, weekendError := getThermostatScheduleByDay("0", sitename, child.Id, cookie, pel.timezone)
 			if weekendError != nil {
 				return nil, fmt.Errorf("Error retrieving schedule for thermostat %v on weekend (day 0): %v", child.Id, weekendError)
 			}
 			for _, day := range []string{"Sunday", "Saturday"} {
 				thermostatSchedule.DaySchedules[day] = weekend
 			}
-			weekday, weekdayError := getThermostatScheduleByDay("1", sitename, child.Id, cookie, timezone)
+			weekday, weekdayError := getThermostatScheduleByDay("1", sitename, child.Id, cookie, pel.timezone)
 			if weekdayError != nil {
 				return nil, fmt.Errorf("Error retrieving schedule for thermostat %v on weekday (day 1): %v", child.Id, weekdayError)
 			}
