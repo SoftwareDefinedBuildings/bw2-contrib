@@ -13,22 +13,6 @@ import (
 	rrule "github.com/teambition/rrule-go"
 )
 
-// Login, Authentication, Thermostat ID Retrieval Structs
-type thermIDRequest struct {
-	Resources []thermIDResources `json:"resources"`
-}
-
-type thermIDResources struct {
-	Children    []thermIDChild `json:"children"`
-	GroupId     string         `json:"groupId"`
-	Permissions string         `json:"permissions"`
-}
-
-type thermIDChild struct {
-	Id          string `json:"id"`
-	Permissions string `json:"permissions"`
-}
-
 // Thermostat Settings Structs
 type settingsRequest struct {
 	Epnum    float64         `json:"epnum"`
@@ -97,24 +81,31 @@ func (pel *Pelican) GetSchedule(sitename string) (map[string]ThermostatSchedule,
 	if (errsTherms != nil) || (respTherms.StatusCode != 200) {
 		return nil, fmt.Errorf("Error retrieving Thermostat IDs: %v", errsTherms)
 	}
-	var result thermIDRequest
+
+	var thermIDRequest map[string]interface{}
 	decoder := json.NewDecoder(respTherms.Body)
-	if decodeError := decoder.Decode(&result); decodeError != nil {
+	if decodeError := decoder.Decode(&thermIDRequest); decodeError != nil {
 		return nil, fmt.Errorf("Failed to decode Thermostat ID response JSON: %v\n", decodeError)
 	}
-	thermostatIDs := result.Resources[0].Children
+	thermIDResources := ((thermIDRequest["resources"].([]interface{}))[0]).(map[string]interface{})
+	thermIDChildren := thermIDResources["children"].([]interface{})
+	var thermostatIDs []string
+	for _, childIFace := range thermIDChildren {
+		childID := (childIFace.(map[string]interface{}))["id"]
+		thermostatIDs = append(thermostatIDs, childID.(string))
+	}
 
 	// Construct Weekly Schedules for each Thermostat ID
 	schedules := make(map[string]ThermostatSchedule, len(thermostatIDs))
-	for _, child := range thermostatIDs {
+	for _, thermostatID := range thermostatIDs {
 		thermSchedule := ThermostatSchedule{
 			DaySchedules: make(map[string]ThermostatDaySchedule, len(week)),
 		}
 
 		// Retrieve Repeat Type (Daily, Weekly, Weekend/Weekday) and Nodename from Thermostat's Settings
-		settings, settingsErr := getSettings(sitename, child.Id, cookie)
+		settings, settingsErr := getSettings(sitename, thermostatID, cookie)
 		if settingsErr != nil {
-			return nil, fmt.Errorf("Failed to determine repeat type for thermostat %v: %v", child.Id, settingsErr)
+			return nil, fmt.Errorf("Failed to determine repeat type for thermostat %v: %v", thermostatID, settingsErr)
 		}
 		repeatType := settings.Repeat
 		nodename := settings.Nodename
@@ -156,7 +147,7 @@ func (pel *Pelican) GetSchedule(sitename string) (map[string]ThermostatSchedule,
 			return nil, fmt.Errorf("Failed to recognize repeat type of thermostat %v's schedule: %v", nodename, repeatType)
 		}
 
-		schedules[child.Id] = thermSchedule
+		schedules[thermostatID] = thermSchedule
 	}
 	return schedules, nil
 }
