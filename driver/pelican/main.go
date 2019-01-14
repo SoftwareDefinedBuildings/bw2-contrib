@@ -259,7 +259,7 @@ func main() {
 			for {
 				if schedStatus, schedErr := currentPelican.GetSchedule(sitename); schedErr != nil {
 					fmt.Printf("Failed to retrieve Pelican's Schedule: %v\n", schedErr)
-				} else if schedStatus != nil {
+				} else {
 					fmt.Printf("%s Schedule: %+v\n", currentPelican.Name, schedStatus)
 					po, err := bw2.CreateMsgPackPayloadObject(bw2.FromDotForm(SCHED_PO_DF), schedStatus)
 					if err != nil {
