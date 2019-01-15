@@ -13,7 +13,54 @@ import (
 	rrule "github.com/teambition/rrule-go"
 )
 
-// Thermostat Schedule By Day Structs
+// Login, Authentication, Thermostat ID Retrieval Structs
+type thermIDRequest struct {
+	Resources []thermIDResources `json:"resources"`
+}
+
+type thermIDResources struct {
+	Children    []thermIDChild `json:"children"`
+	GroupId     string         `json:"groupId"`
+	Permissions string         `json:"permissions"`
+}
+
+type thermIDChild struct {
+	Id          string `json:"id"`
+	Permissions string `json:"permissions"`
+}
+
+// Thermostat Settings Structs
+type settingsRequest struct {
+	Epnum    float64         `json:"epnum"`
+	Id       string          `json:"id"`
+	Nodename string          `json:"nodename"`
+	Userdata settingsWrapper `json:"userdata"`
+}
+
+type settingsWrapper struct {
+	Epnum    float64 `json:"epnum"`
+	Fan      string  `json:"fan"`
+	Nodename string  `json:"nodename"`
+	Repeat   string  `json:"repeat"`
+}
+
+// Thermostat Schedule By Day Decoding Structs
+type scheduleRequest struct {
+	ClientData scheduleSetTimes `json:"clientdata"`
+}
+
+type scheduleSetTimes struct {
+	SetTimes []scheduleTimeBlock `json:"setTimes"`
+}
+
+type scheduleTimeBlock struct {
+	HeatSetting float64 `json:"heatSetting"`
+	CoolSetting float64 `json:"coolSetting"`
+	StartValue  string  `json:"startValue"`
+	System      string  `json:"systemDisplay"`
+}
+
+// Thermostat Schedule By Day Result Structs
 type ThermostatSchedule struct {
 	DaySchedules map[string]ThermostatDaySchedule
 }
@@ -30,6 +77,7 @@ type ThermostatBlockSchedule struct {
 }
 
 var week = [...]string{"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"}
+var weekRRule = [...]rrule.Weekday{rrule.SU, rrule.MO, rrule.TU, rrule.WE, rrule.TH, rrule.FR, rrule.SA}
 
 func (pel *Pelican) GetSchedule(sitename string) (map[string]ThermostatSchedule, error) {
 	// Retrieve Login Authentication Cookies
@@ -51,18 +99,12 @@ func (pel *Pelican) GetSchedule(sitename string) (map[string]ThermostatSchedule,
 		return nil, fmt.Errorf("Error retrieving Thermostat IDs: %v", errsTherms)
 	}
 
-	var thermIDRequest map[string]interface{}
+	var IDRequest thermIDRequest
 	decoder := json.NewDecoder(respTherms.Body)
-	if decodeError := decoder.Decode(&thermIDRequest); decodeError != nil {
+	if decodeError := decoder.Decode(&IDRequest); decodeError != nil {
 		return nil, fmt.Errorf("Failed to decode Thermostat ID response JSON: %v\n", decodeError)
 	}
-	thermIDResources := ((thermIDRequest["resources"].([]interface{}))[0]).(map[string]interface{})
-	thermIDChildren := thermIDResources["children"].([]interface{})
-	var thermostatIDs []string
-	for _, childIFace := range thermIDChildren {
-		childID := (childIFace.(map[string]interface{}))["id"]
-		thermostatIDs = append(thermostatIDs, childID.(string))
-	}
+	thermostatIDs := IDRequest.Resources[0].Children
 
 	// Construct Weekly Schedules for each Thermostat ID
 	schedules := make(map[string]ThermostatSchedule, len(thermostatIDs))
@@ -72,13 +114,13 @@ func (pel *Pelican) GetSchedule(sitename string) (map[string]ThermostatSchedule,
 		}
 
 		// Retrieve Repeat Type (Daily, Weekly, Weekend/Weekday) and Nodename from Thermostat's Settings
-		settings, settingsErr := getSettings(sitename, thermostatID, cookie)
+		settings, settingsErr := getSettings(sitename, thermostatID.Id, cookie)
 		if settingsErr != nil {
 			return nil, fmt.Errorf("Failed to determine repeat type for thermostat %v: %v", thermostatID, settingsErr)
 		}
-		repeatType := settings["repeat"].(string)
-		nodename := settings["nodename"].(string)
-		epnum := settings["epnum"].(float64)
+		repeatType := settings.Repeat
+		nodename := settings.Nodename
+		epnum := settings.Epnum
 
 		// Build Schedule by Repeat Type
 		if repeatType == "Daily" {
@@ -116,12 +158,12 @@ func (pel *Pelican) GetSchedule(sitename string) (map[string]ThermostatSchedule,
 			return nil, fmt.Errorf("Failed to recognize repeat type of thermostat %v's schedule: %v", nodename, repeatType)
 		}
 
-		schedules[thermostatID] = thermSchedule
+		schedules[thermostatID.Id] = thermSchedule
 	}
 	return schedules, nil
 }
 
-func getSettings(sitename, thermostatID string, cookie *http.Cookie) (map[string]interface{}, error) {
+func getSettings(sitename, thermostatID string, cookie *http.Cookie) (*settingsWrapper, error) {
 	var requestURL bytes.Buffer
 	requestURL.WriteString(fmt.Sprintf("https://%s.officeclimatecontrol.net/ajaxThermostat.cgi?id=", sitename))
 	requestURL.WriteString(thermostatID)
@@ -131,13 +173,12 @@ func getSettings(sitename, thermostatID string, cookie *http.Cookie) (map[string
 	if errs != nil {
 		return nil, fmt.Errorf("Failed to retrieve schedule settings for thermostat %v: %v", thermostatID, errs)
 	}
-	var result map[string]interface{}
+	var result settingsRequest
 	decoder := json.NewDecoder(resp.Body)
 	if decodeError := decoder.Decode(&result); decodeError != nil {
 		return nil, fmt.Errorf("Failed to decode schedule settings for thermostat %v: %v", thermostatID, decodeError)
 	}
-	userdata := result["userdata"].(map[string]interface{})
-	return userdata, nil
+	return &result.Userdata, nil
 }
 
 func getScheduleByDay(dayOfWeek int, epnum float64, sitename, thermostatID string, cookie *http.Cookie, timezone *time.Location) (*ThermostatDaySchedule, error) {
@@ -155,7 +196,7 @@ func getScheduleByDay(dayOfWeek int, epnum float64, sitename, thermostatID strin
 	if errs != nil {
 		return nil, fmt.Errorf("Failed to retrieve schedule for thermostat %v on day of week %v: %v", thermostatID, dayOfWeek, errs)
 	}
-	var result map[string]interface{}
+	var result scheduleRequest
 	decoder := json.NewDecoder(resp.Body)
 	if decodeError := decoder.Decode(&result); decodeError != nil {
 		return nil, fmt.Errorf("Failed to decode schedule for thermostat %v on day of week %v: %v", thermostatID, dayOfWeek, decodeError)
@@ -163,18 +204,14 @@ func getScheduleByDay(dayOfWeek int, epnum float64, sitename, thermostatID strin
 
 	// Transfer Response Struct Data into return struct
 	var daySchedule ThermostatDaySchedule
-	clientdata := result["clientdata"].(map[string]interface{})
-	setTimes := clientdata["setTimes"].([]interface{})
-	for _, block := range setTimes {
-		castBlock := block.(map[string]interface{})
+	for _, block := range result.ClientData.SetTimes {
 		var returnBlock ThermostatBlockSchedule
-		returnBlock.CoolSetting = castBlock["coolSetting"].(float64)
-		returnBlock.HeatSetting = castBlock["heatSetting"].(float64)
-		returnBlock.System = castBlock["systemDisplay"].(string)
+		returnBlock.CoolSetting = block.CoolSetting
+		returnBlock.HeatSetting = block.HeatSetting
+		returnBlock.System = block.System
 
-		blockTime := castBlock["startValue"].(string)
-		if rruleTime, rruleError := convertTimeToRRule(blockTime, timezone); rruleError != nil {
-			return nil, fmt.Errorf("Failed to convert time in string format %v to rrule format: %v", blockTime, rruleError)
+		if rruleTime, rruleError := convertTimeToRRule(dayOfWeek, block.StartValue, timezone); rruleError != nil {
+			return nil, fmt.Errorf("Failed to convert time in string format %v to rrule format: %v", block.StartValue, rruleError)
 		} else {
 			returnBlock.Time = rruleTime
 		}
@@ -184,7 +221,7 @@ func getScheduleByDay(dayOfWeek int, epnum float64, sitename, thermostatID strin
 	return &daySchedule, nil
 }
 
-func convertTimeToRRule(blockTime string, timezone *time.Location) (string, error) {
+func convertTimeToRRule(dayOfWeek int, blockTime string, timezone *time.Location) (string, error) {
 	timeSlice := strings.Split(blockTime, ":")
 	hour, hourErr := strconv.Atoi(timeSlice[0])
 	if hourErr != nil {
@@ -203,6 +240,7 @@ func convertTimeToRRule(blockTime string, timezone *time.Location) (string, erro
 
 	rruleSched, _ := rrule.NewRRule(rrule.ROption{
 		Freq:    rrule.WEEKLY,
+		Wkst:    weekRRule[dayOfWeek],
 		Dtstart: time.Date(0, 0, 0, hour, minute, 0, 0, timezone),
 	})
 
