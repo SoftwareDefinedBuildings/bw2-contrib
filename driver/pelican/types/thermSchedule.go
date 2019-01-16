@@ -60,15 +60,19 @@ type scheduleTimeBlock struct {
 	System      string  `json:"systemDisplay"`
 }
 
-// Thermostat Schedule By Day Result Structs
+// Thermostat Schedule Structs
+
+// Struct mapping each day of the week to its daily schedule
 type ThermostatSchedule struct {
 	DaySchedules map[string]ThermostatDaySchedule `msgpack:"day_schedules"`
 }
 
+// Struct containing a series of blocks that describes a day long schedule
 type ThermostatDaySchedule struct {
 	Blocks []ThermostatBlockSchedule `msgpack:blocks`
 }
 
+// Struct containing data defining the settings of each schedule block
 type ThermostatBlockSchedule struct {
 	CoolSetting float64 `msgpack:"cool_setting"`
 	HeatSetting float64 `msgpack:"heat_setting"`
