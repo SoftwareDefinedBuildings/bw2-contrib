@@ -62,18 +62,18 @@ type scheduleTimeBlock struct {
 
 // Thermostat Schedule By Day Result Structs
 type ThermostatSchedule struct {
-	DaySchedules map[string]ThermostatDaySchedule
+	DaySchedules map[string]ThermostatDaySchedule `msgpack:"day_schedules"`
 }
 
 type ThermostatDaySchedule struct {
-	Blocks []ThermostatBlockSchedule
+	Blocks []ThermostatBlockSchedule `msgpack:blocks`
 }
 
 type ThermostatBlockSchedule struct {
-	CoolSetting float64
-	HeatSetting float64
-	System      string
-	Time        string
+	CoolSetting float64 `msgpack:"cool_setting"`
+	HeatSetting float64 `msgpack:"heat_setting"`
+	System      string  `msgpack:"system"`
+	Time        string  `msgpack:"time"`
 }
 
 var week = [...]string{"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"}
