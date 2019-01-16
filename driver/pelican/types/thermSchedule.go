@@ -67,7 +67,7 @@ type ThermostatSchedule struct {
 	DaySchedules map[string]ThermostatDaySchedule `msgpack:"day_schedules"`
 }
 
-// Struct containing a series of blocks that describes a day long schedule
+// Struct containing a series of blocks that describes a one day schedule
 type ThermostatDaySchedule struct {
 	Blocks []ThermostatBlockSchedule `msgpack:blocks`
 }
