@@ -94,7 +94,7 @@ func main() {
 		fmt.Println("Transforming", pelican.Name, "=>", name)
 		tstatIfaces[i] = service.RegisterInterface(name, "i.xbos.thermostat")
 		drstatIfaces[i] = service.RegisterInterface(name, "i.xbos.demand_response")
-		schedstatIfaces[i] = service.RegisterInterface(name, "i.xbos.schedule")
+		schedstatIfaces[i] = service.RegisterInterface(name, "i.xbos.thermostat_schedule")
 		occupancyIfaces[i] = service.RegisterInterface(name, "i.xbos.occupancy")
 
 		// Ensure thermostat is running with correct number of stages
