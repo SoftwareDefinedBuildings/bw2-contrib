@@ -14,15 +14,19 @@ type ThermostatSchedule struct {
 
 // Struct containing a series of blocks that describes a one day schedule
 type ThermostatDaySchedule struct {
-  Blocks []ThermostatBlockSchedule `msgpack:blocks`
+  Blocks []ThermostatBlockSchedule `msgpack:"blocks"`
 }
 
 // Struct containing data defining the settings of each schedule block
 type ThermostatBlockSchedule struct {
-  CoolSetting float64 `msgpack:"cool_setting"` // Cooling turns on when room temperature exceeds cool setting temp.
-  HeatSetting float64 `msgpack:"heat_setting"` // Heating turns on when room temperature drops below heat setting temp.
-  System      string  `msgpack:"system"`       // Indicates if system is heating, cooling, off, or set to auto
-  Time        string  `msgpack:"time"`         // Indicates the time of day which the above settings are enacted.
+  // Cooling turns on when room temperature exceeds cool setting temp.
+  CoolSetting float64 `msgpack:"cool_setting"`
+  // Heating turns on when room temperature drops below heat setting temp.
+  HeatSetting float64 `msgpack:"heat_setting"`
+  // Indicates if system is heating, cooling, off, or set to auto
+  System      string  `msgpack:"system"`
+  // Indicates the time of day which the above settings are enacted.
+  Time        string  `msgpack:"time"`
 }
 ```
 
@@ -60,6 +64,14 @@ Three fields are configured.
 - Frequency indicates the interval with which this event occurs.
 - Wkst tells us which day of the week (Sunday - Saturday) this event occurs.
 - Dtstart is a required field that indicates the "start date" of the particular event. In Go, the Dtstart field is a time.Date object, which is initialized with the following parameters: year, month, day, hour minute, second, millisecond, timezone. For our purposes, there is no real concept of a "start date", just the time, so the year, month, and day parameters are filled with dummy values of 0. Only hour, minute, and timezone (which can be determined from the Pelican settings + schedule) are filled in. As long as an individual knows the time is in RRule format, he or she will be able to determine each field.
+
+The translation from the above RRule format to a string is performed using the RRule-go module, specifically this function linked here:
+https://github.com/teambition/rrule-go/blob/master/str.go#L123
+
+Within the thermSchedule.go code, the last line of the convertTimeToRRule function calls the ".string()" function of the RRule object. The implementation of this function is fairly straightforward. In a nutshell, the conversion function scans through each of the RRule object's fields. The "key-value" pair of each field is appended to a string object, which is ultimately returned. Some helper functions are used primarily for casting a variety of types into a string, such as appendIntsOption, timeToStr (for Dtstart), and append. In a general sense, the conversion function is meant to achieve two things:
+
+1. Be as human readable as possible. If one reads the resulting string output, he or she should easily be able to identify the interval, frequency, count, and start/end dates of the respective event.
+2. Can be converted back into RRule format. The RRule-go module has a complementary ".StrToRRule(rfcString string)" function that converts from string back to an RRule object.
 
 ##### XBOS Interface Configuration
 

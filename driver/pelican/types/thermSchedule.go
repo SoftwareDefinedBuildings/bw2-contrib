@@ -69,7 +69,7 @@ type ThermostatSchedule struct {
 
 // Struct containing a series of blocks that describes a one day schedule
 type ThermostatDaySchedule struct {
-	Blocks []ThermostatBlockSchedule `msgpack:blocks`
+	Blocks []ThermostatBlockSchedule `msgpack:"blocks"`
 }
 
 // Struct containing data defining the settings of each schedule block
