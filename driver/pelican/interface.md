@@ -73,6 +73,26 @@ Within the thermSchedule.go code, the last line of the convertTimeToRRule functi
 1. Be as human readable as possible. If one reads the resulting string output, he or she should easily be able to identify the interval, frequency, count, and start/end dates of the respective event.
 2. Can be converted back into RRule format. The RRule-go module has a complementary ".StrToRRule(rfcString string)" function that converts from string back to an RRule object.
 
+##### Time Format Conversion Examples
+
+The following is an example of what we can expect the conversion to take in and output for different types of events with different settings
+
+With the Pelican Thermostats, we will typically have the following settings:
+
+```
+Frequency: Weekly
+Wkst: Day of Week (Sunday, Monday...Saturday)
+Dtstart: time.Date(0, 0, 0,  Hour, Minute, 0, 0, Timezone)
+```
+
+As a reminder, the parameters of the time.Date object are Year, Month, Date, Hour, Minute, Second, Millisecond, and Timezone. Frequency is always set to "Weekly". Wkst and the Hour/Minute/Timezone depend on the value that is being retrieved in addition to the Pelican's timezone. The NewRRule object's fields are populated with these values and the aforementioned ".String()" method is called. Assuming the Wkst is Sunday and Dtstart is 6:00 a.m. with a U.S. Pacific Timezone, the output will look like this:
+
+```
+FREQ=WEEKLY;DTSTART=-00011201T055258Z;WKST=SU
+```
+
+Another example can be found from the RRule-go Github page at this link: https://github.com/teambition/rrule-go/blob/master/example/main.go. This contains a pretty comprehensive set of RRule's with different assortments of fields in them. In general, if a new field is added to the RRule, you can expect to see a concise, human readable string added to the output string.
+
 ##### XBOS Interface Configuration
 
 The current version of XBOS uses YAML files to define the expectations for the output of different functionalities of the driver code from the bw2-contrib repository. There are a couple limitations regarding what the YAML files are able to represent. The incumbent version of XBOS features protobuf definitions for messages. When the next release of XBOS comes, both new and existing YAML files will be created and modified to reflect the outputs' types more accurately.
