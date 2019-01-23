@@ -84,7 +84,7 @@ Wkst: Day of Week (Sunday, Monday...Saturday)
 Dtstart: time.Date(0, 0, 0,  Hour, Minute, 0, 0, Timezone)
 ```
 
-As a reminder, the parameters of the time.Date object are Year, Month, Date, Hour, Minute, Second, Millisecond, and Timezone. Frequency is always set to "Weekly". Wkst and the Hour/Minute/Timezone depend on the value that is being retrieved in addition to the Pelican's timezone. The NewRRule object's fields are populated with these values and the aforementioned ".String()" method is called. Assuming the Wkst is Sunday and Dtstart is 6:00 a.m. with a U.S. Pacific Timezone, the output will look like this:
+As a reminder, the parameters of the time.Date object are Year, Month, Date, Hour, Minute, Second, Millisecond, and Timezone. Frequency is always set to "Weekly". Wkst and the Hour/Minute/Timezone depend on the value that is being retrieved in addition to the Pelican's timezone. The NewRRule object's fields are populated with these values and the aforementioned ".String()" method is called. Assuming the Wkst is Sunday and Dtstart is 6:00 a.m. in U.S. Pacific Standard Time, the output will look like this:
 
 ```
 FREQ=WEEKLY;DTSTART=-00011201T055258Z;WKST=SU
