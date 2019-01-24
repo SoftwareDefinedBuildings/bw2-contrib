@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/parnurzeal/gorequest"
@@ -64,12 +63,7 @@ type scheduleTimeBlock struct {
 
 // Struct mapping each day of the week to its daily schedule
 type ThermostatSchedule struct {
-	DaySchedules map[string]ThermostatDaySchedule `msgpack:"day_schedules"`
-}
-
-// Struct containing a series of blocks that describes a one day schedule
-type ThermostatDaySchedule struct {
-	Blocks []ThermostatBlockSchedule `msgpack:"blocks"`
+	DaySchedules map[string]([]ThermostatBlockSchedule) `msgpack:"day_schedules"`
 }
 
 // Struct containing data defining the settings of each schedule block
@@ -114,7 +108,7 @@ func (pel *Pelican) GetSchedule(sitename string) (map[string]ThermostatSchedule,
 	schedules := make(map[string]ThermostatSchedule, len(thermostatIDs))
 	for _, thermostatID := range thermostatIDs {
 		thermSchedule := ThermostatSchedule{
-			DaySchedules: make(map[string]ThermostatDaySchedule, len(week)),
+			DaySchedules: make(map[string]([]ThermostatBlockSchedule), len(week)),
 		}
 
 		// Retrieve Repeat Type (Daily, Weekly, Weekend/Weekday) and Nodename from Thermostat's Settings
@@ -185,7 +179,7 @@ func getSettings(sitename, thermostatID string, cookie *http.Cookie) (*settingsW
 	return &result.Userdata, nil
 }
 
-func getScheduleByDay(dayOfWeek int, epnum float64, sitename, thermostatID string, cookie *http.Cookie, timezone *time.Location) (*ThermostatDaySchedule, error) {
+func getScheduleByDay(dayOfWeek int, epnum float64, sitename, thermostatID string, cookie *http.Cookie, timezone *time.Location) (*[]ThermostatBlockSchedule, error) {
 	// Construct Request URL for Thermostat Schedule by Day of Week
 	var requestURL bytes.Buffer
 	requestURL.WriteString(fmt.Sprintf("https://%s.officeclimatecontrol.net/thermDayEdit.cgi?section=json&nodename=", sitename))
@@ -207,12 +201,13 @@ func getScheduleByDay(dayOfWeek int, epnum float64, sitename, thermostatID strin
 	}
 
 	// Transfer Response Struct Data into return struct
-	var daySchedule ThermostatDaySchedule
+	var daySchedule []ThermostatBlockSchedule
 	for _, block := range result.ClientData.SetTimes {
-		var returnBlock ThermostatBlockSchedule
-		returnBlock.CoolSetting = block.CoolSetting
-		returnBlock.HeatSetting = block.HeatSetting
-		returnBlock.System = block.System
+		returnBlock := ThermostatBlockSchedule{
+			CoolSetting: block.CoolSetting,
+			HeatSetting: block.HeatSetting,
+			System:      block.System,
+		}
 
 		if rruleTime, rruleError := convertTimeToRRule(dayOfWeek, block.StartValue, timezone); rruleError != nil {
 			return nil, fmt.Errorf("Failed to convert time in string format %v to rrule format: %v", block.StartValue, rruleError)
@@ -220,33 +215,25 @@ func getScheduleByDay(dayOfWeek int, epnum float64, sitename, thermostatID strin
 			returnBlock.Time = rruleTime
 		}
 
-		daySchedule.Blocks = append(daySchedule.Blocks, returnBlock)
+		daySchedule = append(daySchedule, returnBlock)
 	}
 	return &daySchedule, nil
 }
 
 func convertTimeToRRule(dayOfWeek int, blockTime string, timezone *time.Location) (string, error) {
-	timeSlice := strings.Split(blockTime, ":")
-	hour, hourErr := strconv.Atoi(timeSlice[0])
-	if hourErr != nil {
-		return "", fmt.Errorf("Failed to convert hour value of type string to type int: %v", hourErr)
-	}
-	if timeSlice[2] == "PM" {
-		hour += 12
-		if hour == 24 {
-			hour = 0
-		}
-	}
-	minute, minuteErr := strconv.Atoi(timeSlice[1])
-	if minuteErr != nil {
-		return "", fmt.Errorf("Failed to convert minute value of type string to type int: %v", minuteErr)
+	timeParsed, timeParsedErr := time.Parse("15:04:PM", blockTime)
+	if timeParsedErr != nil {
+		return "", fmt.Errorf("Error parsing time %v with time.Parse function: %v\n: ", blockTime, timeParsedErr)
 	}
 
-	rruleSched, _ := rrule.NewRRule(rrule.ROption{
+	rruleSched, rruleSchedErr := rrule.NewRRule(rrule.ROption{
 		Freq:    rrule.WEEKLY,
 		Wkst:    weekRRule[dayOfWeek],
-		Dtstart: time.Date(0, 0, 0, hour, minute, 0, 0, timezone),
+		Dtstart: time.Date(0, 0, 0, timeParsed.Hour(), timeParsed.Minute(), 0, 0, timezone),
 	})
+	if rruleSchedErr != nil {
+		return "", fmt.Errorf("Error creating rruleSchedule object: %v\n", rruleSchedErr)
+	}
 
 	return rruleSched.String(), nil
 }

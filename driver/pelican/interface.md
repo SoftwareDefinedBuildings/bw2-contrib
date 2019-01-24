@@ -9,12 +9,7 @@ The following structs define the way users interact with the Scheduling interfac
 ```
 // Struct mapping each day of the week to its daily schedule
 type ThermostatSchedule struct {
-  DaySchedules map[string]ThermostatDaySchedule `msgpack:"day_schedules"`
-}
-
-// Struct containing a series of blocks that describes a one day schedule
-type ThermostatDaySchedule struct {
-  Blocks []ThermostatBlockSchedule `msgpack:"blocks"`
+  DaySchedules map[string]([]ThermostatBlockSchedule) `msgpack:"day_schedules"`
 }
 
 // Struct containing data defining the settings of each schedule block
@@ -39,7 +34,7 @@ Each Pelican Thermostat has three potential schedule settings.
 
 Next, it's wise if we attempt to define what a "daily schedule" actually looks like. Each day's schedule consists of a series of what we'll call "blocks". Each block details a certain number of settings that are enacted at a certain time of day. This is encapsulated by the ThermostatBlockSchedule struct. For example, one might have a series of four different blocks with time intervals at 6:00 a.m., 11:00 a.m., 4:00 p.m., and 6:00 p.m. At each of these times, the associated cool temperature, heat temperature, and system settings are all enacted.
 
-Going one layer above, the ThermostatDaySchedule struct represents an array of blocks. The purpose of this struct is to represent the schedule of one day a.k.a a series of blocks. Last but not least, the outermost struct, "ThermostatSchedule", maps each day of the week (Sunday - Saturday) to their respective daily schedules (ThermostatDaySchedule struct). This is the struct that is delivered to the user for getting and setting purposes.
+The outermost struct, "ThermostatSchedule", maps each day of the week (Sunday - Saturday) to their respective daily schedules which is represented as an array of ThermostatBlockSchedule objects. Each day may have a different series of configurations that are enforced at different times, which is why there are multiple blocks per day. This is the struct that is delivered to the user for getting and setting purposes.
 
 ##### Thermostat Block Schedule Struct Fields Explanation
 
