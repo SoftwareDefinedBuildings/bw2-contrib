@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/parnurzeal/gorequest"
 	rrule "github.com/teambition/rrule-go"
 )
 
@@ -84,7 +83,7 @@ func (pel *Pelican) GetSchedule(sitename string) (map[string]ThermostatSchedule,
 		"password": pel.password,
 		"sitename": sitename,
 	}
-	respLogin, _, errsLogin := gorequest.New().Post(fmt.Sprintf("https://%s.officeclimatecontrol.net/#_loginPage", sitename)).Type("form").Send(loginInfo).End()
+	respLogin, _, errsLogin := pel.scheduleReq.Post(fmt.Sprintf("https://%s.officeclimatecontrol.net/#_loginPage", sitename)).Type("form").Send(loginInfo).End()
 	if (errsLogin != nil) || (respLogin.StatusCode != 200) {
 		return nil, fmt.Errorf("Error logging into climate control website: %v", errsLogin)
 	}
@@ -92,7 +91,7 @@ func (pel *Pelican) GetSchedule(sitename string) (map[string]ThermostatSchedule,
 	cookie := cookies[0]
 
 	// Retrieve Thermostat IDs within given sitename
-	respTherms, _, errsTherms := gorequest.New().Get(fmt.Sprintf("https://%s.officeclimatecontrol.net/ajaxSchedule.cgi?request=getResourcesExtended&resourceType=Thermostats", sitename)).Type("form").AddCookie(cookie).End()
+	respTherms, _, errsTherms := pel.scheduleReq.Get(fmt.Sprintf("https://%s.officeclimatecontrol.net/ajaxSchedule.cgi?request=getResourcesExtended&resourceType=Thermostats", sitename)).Type("form").AddCookie(cookie).End()
 	if (errsTherms != nil) || (respTherms.StatusCode != 200) {
 		return nil, fmt.Errorf("Error retrieving Thermostat IDs: %v", errsTherms)
 	}
@@ -112,7 +111,7 @@ func (pel *Pelican) GetSchedule(sitename string) (map[string]ThermostatSchedule,
 		}
 
 		// Retrieve Repeat Type (Daily, Weekly, Weekend/Weekday) and Nodename from Thermostat's Settings
-		settings, settingsErr := getSettings(sitename, thermostatID.Id, cookie)
+		settings, settingsErr := pel.getSettings(sitename, thermostatID.Id, cookie)
 		if settingsErr != nil {
 			return nil, fmt.Errorf("Failed to determine repeat type for thermostat %v: %v", thermostatID, settingsErr)
 		}
@@ -122,7 +121,7 @@ func (pel *Pelican) GetSchedule(sitename string) (map[string]ThermostatSchedule,
 
 		// Build Schedule by Repeat Type
 		if repeatType == "Daily" {
-			schedule, scheduleError := getScheduleByDay(0, epnum, sitename, nodename, cookie, pel.timezone)
+			schedule, scheduleError := pel.getScheduleByDay(0, epnum, sitename, nodename, cookie, pel.timezone)
 			if scheduleError != nil {
 				return nil, fmt.Errorf("Error retrieving schedule for thermostat %v: %v", nodename, scheduleError)
 			}
@@ -131,21 +130,21 @@ func (pel *Pelican) GetSchedule(sitename string) (map[string]ThermostatSchedule,
 			}
 		} else if repeatType == "Weekly" {
 			for index, day := range week {
-				schedule, scheduleError := getScheduleByDay(index, epnum, sitename, nodename, cookie, pel.timezone)
+				schedule, scheduleError := pel.getScheduleByDay(index, epnum, sitename, nodename, cookie, pel.timezone)
 				if scheduleError != nil {
 					return nil, fmt.Errorf("Error retrieving schedule for thermostat %v on %v (day %v): %v", nodename, day, index, scheduleError)
 				}
 				thermSchedule.DaySchedules[day] = *schedule
 			}
 		} else if repeatType == "Weekday/Weekend" {
-			weekend, weekendError := getScheduleByDay(0, epnum, sitename, nodename, cookie, pel.timezone)
+			weekend, weekendError := pel.getScheduleByDay(0, epnum, sitename, nodename, cookie, pel.timezone)
 			if weekendError != nil {
 				return nil, fmt.Errorf("Error retrieving schedule for thermostat %v on weekend (day 0): %v", nodename, weekendError)
 			}
 			for _, day := range []string{"Sunday", "Saturday"} {
 				thermSchedule.DaySchedules[day] = *weekend
 			}
-			weekday, weekdayError := getScheduleByDay(1, epnum, sitename, nodename, cookie, pel.timezone)
+			weekday, weekdayError := pel.getScheduleByDay(1, epnum, sitename, nodename, cookie, pel.timezone)
 			if weekdayError != nil {
 				return nil, fmt.Errorf("Error retrieving schedule for thermostat %v on weekday (day 1): %v", nodename, weekdayError)
 			}
@@ -161,13 +160,13 @@ func (pel *Pelican) GetSchedule(sitename string) (map[string]ThermostatSchedule,
 	return schedules, nil
 }
 
-func getSettings(sitename, thermostatID string, cookie *http.Cookie) (*settingsWrapper, error) {
+func (pel *Pelican) getSettings(sitename, thermostatID string, cookie *http.Cookie) (*settingsWrapper, error) {
 	var requestURL bytes.Buffer
 	requestURL.WriteString(fmt.Sprintf("https://%s.officeclimatecontrol.net/ajaxThermostat.cgi?id=", sitename))
 	requestURL.WriteString(thermostatID)
 	requestURL.WriteString(":Thermostat&request=GetSchedule")
 
-	resp, _, errs := gorequest.New().Get(requestURL.String()).Type("form").AddCookie(cookie).End()
+	resp, _, errs := pel.scheduleReq.Get(requestURL.String()).Type("form").AddCookie(cookie).End()
 	if errs != nil {
 		return nil, fmt.Errorf("Failed to retrieve schedule settings for thermostat %v: %v", thermostatID, errs)
 	}
@@ -179,7 +178,7 @@ func getSettings(sitename, thermostatID string, cookie *http.Cookie) (*settingsW
 	return &result.Userdata, nil
 }
 
-func getScheduleByDay(dayOfWeek int, epnum float64, sitename, thermostatID string, cookie *http.Cookie, timezone *time.Location) (*[]ThermostatBlockSchedule, error) {
+func (pel *Pelican) getScheduleByDay(dayOfWeek int, epnum float64, sitename, thermostatID string, cookie *http.Cookie, timezone *time.Location) (*[]ThermostatBlockSchedule, error) {
 	// Construct Request URL for Thermostat Schedule by Day of Week
 	var requestURL bytes.Buffer
 	requestURL.WriteString(fmt.Sprintf("https://%s.officeclimatecontrol.net/thermDayEdit.cgi?section=json&nodename=", sitename))
@@ -190,7 +189,7 @@ func getScheduleByDay(dayOfWeek int, epnum float64, sitename, thermostatID strin
 	requestURL.WriteString(strconv.Itoa(dayOfWeek))
 
 	// Make Request, Decode into Response Struct
-	resp, _, errs := gorequest.New().Get(requestURL.String()).Type("form").AddCookie(cookie).End()
+	resp, _, errs := pel.scheduleReq.Get(requestURL.String()).Type("form").AddCookie(cookie).End()
 	if errs != nil {
 		return nil, fmt.Errorf("Failed to retrieve schedule for thermostat %v on day of week %v: %v", thermostatID, dayOfWeek, errs)
 	}

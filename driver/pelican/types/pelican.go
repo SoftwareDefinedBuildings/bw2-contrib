@@ -38,7 +38,8 @@ type Pelican struct {
 	timezone      *time.Location
 	req           *gorequest.SuperAgent
 	drReq         *gorequest.SuperAgent
-	occupanyReq   *gorequest.SuperAgent
+	occupancyReq  *gorequest.SuperAgent
+	scheduleReq   *gorequest.SuperAgent
 }
 
 type PelicanStatus struct {
@@ -161,7 +162,8 @@ func NewPelican(params *NewPelicanParams) (*Pelican, error) {
 		timezone:      timezone,
 		req:           gorequest.New(),
 		drReq:         gorequest.New(),
-		occupanyReq:   gorequest.New(),
+		occupancyReq:  gorequest.New(),
+		scheduleReq:   gorequest.New(),
 	}, nil
 }
 

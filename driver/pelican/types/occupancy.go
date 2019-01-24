@@ -29,7 +29,7 @@ type childSensor struct {
 }
 
 func (pel *Pelican) GetOccupancy() (int, error) {
-	resp, _, errs := pel.occupanyReq.Get(pel.target).
+	resp, _, errs := pel.occupancyReq.Get(pel.target).
 		Param("username", pel.username).
 		Param("password", pel.password).
 		Param("request", "get").
