@@ -194,7 +194,6 @@ func (pel *Pelican) getScheduleByDay(dayOfWeek int, epnum float64, thermostatID 
 		} else {
 			returnBlock.Time = rruleTime
 		}
-
 		daySchedule = append(daySchedule, returnBlock)
 	}
 	return &daySchedule, nil
@@ -220,6 +219,7 @@ func convertTimeToRRule(dayOfWeek int, blockTime string, timezone *time.Location
 
 // Handles setting the Pelican fields (cookie, id) that can only be retrieved by AJAX Requests
 func (pel *Pelican) setCookieAndID() error {
+	// Set the cookie field using the pelican's login information
 	loginInfo := map[string]interface{}{
 		"username": pel.username,
 		"password": pel.password,
@@ -231,11 +231,11 @@ func (pel *Pelican) setCookieAndID() error {
 	}
 	pel.cookie = (*http.Response)(respLogin).Cookies()[0]
 
+	// Set the Thermostat ID using the thermostat resources AJAX Request
 	respTherms, _, errsTherms := gorequest.New().Get(fmt.Sprintf("https://%s.officeclimatecontrol.net/ajaxSchedule.cgi?request=getResourcesExtended&resourceType=Thermostats", pel.sitename)).Type("form").AddCookie(pel.cookie).End()
 	if (errsTherms != nil) || (respTherms.StatusCode != 200) {
 		return fmt.Errorf("Error retrieving Thermostat IDs: %v", errsTherms)
 	}
-
 	var IDRequest thermIDRequest
 	decoder := json.NewDecoder(respTherms.Body)
 	if decodeError := decoder.Decode(&IDRequest); decodeError != nil {
