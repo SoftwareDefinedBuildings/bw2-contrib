@@ -257,7 +257,7 @@ func main() {
 
 		go func() {
 			for {
-				if schedStatus, schedErr := currentPelican.GetSchedule(sitename); schedErr != nil {
+				if schedStatus, schedErr := currentPelican.GetSchedule(); schedErr != nil {
 					fmt.Printf("Failed to retrieve Pelican's Schedule: %v\n", schedErr)
 				} else {
 					fmt.Printf("%s Schedule: %+v\n", currentPelican.Name, schedStatus)

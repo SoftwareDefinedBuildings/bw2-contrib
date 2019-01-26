@@ -34,7 +34,7 @@ Each Pelican Thermostat has three potential schedule settings.
 
 Next, it's wise if we attempt to define what a "daily schedule" actually looks like. Each day's schedule consists of a series of what we'll call "blocks". Each block details a certain number of settings that are enacted at a certain time of day. This is encapsulated by the ThermostatBlockSchedule struct. For example, one might have a series of four different blocks with time intervals at 6:00 a.m., 11:00 a.m., 4:00 p.m., and 6:00 p.m. At each of these times, the associated cool temperature, heat temperature, and system settings are all enacted.
 
-The outermost struct, "ThermostatSchedule", maps each day of the week (Sunday - Saturday) to their respective daily schedules which is represented as an array of ThermostatBlockSchedule objects. Each day may have a different series of configurations that are enforced at different times, which is why there are multiple blocks per day. This is the struct that is delivered to the user for getting and setting purposes.
+The outermost struct, "ThermostatSchedule", maps each day of the week (Sunday - Saturday) to their respective daily schedules which is represented as an array of ThermostatBlockSchedule objects. Each day may have a different series of configurations that are enforced at different times, which is why there are multiple blocks per day. Ultimately, the pelican's "GetSchedule" function returns a pointer to this struct, which encapsulates the entire weekly schedule for that particular pelican thermostat.
 
 ##### Thermostat Block Schedule Struct Fields Explanation
 
