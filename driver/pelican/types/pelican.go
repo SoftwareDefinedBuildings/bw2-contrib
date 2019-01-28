@@ -38,6 +38,7 @@ type Pelican struct {
 	CoolingStages int32
 	TimezoneName  string
 	target        string
+	cookieTime    time.Time
 	timezone      *time.Location
 	cookie        *http.Cookie
 	req           *gorequest.SuperAgent

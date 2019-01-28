@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/parnurzeal/gorequest"
 	rrule "github.com/teambition/rrule-go"
 )
 
@@ -75,18 +74,17 @@ type ThermostatBlockSchedule struct {
 }
 
 // Time Constant for Cookie Refresh. 720 Hours = 30 Days
-const cookieDuration = time.Duration(720)
+const cookieDuration = 720 * time.Hour
 
-var lastCookie = time.Now()
 var week = [...]string{"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"}
 var weekRRule = [...]rrule.Weekday{rrule.SU, rrule.MO, rrule.TU, rrule.WE, rrule.TH, rrule.FR, rrule.SA}
 
 func (pel *Pelican) GetSchedule() (*ThermostatSchedule, error) {
 	// Check if cookie needs to be refreshed
-	if time.Since(lastCookie) > cookieDuration*time.Hour {
-		lastCookie = time.Now()
-		pel.setCookieAndID()
-		return pel.GetSchedule()
+	if time.Since(pel.cookieTime) > cookieDuration {
+		if cookieAndIDError := pel.setCookieAndID(); cookieAndIDError != nil {
+			return nil, cookieAndIDError
+		}
 	}
 
 	thermSchedule := ThermostatSchedule{
@@ -225,14 +223,15 @@ func (pel *Pelican) setCookieAndID() error {
 		"password": pel.password,
 		"sitename": pel.sitename,
 	}
-	respLogin, _, errsLogin := gorequest.New().Post(fmt.Sprintf("https://%s.officeclimatecontrol.net/#_loginPage", pel.sitename)).Type("form").Send(loginInfo).End()
+	respLogin, _, errsLogin := pel.scheduleReq.Post(fmt.Sprintf("https://%s.officeclimatecontrol.net/#_loginPage", pel.sitename)).Type("form").Send(loginInfo).End()
 	if (errsLogin != nil) || (respLogin.StatusCode != 200) {
 		return fmt.Errorf("Error logging into climate control website to retrieve cookie: %v", errsLogin)
 	}
 	pel.cookie = (*http.Response)(respLogin).Cookies()[0]
+	pel.cookieTime = time.Now()
 
 	// Set the Thermostat ID using the thermostat resources AJAX Request
-	respTherms, _, errsTherms := gorequest.New().Get(fmt.Sprintf("https://%s.officeclimatecontrol.net/ajaxSchedule.cgi?request=getResourcesExtended&resourceType=Thermostats", pel.sitename)).Type("form").AddCookie(pel.cookie).End()
+	respTherms, _, errsTherms := pel.scheduleReq.Get(fmt.Sprintf("https://%s.officeclimatecontrol.net/ajaxSchedule.cgi?request=getResourcesExtended&resourceType=Thermostats", pel.sitename)).Type("form").AddCookie(pel.cookie).End()
 	if (errsTherms != nil) || (respTherms.StatusCode != 200) {
 		return fmt.Errorf("Error retrieving Thermostat IDs: %v", errsTherms)
 	}
