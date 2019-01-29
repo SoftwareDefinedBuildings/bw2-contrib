@@ -480,9 +480,11 @@ func (pel *Pelican) ModifyStages(params *PelicanStageParams) error {
 
 	// Restore the thermostat to its previous mode
 	defer func() {
-		oldMode := float64(status.Mode)
-		if err := pel.ModifyState(&PelicanStateParams{Mode: &oldMode}); err != nil {
-			fmt.Printf("Failed to restore thermostat to old mode: %s\n", err)
+		if status != nil {
+			oldMode := float64(status.Mode)
+			if err := pel.ModifyState(&PelicanStateParams{Mode: &oldMode}); err != nil {
+				fmt.Printf("Failed to restore thermostat to old mode: %s\n", err)
+			}
 		}
 	}()
 
