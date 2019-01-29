@@ -3,6 +3,7 @@ package types
 import (
 	"encoding/xml"
 	"fmt"
+	"net/http"
 	"strings"
 	"time"
 
@@ -30,15 +31,20 @@ var stateMappings = map[string]int32{
 type Pelican struct {
 	username      string
 	password      string
+	sitename      string
+	id            string
 	Name          string
 	HeatingStages int32
 	CoolingStages int32
 	TimezoneName  string
 	target        string
+	cookieTime    time.Time
 	timezone      *time.Location
+	cookie        *http.Cookie
 	req           *gorequest.SuperAgent
 	drReq         *gorequest.SuperAgent
-	occupanyReq   *gorequest.SuperAgent
+	occupancyReq  *gorequest.SuperAgent
+	scheduleReq   *gorequest.SuperAgent
 }
 
 type PelicanStatus struct {
@@ -150,9 +156,11 @@ func NewPelican(params *NewPelicanParams) (*Pelican, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Pelican{
+
+	newPelican := &Pelican{
 		username:      params.Username,
 		password:      params.Password,
+		sitename:      params.Sitename,
 		target:        fmt.Sprintf("https://%s.officeclimatecontrol.net/api.cgi", params.Sitename),
 		Name:          params.Name,
 		HeatingStages: params.HeatingStages,
@@ -161,8 +169,13 @@ func NewPelican(params *NewPelicanParams) (*Pelican, error) {
 		timezone:      timezone,
 		req:           gorequest.New(),
 		drReq:         gorequest.New(),
-		occupanyReq:   gorequest.New(),
-	}, nil
+		occupancyReq:  gorequest.New(),
+		scheduleReq:   gorequest.New(),
+	}
+	if error := newPelican.setCookieAndID(); error != nil {
+		return nil, error
+	}
+	return newPelican, nil
 }
 
 func DiscoverPelicans(username, password, sitename string) ([]*Pelican, error) {

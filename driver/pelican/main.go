@@ -15,6 +15,7 @@ import (
 const TSTAT_PO_DF = "2.1.1.0"
 const DR_PO_DF = "2.1.1.9"
 const OCCUPANCY_PO_DF = "2.1.2.1"
+const SCHED_PO_DF = "2.1.2.2"
 
 type setpointsMsg struct {
 	HeatingSetpoint *float64 `msgpack:"heating_setpoint"`
@@ -73,9 +74,17 @@ func main() {
 		os.Exit(1)
 	}
 
+	pollSchedStr := params.MustString("poll_interval_sched")
+	pollSched, schedErr := time.ParseDuration(pollSchedStr)
+	if schedErr != nil {
+		fmt.Printf("Invalid schedule poll interval specified: %v\n", schedErr)
+		os.Exit(1)
+	}
+
 	service := bwClient.RegisterService(baseURI, "s.pelican")
 	tstatIfaces := make([]*bw2.Interface, len(pelicans))
 	drstatIfaces := make([]*bw2.Interface, len(pelicans))
+	schedstatIfaces := make([]*bw2.Interface, len(pelicans))
 	occupancyIfaces := make([]*bw2.Interface, len(pelicans))
 	for i, pelican := range pelicans {
 		pelican := pelican
@@ -85,6 +94,7 @@ func main() {
 		fmt.Println("Transforming", pelican.Name, "=>", name)
 		tstatIfaces[i] = service.RegisterInterface(name, "i.xbos.thermostat")
 		drstatIfaces[i] = service.RegisterInterface(name, "i.xbos.demand_response")
+		schedstatIfaces[i] = service.RegisterInterface(name, "i.xbos.thermostat_schedule")
 		occupancyIfaces[i] = service.RegisterInterface(name, "i.xbos.occupancy")
 
 		// Ensure thermostat is running with correct number of stages
@@ -207,6 +217,7 @@ func main() {
 		currentPelican := pelican
 		currentIface := tstatIfaces[i]
 		currentDRIface := drstatIfaces[i]
+		currentSchedIface := schedstatIfaces[i]
 		currentOccupancyIface := occupancyIfaces[i]
 
 		go func() {
@@ -241,6 +252,22 @@ func main() {
 					currentDRIface.PublishSignal("info", po)
 				}
 				time.Sleep(pollDr)
+			}
+		}()
+
+		go func() {
+			for {
+				if schedStatus, schedErr := currentPelican.GetSchedule(); schedErr != nil {
+					fmt.Printf("Failed to retrieve Pelican's Schedule: %v\n", schedErr)
+				} else {
+					fmt.Printf("%s Schedule: %+v\n", currentPelican.Name, schedStatus)
+					po, err := bw2.CreateMsgPackPayloadObject(bw2.FromDotForm(SCHED_PO_DF), schedStatus)
+					if err != nil {
+						fmt.Printf("Failed to create Schedule msgpack PO: %v", err)
+					}
+					currentSchedIface.PublishSignal("info", po)
+				}
+				time.Sleep(pollSched)
 			}
 		}()
 
