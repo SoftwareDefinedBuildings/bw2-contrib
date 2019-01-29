@@ -104,7 +104,7 @@ func main() {
 		}); err != nil {
 			fmt.Printf("Failed to configure heating/cooling stages for pelican %s: %s\n",
 				pelican.Name, err)
-			os.Exit(1)
+			//os.Exit(1)
 		}
 
 		tstatIfaces[i].SubscribeSlot("setpoints", func(msg *bw2.SimpleMessage) {
