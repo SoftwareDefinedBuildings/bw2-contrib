@@ -210,6 +210,30 @@ func main() {
 				}
 			}
 		})
+
+		schedstatIfaces[i].SubscribeSlot("schedule", func(msg *bw2.SimpleMessage) {
+			po := msg.GetOnePODF(SCHED_PO_DF)
+			if po == nil {
+				fmt.Println("Received message on stage slot without required PO. Dropping.")
+				return
+			}
+
+			var schedule types.ThermostatSchedule
+			if err := po.(bw2.MsgPackPayloadObject).ValueInto(&schedule); err != nil {
+				fmt.Println("Received malformed PO on stage slot. Dropping.", err)
+				return
+			}
+			if schedule.DaySchedules == nil {
+				fmt.Println("Received message on stage slot with no content. Dropping.")
+				return
+			}
+
+			if err := pelican.SetSchedule(&schedule); err != nil {
+				fmt.Println(err)
+			} else {
+				fmt.Printf("Set pelican schedule to: %v", schedule)
+			}
+		})
 	}
 
 	done := make(chan bool)
