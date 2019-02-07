@@ -9,32 +9,31 @@ import (
 
 func (pel *Pelican) SetSchedule(newSchedule *ThermostatSchedule) error {
 	for day, blocks := range newSchedule.DaySchedules {
-
-		// Delete Day's Existing Schedule
-		// (TODO)john-b-yang: Not necessary? Can just overwrite existing schedule
-		respDelete, _, errsDelete := pel.scheduleReq.Get(pel.target).
-			Param("username", pel.username).
-			Param("password", pel.password).
-			Param("request", "set").
-			Param("object", "thermostatSchedule").
-			Param("selection", fmt.Sprintf("name:%s;dayOfWeek:%s;", pel.Name, day)).
-			Param("value", "deleteAll").
-			End()
-
-		if errsDelete != nil {
-			return fmt.Errorf("Error deleting thermostat schedule settings on day %v: %v\n", day, errsDelete)
-		}
-		var resultDelete apiResult
-		dec := xml.NewDecoder(respDelete.Body)
-		if errDecodeDelete := dec.Decode(&resultDelete); errDecodeDelete != nil {
-			return fmt.Errorf("Failed to decode schedule delete response XML: %v", errDecodeDelete)
-		}
-		if resultDelete.Success == 0 {
-			return fmt.Errorf("Error retrieving thermostat status thermostat schedule settings on day %v: %v\n", day, resultDelete.Message)
-		}
-		defer respDelete.Body.Close()
-
 		for index, block := range blocks {
+			// Delete Day Block's Existing Schedule
+			respDelete, _, errsDelete := pel.scheduleReq.Get(pel.target).
+				Param("username", pel.username).
+				Param("password", pel.password).
+				Param("request", "set").
+				Param("object", "thermostatSchedule").
+				Param("selection", fmt.Sprintf("name:%s;dayOfWeek:%s;setTime:%v;", pel.Name, day, index+1)).
+				Param("value", "delete").
+				End()
+
+			if errsDelete != nil {
+				return fmt.Errorf("Error deleting thermostat schedule settings on day %v: %v\n", day, errsDelete)
+			}
+			var resultDelete apiResult
+			decDelete := xml.NewDecoder(respDelete.Body)
+			if errDecodeDelete := decDelete.Decode(&resultDelete); errDecodeDelete != nil {
+				return fmt.Errorf("Failed to decode schedule delete response XML: %v", errDecodeDelete)
+			}
+			if resultDelete.Success == 0 {
+				return fmt.Errorf("Error retrieving thermostat status thermostat schedule settings on day %v: %v\n", day, resultDelete.Message)
+			}
+			defer respDelete.Body.Close()
+
+			// Construct New Day Block Schedule Settings
 			var value string = ""
 			value += fmt.Sprintf("coolSetting:%.0f;", block.CoolSetting)
 			value += fmt.Sprintf("heatSetting:%.0f", block.HeatSetting)
@@ -45,9 +44,9 @@ func (pel *Pelican) SetSchedule(newSchedule *ThermostatSchedule) error {
 				return fmt.Errorf("Error converting time string %v to RRule format: %v\n", block.Time, timeErr)
 			}
 
-			hour := time.OrigOptions.Dtstart.Hour()
-			minute := time.OrigOptions.Dtstart.Minute()
-			value += fmt.Sprintf("startTime:%s;", fmt.Sprintf("%v:%v", hour, minute))
+			// Convert Time to Pelican's Timezone
+			timeLocal := time.OrigOptions.Dtstart.In(pel.timezone)
+			value += fmt.Sprintf("startTime:%s;", fmt.Sprintf("%v:%v", timeLocal.Hour(), timeLocal.Minute()))
 
 			// Set (Day, Time)'s Schedule
 			respSet, _, errsSet := pel.scheduleReq.Get(pel.target).
@@ -63,8 +62,8 @@ func (pel *Pelican) SetSchedule(newSchedule *ThermostatSchedule) error {
 				return fmt.Errorf("Error setting schedule for thermostat on day %v at index %v: %v", day, index, errsSet)
 			}
 			var resultSet apiResult
-			dec := xml.NewDecoder(respSet.Body)
-			if errDecodeSet := dec.Decode(&resultSet); errDecodeSet != nil {
+			decSet := xml.NewDecoder(respSet.Body)
+			if errDecodeSet := decSet.Decode(&resultSet); errDecodeSet != nil {
 				return fmt.Errorf("Failed to decode schedule set response XML: %v", errDecodeSet)
 			}
 			if resultSet.Success == 0 {
