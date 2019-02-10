@@ -32,6 +32,7 @@ func (pel *Pelican) SetSchedule(newSchedule *ThermostatSchedule) error {
 			if errsDelete != nil {
 				return fmt.Errorf("Error deleting thermostat schedule settings on day %v: %v\n", day, errsDelete)
 			}
+			defer respDelete.Body.Close()
 			var resultDelete apiResult
 			decDelete := xml.NewDecoder(respDelete.Body)
 			if errDecodeDelete := decDelete.Decode(&resultDelete); errDecodeDelete != nil {
@@ -40,7 +41,6 @@ func (pel *Pelican) SetSchedule(newSchedule *ThermostatSchedule) error {
 			if resultDelete.Success == 0 {
 				return fmt.Errorf("Error deleting thermostat schedule settings on day %v: %v\n", day, resultDelete.Message)
 			}
-			defer respDelete.Body.Close()
 			currentBlockCount -= 1
 		}
 
@@ -57,7 +57,7 @@ func (pel *Pelican) SetSchedule(newSchedule *ThermostatSchedule) error {
 				return fmt.Errorf("Error converting time string %v to RRule format: %v\n", block.Time, timeErr)
 			}
 			timeLocal := time.OrigOptions.Dtstart.In(pel.timezone)
-			value += fmt.Sprintf("startTime:%s;", fmt.Sprintf("%v:%v", timeLocal.Hour(), timeLocal.Minute()))
+			value += fmt.Sprintf("startTime:%s;", timeLocal.Format("03:04"))
 
 			// Set Request + Error Checking
 			respSet, _, errsSet := gorequest.New().Get(pel.target).
@@ -72,6 +72,7 @@ func (pel *Pelican) SetSchedule(newSchedule *ThermostatSchedule) error {
 			if errsSet != nil {
 				return fmt.Errorf("Error setting thermostat schedule on day %v: %v\n", day, errsSet)
 			}
+			defer respSet.Body.Close()
 			var resultSet apiResult
 			decSet := xml.NewDecoder(respSet.Body)
 			if errDecodeSet := decSet.Decode(&resultSet); errDecodeSet != nil {
@@ -80,7 +81,6 @@ func (pel *Pelican) SetSchedule(newSchedule *ThermostatSchedule) error {
 			if resultSet.Success == 0 {
 				return fmt.Errorf("Error setting thermostat schedule on day %v: %v\n", day, resultSet.Message)
 			}
-			defer respSet.Body.Close()
 		}
 	}
 
