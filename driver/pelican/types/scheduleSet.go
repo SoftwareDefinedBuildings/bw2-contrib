@@ -53,11 +53,11 @@ func (pel *Pelican) SetSchedule(newSchedule *ThermostatSchedule) error {
 				value += fmt.Sprintf("system:%s", block.System)
 
 				// Convert Time to Pelican's Timezone
-				time, timeErr := rrule.StrToRRule(block.Time)
-				if timeErr != nil {
-					return fmt.Errorf("Error converting time string %v to RRule format: %v\n", block.Time, timeErr)
+				timeRRule, timeRRuleErr := rrule.StrToRRule(block.Time)
+				if timeRRuleErr != nil {
+					return fmt.Errorf("Error converting time string %v to RRule format: %v\n", block.Time, timeRRuleErr)
 				}
-				timeLocal := time.OrigOptions.Dtstart.In(pel.timezone)
+				timeLocal := timeRRule.OrigOptions.Dtstart.In(pel.timezone)
 				value += fmt.Sprintf("startTime:%s;", timeLocal.Format("03:04"))
 
 				// Set Request + Error Checking
