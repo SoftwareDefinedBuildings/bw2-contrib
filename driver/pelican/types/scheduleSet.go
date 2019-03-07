@@ -85,26 +85,29 @@ func (pel *Pelican) SetSchedule(newSchedule *ThermostatSchedule) error {
 			}
 		} else {
 			// Delete Entire Day's Schedule
-			respDelete, _, errsDelete := gorequest.New().Get(pel.target).
-				Param("username", pel.username).
-				Param("password", pel.password).
-				Param("request", "set").
-				Param("object", "thermostatSchedule").
-				Param("selection", fmt.Sprintf("name:%s;dayOfWeek:%s;", pel.Name, day)).
-				Param("value", "deleteAll").
-				End()
+			blockCount := len(currentSchedule.DaySchedules[day])
+			for i := blockCount; i >= 1; i-- {
+				respDelete, _, errsDelete := gorequest.New().Get(pel.target).
+					Param("username", pel.username).
+					Param("password", pel.password).
+					Param("request", "set").
+					Param("object", "thermostatSchedule").
+					Param("selection", fmt.Sprintf("name:%s;dayOfWeek:%s;setTime:%v;", pel.Name, day, i)).
+					Param("value", "delete").
+					End()
 
-			if errsDelete != nil {
-				return fmt.Errorf("Error deleting thermostat schedule settings on day %v: %v\n", day, errsDelete)
-			}
-			defer respDelete.Body.Close()
-			var resultDelete apiResult
-			decDelete := xml.NewDecoder(respDelete.Body)
-			if errDecodeDelete := decDelete.Decode(&resultDelete); errDecodeDelete != nil {
-				return fmt.Errorf("Failed to decode thermostat schedule delete response XML: %v", errDecodeDelete)
-			}
-			if resultDelete.Success == 0 {
-				return fmt.Errorf("Error deleting thermostat schedule settings on day %v: %v\n", day, resultDelete.Message)
+				if errsDelete != nil {
+					return fmt.Errorf("Error deleting thermostat schedule settings on day %v: %v\n", day, errsDelete)
+				}
+				defer respDelete.Body.Close()
+				var resultDelete apiResult
+				decDelete := xml.NewDecoder(respDelete.Body)
+				if errDecodeDelete := decDelete.Decode(&resultDelete); errDecodeDelete != nil {
+					return fmt.Errorf("Failed to decode thermostat schedule delete response XML: %v", errDecodeDelete)
+				}
+				if resultDelete.Success == 0 {
+					return fmt.Errorf("Error deleting thermostat schedule settings on day %v: %v\n", day, resultDelete.Message)
+				}
 			}
 		}
 	}
