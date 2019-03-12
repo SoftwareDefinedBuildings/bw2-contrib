@@ -365,7 +365,7 @@ func (pel *Pelican) ModifySetpoints(params *PelicanSetpointParams) error {
 	if params.CoolingSetpoint != nil {
 		value += fmt.Sprintf("coolSetting:%d;", int(*params.CoolingSetpoint))
 	}
-	resp, _, errs := pel.req.Get(pel.target).
+	resp, _, errs := gorequest.New().Get(pel.target).
 		Param("username", pel.username).
 		Param("password", pel.password).
 		Param("request", "set").
@@ -434,7 +434,7 @@ func (pel *Pelican) ModifyState(params *PelicanStateParams) error {
 		value += fmt.Sprintf("coolSetting:%d;", int(*params.CoolingSetpoint))
 	}
 
-	resp, _, errs := pel.req.Get(pel.target).
+	resp, _, errs := gorequest.New().Get(pel.target).
 		Param("username", pel.username).
 		Param("password", pel.password).
 		Param("request", "set").
@@ -497,7 +497,7 @@ func (pel *Pelican) ModifyStages(params *PelicanStageParams) error {
 		value += fmt.Sprintf("coolStages:%d;", *params.CoolingStages)
 	}
 
-	resp, _, errs := pel.req.Get(pel.target).
+	resp, _, errs := gorequest.New().Get(pel.target).
 		Param("username", pel.username).
 		Param("password", pel.password).
 		Param("request", "set").
